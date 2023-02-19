@@ -7,8 +7,10 @@ Trusted timestamping server with threshold signing key
 - David Rajnoha
 
 ## Installation
-1. git clone --recurse-submodules git@github.com:xmaslo/PV204-Project.git (or use https instead)
+1. git clone git@github.com:xmaslo/timestamping-server.git (or use https instead)
+2. cd timestamping-server
+3. cargo run
 
-If some sort of error occurs:
-1. cd multi-party-ecdsa
-2. cargo build --release --examples --no-default-features --features curv-kzen/num-bigint
+## Static Analysis
+cargo clippy
+
