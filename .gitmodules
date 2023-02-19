@@ -1,3 +1,0 @@
-[submodule "multi-party-ecdsa"]
-	path = multi-party-ecdsa
-	url = git@github.com:ZenGo-X/multi-party-ecdsa.git
