@@ -5,3 +5,8 @@ Trusted timestamping server with threshold signing key
 - Dávid Maslo
 - Adam Hlaváček
 - David Rajnoha
+
+## Installation
+1. git clone --recurse-submodules git@github.com:xmaslo/PV204-Project.git (or use https instead)
+2. cd multi-party-ecdsa
+3. cargo build --release --examples --no-default-features --features curv-kzen/num-bigint
