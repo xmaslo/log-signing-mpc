@@ -7,7 +7,7 @@ Trusted timestamping server with threshold signing key
 - David Rajnoha
 
 ## Installation
-1. git clone git@github.com:xmaslo/timestamping-server.git (or use https instead)
+1. git@github.com:davidmaslo/timestamping-server.git (or use https instead)
 2. cd timestamping-server
 3. cargo run
 
