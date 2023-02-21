@@ -14,3 +14,6 @@ Trusted timestamping server with threshold signing key
 ## Static Analysis
 cargo clippy
 
+## Example Running with Cargo Run
+cargo run --example gg20_sm_manager --no-default-features --features curv-kzen/num-bigint
+
