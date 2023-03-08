@@ -11,3 +11,6 @@ Cargo.lock
 
 # Idea files
 .idea
+
+# Json files
+*.json
