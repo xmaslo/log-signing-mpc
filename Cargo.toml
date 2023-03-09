@@ -8,3 +8,8 @@ edition = "2021"
 [dependencies]
 multi-party-ecdsa = { git = "https://github.com/zengo-x/multi-party-ecdsa.git", rev = "3e711c792db06aaeeac5694b137d24f7551069d1", default-features = false }
 curv-kzen = { version = "*", default-features = false, features = ["num-bigint"] }
+round-based = { version = "0.1.4", features = [] }
+futures = "0.3"
+
+[dev-dependencies]
+round-based = { version = "0.1.4", features = ["dev"] }
