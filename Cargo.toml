@@ -10,6 +10,9 @@ multi-party-ecdsa = { git = "https://github.com/zengo-x/multi-party-ecdsa.git", 
 curv-kzen = { version = "*", default-features = false, features = ["num-bigint"] }
 round-based = { version = "0.1.4", features = [] }
 futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", default-features = false, features = ["macros"] }
 
 [dev-dependencies]
 round-based = { version = "0.1.4", features = ["dev"] }
