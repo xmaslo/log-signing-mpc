@@ -19,6 +19,9 @@ cargo clippy
 - cargo run --example gg20_keygen --no-default-features --features curv-kzen/num-bigint -- -t 1 -n 3 -i 1 --output local-share1.json
 - cargo run --example gg20_signing --no-default-features --features curv-kzen/num-bigint -- -p 1,2 -d "hello" -l local-share1.json
 
+## Cargo Test With Command Line Output
+- cargo test -- --nocapture
+
 ## Signing
 My understanding is that gg_20 is a demonstration of https://eprint.iacr.org/2020/540.pdf implementation.
 
