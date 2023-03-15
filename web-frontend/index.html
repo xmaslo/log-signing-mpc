@@ -8,6 +8,46 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <script src="https://cdn.adamhlavacek.com/GRenderer.js" crossorigin="anonymous"></script>
     <script>
+        /** @type {string[]} */
+        const SERVERS = [
+            'http://localhost:8001',
+            'http://localhost:8002',
+            'http://localhost:8003',
+        ];
+
+        /**
+         * Reorders servers in random order
+         * @return {string[]}
+         */
+        function getRandomServers() {
+            let serversOriginal = [...SERVERS];
+            let serversRandom = [];
+            while (serversOriginal.length > 0) {
+                serversRandom.push(...serversOriginal.splice(Math.floor(serversOriginal.length * Math.random()), 1));
+            }
+
+            return serversRandom;
+        }
+
+        /**
+         * Attempts to timestamp a hash of a file with given server
+         * @param server {string}
+         * @param hash {string} hex-encoded hash
+         * @return {Promise<Blob | null>}
+         */
+        async function stamp(server, hash) {
+            try {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve(new Blob(["TEST BLOB"]))
+                    }, 3000);
+                });
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        }
+
         /**
          * Creates a SHA256 hash of a file
          * @param file {File} file to be hashed
@@ -24,6 +64,25 @@
                     .join("");
         }
 
+        /**
+         * Sets new progressbar text, null for disabling progressbar
+         * @param text {string | null}
+         * @param percentage {number}
+         */
+        function setProgressbar(text, percentage) {
+            const progressCurrent = _renderer.variables.progress || {};
+            if (text === null) {
+                progressCurrent.shown = false;
+            } else {
+                progressCurrent.shown = true;
+                progressCurrent.text = text;
+                progressCurrent.percentage = percentage;
+            }
+
+            _renderer.variables.progress = progressCurrent;
+            _renderer.render();
+        }
+
         /** @type {GRenderer | undefined} */
         let _renderer;
 
@@ -31,15 +90,17 @@
             /** @type {HTMLInputElement} */
             const inputFile = document.querySelector('#inputFile');
             console.assert(inputFile !== null);
-
             /** @type {HTMLFormElement} */
             const inputFileForm = document.querySelector('#inputFileForm');
             console.assert(inputFileForm !== null);
+            /** @type {HTMLAnchorElement} */
+            const btnDownloadStamp = document.querySelector('#btnDownloadStamp');
+            console.assert(btnDownloadStamp !== null);
 
             /** @type {File | null} */
             let selectedFile;
 
-            _renderer = new GRenderer(document.querySelector('form'), {
+            _renderer = new GRenderer(document.querySelector('body'), {
                 selectDisabled: undefined,
                 submitDisabled: true
             }, undefined, {
@@ -48,15 +109,41 @@
                     _renderer.variables.submitDisabled = selectedFile === null ? true : undefined;
                     _renderer.render();
                 },
-                onFormSubmit: () => {
+                onFormSubmit: async () => {
+                    // disable next submitting
                     _renderer.variables.submitDisabled = true;
                     _renderer.variables.selectDisabled = true;
-                    console.log('Submitted');
-                    sha256(selectedFile).then((hash) => console.log('hash', hash));
+                    _renderer.variables.stamp = null;
+                    _renderer.render();
+
+                    setProgressbar('Computing file hash', 25);
+                    const hash = await sha256(selectedFile);
+
+                    let success = false;
+                    for (const server of getRandomServers()) {
+                        setProgressbar(`Asking ${server} to sign`, 75);
+                        const timestamp = await stamp(server, hash);
+                        if (timestamp === null) {
+                            continue;
+                        }
+                        setProgressbar(selectedFile.name + ' successfuly signed', 100);
+                        _renderer.variables.stamp = {
+                            url: URL.createObjectURL(timestamp),
+                            filename: selectedFile.name + '.stamp'
+                        };
+                        btnDownloadStamp.download = _renderer.variables.stamp.filename;
+                        btnDownloadStamp.href = _renderer.variables.stamp.url;
+                        success = true;
+                        break;
+                    }
+
+                    _renderer.variables.submitDisabled = false;
+                    _renderer.variables.selectDisabled = false;
                     _renderer.render();
                 }
             });
 
+            // handle UI events
             inputFile.onchange = _renderer.functions.onFileSelect;
             inputFileForm.onsubmit = (e) => {
                 e.preventDefault();
@@ -64,12 +151,13 @@
                 _renderer.functions.onFormSubmit();
                 return false;
             }
+            // run first render
             _renderer.render();
         }
     </script>
 </head>
 <body>
-<div class="container">
+<div class="container mt-10">
     <div class="row">
         <div class="col-12"><h1>Multi-party timestamping server</h1></div>
     </div>
@@ -81,7 +169,13 @@
                 <div id="helpFile" class="form-text">Hash of the file is computed locally and then sent to the server</div>
             </div>
             <button r-attr="{&quot;disabled&quot;: &quot;v.submitDisabled&quot;}" type="submit" class="btn btn-primary">Submit</button>
+            <a r-if="v.stamp" id="btnDownloadStamp" class="btn btn-secondary">Download stamp</a>
         </form>
+    </div>
+    <div r-if="v.progress.shown" class="row mt-3">
+        <div class="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" r-attr="{&quot;style&quot;: &quot;'width: ' + v.progress.percentage + '%'&quot;}" r-var="v.progress.text"></div>
+        </div>
     </div>
 </div>
 </body>
