@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Multi-party timestamping server
+  version: 0.0.0
+tags:
+  - name: stamp
+    description: Perform document timestamping
+paths:
+  /timestamp:
+    post:
+      tags:
+        - stamp
+      summary: Signs a new document
+      operationId: sign
+      requestBody:
+        description: Request for a new timestamp
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TimestampRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful signature
+          content:
+            application/octet-stream:
+              schema:
+                $ref: '#/components/schemas/TimestampResponse'
+        '405':
+          description: Invalid input
+        '502':
+          description: Not enough servers participated in time
+
+components:
+  schemas:
+    TimestampRequest:
+      required:
+        - hash
+      type: object
+      properties:
+        hash:
+          type: string
+          description: SHA-256 hash as hex-string
+    TimestampResponse:
+      type: string
+      format: binary
+      description: Binary signature file
