@@ -39,8 +39,12 @@
             try {
                 return new Promise((resolve) => {
                     setTimeout(() => {
-                        resolve(new Blob(["TEST BLOB"]))
-                    }, 3000);
+                        if (Math.random() > 0.7) {
+                            resolve(new Blob(["TEST BLOB"]));
+                        } else {
+                            resolve(null);
+                        }
+                    }, Math.random() * 3000);
                 });
             } catch (e) {
                 console.error(e);
@@ -83,6 +87,15 @@
             _renderer.render();
         }
 
+        /**
+         * Shows an error message to the user
+         * @param message {string | null} null hides the message
+         */
+        function showError(message) {
+            _renderer.variables.error = message;
+            _renderer.render();
+        }
+
         /** @type {GRenderer | undefined} */
         let _renderer;
 
@@ -114,14 +127,25 @@
                     _renderer.variables.submitDisabled = true;
                     _renderer.variables.selectDisabled = true;
                     _renderer.variables.stamp = null;
+                    showError(null);
                     _renderer.render();
 
                     setProgressbar('Computing file hash', 25);
-                    const hash = await sha256(selectedFile);
+                    /** @type {string} */
+                    let hash;
+                    try {
+                        hash = await sha256(selectedFile);
+                    } catch (e) {
+                        showError('Could not hash given file');
+                        console.error(e);
+                        return;
+                    }
 
                     let success = false;
-                    for (const server of getRandomServers()) {
-                        setProgressbar(`Asking ${server} to sign`, 75);
+                    const servers = getRandomServers();
+                    for (let i = 0; i < servers.length; i++) {
+                        const server = servers[i];
+                        setProgressbar(`Asking ${server} to sign`, 50 + (25 * i / servers.length));
                         const timestamp = await stamp(server, hash);
                         if (timestamp === null) {
                             continue;
@@ -137,8 +161,12 @@
                         break;
                     }
 
-                    _renderer.variables.submitDisabled = false;
-                    _renderer.variables.selectDisabled = false;
+                    if (!success) {
+                        showError('No of the servers responded in time, try again later');
+                    }
+
+                    _renderer.variables.submitDisabled = undefined;
+                    _renderer.variables.selectDisabled = undefined;
                     _renderer.render();
                 }
             });
@@ -157,7 +185,7 @@
     </script>
 </head>
 <body>
-<div class="container mt-10">
+<div class="container mt-3">
     <div class="row">
         <div class="col-12"><h1>Multi-party timestamping server</h1></div>
     </div>
@@ -171,6 +199,9 @@
             <button r-attr="{&quot;disabled&quot;: &quot;v.submitDisabled&quot;}" type="submit" class="btn btn-primary">Submit</button>
             <a r-if="v.stamp" id="btnDownloadStamp" class="btn btn-secondary">Download stamp</a>
         </form>
+    </div>
+    <div r-if="v.error" class="row mt-3">
+        <div class="alert alert-danger" role="alert" r-var="v.error"></div>
     </div>
     <div r-if="v.progress.shown" class="row mt-3">
         <div class="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
