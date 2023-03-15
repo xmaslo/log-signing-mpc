@@ -91,6 +91,14 @@ impl Room {
 
 }
 
+
+// The messages sent to the outgoing sink will be received by other servers in their receiving_stream
+// And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
+// To enable this functionality, it is necessary to:
+//  1. add the room to the rocket state
+//  2. call the init_room function on the rocket managed room state with the addresses of the communication partners
+//      2.1 this can be now done by the call to the init_room endpoint
+//  3. Mount the receive_broadcast endpoint to the rocket instance
 fn create_communication_channels() -> (
     futures::channel::mpsc::UnboundedReceiver<String>,
     futures::channel::mpsc::UnboundedSender<String>,
@@ -123,7 +131,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
 
     rocket::build()
+        // Necessary step 3
         .mount("/", rocket::routes![receive_broadcast, send_broadcast, init_room])
+        // Necessary step 2
         .manage(room)
         .manage(outgoing_sink_managed)
         .launch()
