@@ -44,4 +44,4 @@ components:
     TimestampResponse:
       type: string
       format: binary
-      description: Binary signature file
+      description: Binary timestamp file
