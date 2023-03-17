@@ -11,6 +11,7 @@ use rocket::http::Status;
 use rocket::State;
 use rocket::Config;
 use round_based::Msg;
+
 use serde::Serialize;
 
 use tokio::sync::RwLock;
@@ -82,7 +83,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The outgoing sink will be passed to the multisig library to work with it instead
     let outgoing_sink_managed = OutgoingSink::new(Box::pin(outgoing_sink));
 
-    rocket::build()
+    let figment = rocket::Config::figment()
+        .merge(("address", "127.0.0.1"))
+        .merge(("port", port))
+        .merge(("workers", 4))
+        .merge(("log_level", "normal"));
+
+    rocket::custom(figment)
         // Necessary step 3
         .mount("/", rocket::routes![receive_broadcast, send_broadcast, init_room])
         // Necessary step 2
