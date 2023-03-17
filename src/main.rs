@@ -5,9 +5,14 @@ use create_communication_channel::{create_communication_channels, Room, receive_
 use futures::{Sink, SinkExt, StreamExt};
 
 use std::sync::{Arc};
+use std::pin::Pin;
+
 use rocket::http::Status;
 use rocket::State;
 use rocket::Config;
+use round_based::Msg;
+use serde::Serialize;
+
 use tokio::sync::RwLock;
 
 
@@ -18,25 +23,31 @@ async fn send_broadcast(outgoing_sink: &State<OutgoingSink>, message: String) ->
 }
 
 struct OutgoingSink {
-    outgoing_sink: Arc<RwLock<Box<dyn Sink<String, Error=futures::channel::mpsc::SendError> + Send + Sync + Unpin>>>,
+    outgoing_sink: Arc<RwLock<Pin<Box<dyn Sink<Msg<String>, Error=anyhow::Error> + Send + Sync>>>>,
 }
 
 impl OutgoingSink {
-    pub fn new(sink: Box<dyn Sink<String, Error=futures::channel::mpsc::SendError> + Send + Sync + Unpin>) -> Self {
+    pub fn new(sink: Pin<Box<dyn Sink<Msg<String>, Error=anyhow::Error> + Send + Sync>>) -> Self {
         Self {
             outgoing_sink: Arc::new(RwLock::new(sink))
         }
     }
 
     pub async fn receive(&self, message: String) {
+        let msg = Msg {
+            sender: 0,
+            receiver: Some(0),
+            body: message,
+        };
         let mut guard = self.outgoing_sink.write().await;
         let mut sink = guard.as_mut();
-        sink.send(message).await.unwrap();
+        sink.send(msg).await.unwrap();
     }
 }
 
 #[rocket::post("/init_room", data = "<urls>")]
-async fn init_room(room: &State<Room>, urls: String) -> Status {
+async fn init_room(room: &State<Room>, urls: String) -> Status
+{
     let urls = urls.split(',').map(|s| s.to_string()).collect();
     // Necessary step 1, calling the .init_room with correct urls on the rocket managed state
     room.init_room(&urls).await;
@@ -51,12 +62,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The receiving_stream will be passed to the multisig library to work with it instead
     tokio::spawn(async move {
         while let Some(message) = receiving_stream.next().await {
-            println!("Received: {}", message);
+            println!("Received: {:?}", message);
         }
     });
 
     // The outgoing sink will be passed to the multisig library to work with it instead
-    let outgoing_sink_managed = OutgoingSink::new(Box::new(outgoing_sink));
+    let outgoing_sink_managed = OutgoingSink::new(Box::pin(outgoing_sink));
 
     let args: Vec<String> = std::env::args().collect();
     let port = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
