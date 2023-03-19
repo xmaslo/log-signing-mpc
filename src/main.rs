@@ -1,5 +1,7 @@
 mod create_communication_channel;
+mod key_generator;
 
+use std::path::Path;
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
 
 use futures::{Sink, SinkExt, StreamExt};
@@ -15,6 +17,7 @@ use round_based::Msg;
 use serde::Serialize;
 
 use tokio::sync::RwLock;
+use crate::key_generator::KeyGenerator;
 
 
 #[rocket::post("/send_broadcast", data = "<message>")]
@@ -82,6 +85,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // The outgoing sink will be passed to the multisig library to work with it instead
     let outgoing_sink_managed = OutgoingSink::new(Box::pin(outgoing_sink));
+
+    // let kg = KeyGenerator::new(0);
+    // kg.run(Path::new("file_name"), receiving_stream, outgoing_sink);
 
     let figment = rocket::Config::figment()
         .merge(("address", "127.0.0.1"))
