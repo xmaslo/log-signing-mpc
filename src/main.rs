@@ -11,20 +11,16 @@ use std::pin::Pin;
 
 use rocket::http::Status;
 use rocket::State;
-use rocket::Config;
 use round_based::Msg;
-
-use serde::Serialize;
 
 use tokio::sync::RwLock;
 use crate::key_generator::KeyGenerator;
 
-
-#[rocket::post("/send_broadcast", data = "<message>")]
-async fn send_broadcast(outgoing_sink: &State<OutgoingSink>, message: String) -> Status {
-    outgoing_sink.receive(message).await;
-    Status::Ok
-}
+// #[rocket::post("/send_broadcast", data = "<message>")]
+// async fn send_broadcast(outgoing_sink: &State<OutgoingSink>, message: String) -> Status {
+//     outgoing_sink.receive(message).await;
+//     Status::Ok
+// }
 
 struct OutgoingSink {
     outgoing_sink: Arc<RwLock<Pin<Box<dyn Sink<Msg<String>, Error=anyhow::Error> + Send + Sync>>>>,
@@ -64,6 +60,11 @@ async fn init_room(room: &State<Room>, urls: String) -> Status
     Status::Ok
 }
 
+#[rocket::post("/keygen", data = "<file_name>")]
+async fn keygen(kg: &State<KeyGenerator>, file_name: String) -> Status {
+    kg.run(Path::new("file_name"));
+    Status::Ok
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -83,11 +84,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // The outgoing sink will be passed to the multisig library to work with it instead
-    let outgoing_sink_managed = OutgoingSink::new(Box::pin(outgoing_sink));
+    let kg = KeyGenerator::new(0, Box::new(receiving_stream), Box::new(outgoing_sink));
+    // kg.run(Path::new("local-share1.json"));
 
-    // let kg = KeyGenerator::new(0);
-    // kg.run(Path::new("file_name"), receiving_stream, outgoing_sink);
+    // The outgoing sink will be passed to the multisig library to work with it instead
+    // let outgoing_sink_managed = OutgoingSink::new(Box::pin(outgoing_sink));
 
     let figment = rocket::Config::figment()
         .merge(("address", "127.0.0.1"))
@@ -97,10 +98,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     rocket::custom(figment)
         // Necessary step 3
-        .mount("/", rocket::routes![receive_broadcast, send_broadcast, init_room])
+        .mount("/", rocket::routes![receive_broadcast, /*send_broadcast,*/ init_room, keygen])
         // Necessary step 2
         .manage(room)
-        .manage(outgoing_sink_managed)
+        // .manage(outgoing_sink_managed)
+        .manage(kg)
         .launch()
         .await?;
 
