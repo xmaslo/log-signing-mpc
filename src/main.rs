@@ -5,13 +5,16 @@ use std::path::Path;
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
 
 use futures::{Sink, SinkExt, StreamExt};
+use anyhow::{anyhow, Error, Result};
 
 use std::sync::{Arc};
 use std::pin::Pin;
+use curv::elliptic::curves::Secp256k1;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{Keygen, LocalKey};
 
 use rocket::http::Status;
 use rocket::State;
-use round_based::Msg;
+use round_based::{AsyncProtocol, Msg};
 
 use tokio::sync::RwLock;
 use crate::key_generator::KeyGenerator;
@@ -77,18 +80,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (mut receiving_stream, outgoing_sink, room)
         = create_communication_channels(id);
 
-    // The receiving_stream will be passed to the multisig library to work with it instead
-    tokio::spawn(async move {
-        while let Some(message) = receiving_stream.next().await {
-            println!("Received: {:?}", message);
-        }
-    });
+    // // The receiving_stream will be passed to the multisig library to work with it instead
+    // tokio::spawn(async move {
+    //     while let Some(message) = receiving_stream.next().await {
+    //         println!("Received: {:?}", message);
+    //     }
+    // });
 
-    let kg = KeyGenerator::new(0, Box::new(receiving_stream), Box::new(outgoing_sink));
+    let receiving_stream = receiving_stream.fuse();
+    tokio::pin!(receiving_stream);
+    tokio::pin!(outgoing_sink);
+
+
+    // let kg = KeyGenerator::new(0, receiving_stream, outgoing_sink);
     // kg.run(Path::new("local-share1.json"));
 
     // The outgoing sink will be passed to the multisig library to work with it instead
     // let outgoing_sink_managed = OutgoingSink::new(Box::pin(outgoing_sink));
+
+    let keygen: Keygen = Keygen::new(1, 2, 3).unwrap();
+
+    println!("Keygen started: {:?}", keygen);
+
+    let results: Result<LocalKey<Secp256k1>, Error> = AsyncProtocol::new(keygen, receiving_stream, outgoing_sink)
+        .run()
+        .await
+        .map_err(|e| anyhow!("protocol execution terminated with error: {}", e));
+
+    println!("Keygen finished: {:?}", results);
 
     let figment = rocket::Config::figment()
         .merge(("address", "127.0.0.1"))
@@ -102,9 +121,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Necessary step 2
         .manage(room)
         // .manage(outgoing_sink_managed)
-        .manage(kg)
+        // .manage(kg)
         .launch()
         .await?;
+
+    println!("Rocket has launched! (but the program has not yet exited!)");
 
     Ok(())
 }
