@@ -1,16 +1,18 @@
 use futures::{Sink, SinkExt, Stream, StreamExt};
 use futures::channel::mpsc::{SendError};
 use tokio::sync::RwLock;
-use rocket::State;
+use rocket::{Data, State};
 use round_based::Msg;
 
 use anyhow::{Context, Result};
 use std::sync::Arc;
 use rocket::http::Status;
 use serde::{de::DeserializeOwned, Serialize, Deserialize};
+use rocket::tokio::io::AsyncReadExt;
 
 use std::thread;
 use std::time::Duration;
+use rocket::data::ToByteUnit;
 
 pub trait SerializableMessage: Serialize + DeserializeOwned + Send + 'static {}
 
@@ -59,11 +61,17 @@ pub fn create_communication_channels<SerializableMessage: Serialize + Deserializ
 }
 
 // Handling the messages received from the other servers
-#[rocket::post("/receive_broadcast", data = "<message>")]
-pub async fn receive_broadcast(room: &State<Room>, message: String) -> Status
-{
+#[rocket::post("/receive_broadcast", data = "<data>")]
+pub async fn receive_broadcast(room: &State<Room>, data: Data<'_>) -> Result<Status, std::io::Error> {
+    let mut buffer = Vec::new();
+    let data_length = data.open(1.mebibytes()).read_to_end(&mut buffer).await?;
+
+    println!("Received data length: {} bytes", data_length);
+
+    let message = String::from_utf8(buffer).unwrap_or_else(|_| String::from("Invalid UTF-8"));
+
     room.receive(message).await;
-    Status::Ok
+    Ok(Status::Ok)
 }
 
 pub struct Room {
@@ -100,7 +108,14 @@ impl Room {
                     for url in server_urls {
                         let endpoint = format!("http://{}/receive_broadcast", url);
                         println!("Sending: {} to {}", message, url);
-                        self.client.post(&endpoint).body(message.clone()).send().await.unwrap();
+                        match self.client.post(&endpoint).body(message.clone()).send().await {
+                            Ok(response) => {
+                                println!("Successfully sent message to {}", url);
+                            }
+                            Err(e) => {
+                                eprintln!("Error sending message to {}: {}", url, e);
+                            }
+                        }
                     }
                 }
                 Some(Err(_)) => break,

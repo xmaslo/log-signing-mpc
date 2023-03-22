@@ -10,6 +10,7 @@ use std::pin::Pin;
 use curv::elliptic::curves::Secp256k1;
 use futures::stream::Fuse;
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{Keygen, LocalKey, ProtocolMessage};
+use rocket::data::{ByteUnit, Limits};
 
 use rocket::http::Status;
 use rocket::State;
@@ -73,7 +74,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(("address", "127.0.0.1"))
         .merge(("port", port))
         .merge(("workers", 4))
-        .merge(("log_level", "normal"));
+        .merge(("log_level", "normal"))
+        .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
     // Replace `let server = rocket::custom(figment)` with the following lines
     let rocket_instance = rocket::custom(figment)
