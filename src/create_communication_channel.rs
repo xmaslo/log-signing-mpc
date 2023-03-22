@@ -9,6 +9,9 @@ use std::sync::Arc;
 use rocket::http::Status;
 use serde::{de::DeserializeOwned, Serialize, Deserialize};
 
+use std::thread;
+use std::time::Duration;
+
 pub trait SerializableMessage: Serialize + DeserializeOwned + Send + 'static {}
 
 impl<T> SerializableMessage for T where T: Serialize + DeserializeOwned + Send + 'static {}
@@ -85,6 +88,8 @@ impl Room {
     }
 
     pub async fn init_room(&self, server_urls: &Vec<String>) {
+        thread::sleep(Duration::from_secs(15));
+
         let mut counter = 0;
 
         loop {
