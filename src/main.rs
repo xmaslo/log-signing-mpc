@@ -1,6 +1,7 @@
 mod create_communication_channel;
 mod key_generator;
 
+use std::path::Path;
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
 
 use futures::{Sink, Stream, StreamExt};
@@ -15,8 +16,9 @@ use rocket::data::{ByteUnit, Limits};
 use rocket::http::Status;
 use rocket::State;
 use round_based::{AsyncProtocol, Msg};
+use crate::key_generator::generate_keys;
 
-use crate::key_generator::KeyGenerator;
+// use crate::key_generator::KeyGenerator;
 
 #[rocket::post("/init_room", data = "<urls>")]
 async fn init_room(room: &State<Room>, urls: String) -> Status
@@ -45,14 +47,13 @@ async fn run_keygen(
         .map_err(|e| anyhow!("protocol execution terminated with error: {}", e))
 }
 
-
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     // id that will be used to filter out messages
     let id = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(0);
     let port = args.get(2).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
+    let file_name = args.get(3).unwrap();
 
 
     let (mut receiving_stream, outgoing_sink, room)
@@ -66,9 +67,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let kg = KeyGenerator::new(0, receiving_stream, outgoing_sink);
     // kg.run(Path::new("local-share1.json"));
 
-    let keygen: Keygen = Keygen::new(id, 2, 3).unwrap();
+    // let keygen: Keygen = Keygen::new(id, 2, 3).unwrap();
 
-    println!("Keygen started: {:?}", keygen);
+    // println!("Keygen started: {:?}", keygen);
 
     let figment = rocket::Config::figment()
         .merge(("address", "127.0.0.1"))
@@ -84,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Run the server and the run_keygen function concurrently
     let server_future = tokio::spawn(async { rocket_instance.launch().await });
-    let keygen_future = run_keygen(keygen, receiving_stream, outgoing_sink);
+    let keygen_future = generate_keys(Path::new(file_name), id, receiving_stream, outgoing_sink);
 
     let (server_result, keygen_result) = tokio::join!(server_future, keygen_future);
 
