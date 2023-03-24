@@ -1,5 +1,5 @@
 mod create_communication_channel;
-mod key_generator;
+mod key_generation;
 
 use std::path::Path;
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
@@ -11,7 +11,7 @@ use rocket::data::{ByteUnit, Limits};
 
 use rocket::http::Status;
 use rocket::State;
-use crate::key_generator::generate_keys;
+use crate::key_generation::generate_keys;
 
 #[rocket::post("/init_room", data = "<urls>")]
 async fn init_room(room: &State<Room>, urls: String) -> Status
