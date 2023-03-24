@@ -1,56 +1,17 @@
 mod create_communication_channel;
+mod key_generation;
 
+use std::path::Path;
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
 
-use futures::{Sink, SinkExt, StreamExt};
+use futures::{StreamExt};
+use anyhow::{Result};
 
-use std::sync::{Arc};
-use std::pin::Pin;
+use rocket::data::{ByteUnit, Limits};
 
 use rocket::http::Status;
 use rocket::State;
-use rocket::Config;
-use round_based::Msg;
-
-use serde::Serialize;
-
-use tokio::sync::RwLock;
-
-
-#[rocket::post("/send_broadcast", data = "<message>")]
-async fn send_broadcast(outgoing_sink: &State<OutgoingSink>, message: String) -> Status {
-    outgoing_sink.receive(message).await;
-    Status::Ok
-}
-
-struct OutgoingSink {
-    outgoing_sink: Arc<RwLock<Pin<Box<dyn Sink<Msg<String>, Error=anyhow::Error> + Send + Sync>>>>,
-}
-
-impl OutgoingSink {
-    pub fn new(sink: Pin<Box<dyn Sink<Msg<String>, Error=anyhow::Error> + Send + Sync>>) -> Self {
-        Self {
-            outgoing_sink: Arc::new(RwLock::new(sink))
-        }
-    }
-
-    pub async fn receive(&self, message: String) {
-        let msg_value: serde_json::Value = serde_json::from_str(&message).unwrap();
-        //TODO: handle error more gracefully
-        let receiver = msg_value["receiver"].as_u64().map(|r| r as u16).unwrap();
-        let sender = msg_value["sender"].as_u64().map(|r| r as u16).unwrap();
-        let body = msg_value["body"].as_str().unwrap().to_string();
-
-        let msg = Msg {
-            sender,
-            receiver: Some(receiver),
-            body,
-        };
-        let mut guard = self.outgoing_sink.write().await;
-        let mut sink = guard.as_mut();
-        sink.send(msg).await.unwrap();
-    }
-}
+use crate::key_generation::generate_keys;
 
 #[rocket::post("/init_room", data = "<urls>")]
 async fn init_room(room: &State<Room>, urls: String) -> Status
@@ -61,7 +22,6 @@ async fn init_room(room: &State<Room>, urls: String) -> Status
     Status::Ok
 }
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
@@ -70,33 +30,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = args.get(2).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
 
 
-    let (mut receiving_stream, outgoing_sink, room)
+    let (receiving_stream, outgoing_sink, room)
         = create_communication_channels(id);
 
-    // The receiving_stream will be passed to the multisig library to work with it instead
-    tokio::spawn(async move {
-        while let Some(message) = receiving_stream.next().await {
-            println!("Received: {:?}", message);
-        }
-    });
-
-    // The outgoing sink will be passed to the multisig library to work with it instead
-    let outgoing_sink_managed = OutgoingSink::new(Box::pin(outgoing_sink));
+    let receiving_stream = receiving_stream.fuse();
+    tokio::pin!(receiving_stream);
+    tokio::pin!(outgoing_sink);
 
     let figment = rocket::Config::figment()
         .merge(("address", "127.0.0.1"))
         .merge(("port", port))
         .merge(("workers", 4))
-        .merge(("log_level", "normal"));
+        .merge(("log_level", "normal"))
+        .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
-    rocket::custom(figment)
-        // Necessary step 3
-        .mount("/", rocket::routes![receive_broadcast, send_broadcast, init_room])
-        // Necessary step 2
-        .manage(room)
-        .manage(outgoing_sink_managed)
-        .launch()
-        .await?;
+    // Replace `let server = rocket::custom(figment)` with the following lines
+    let rocket_instance = rocket::custom(figment)
+        .mount("/", rocket::routes![receive_broadcast, init_room])
+        .manage(room);
+
+    let file_name: String = format!("local_share{}.json", id);
+
+    // Run the server and the run_keygen function concurrently
+    let server_future = tokio::spawn(async { rocket_instance.launch().await });
+    let keygen_future = generate_keys(Path::new(&file_name), id, receiving_stream, outgoing_sink);
+
+    let (server_result, keygen_result) = tokio::join!(server_future, keygen_future);
+
+    // Check the results
+    println!("Rocket server result: {:?}", server_result);
+    println!("Keygen result: {:?}", keygen_result);
 
     Ok(())
 }
