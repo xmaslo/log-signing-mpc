@@ -11,6 +11,24 @@ Trusted timestamping server with threshold signing key
 2. cd timestamping-server
 3. cargo run
 
+## Server Setup and Key Generation
+
+### Linux
+Run *keygen_example.sh* script.
+
+### Windows
+Run all three timestamping servers as follows:
+1. .\timestamping-server.exe 1 8000
+2. .\timestamping-server.exe 2 8001
+3. .\timestamping-server.exe 3 8002
+
+Then, curl */init_room* endpoint (you can download curl at https://curl.se/windows/):
+1. .\curl.exe -X POST localhost:8000/init_room -d "127.0.0.1:8001,127.0.0.1:8002"
+2. .\curl.exe -X POST localhost:8001/init_room -d "127.0.0.1:8002,127.0.0.1:8000"
+3. .\curl.exe -X POST localhost:8002/init_room -d "127.0.0.1:8001,127.0.0.1:8000"
+
+After completed all these steps, servers are running, and you can begin to use our frontend to timestamp your files.
+
 ## Static Analysis
 cargo clippy
 
