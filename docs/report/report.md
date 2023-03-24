@@ -5,7 +5,7 @@
 ## Selected technologies stack
 
 - **Rust** as programming language -- thanks to its memory safe and concurrency-safe properties, we found it fitting for usage in scenario which performs cryptographic with possibly highly sensitive data
-- **Multi-party ECDSA** by [ZenGo-X](https://github.com/ZenGo-X/multi-party-ecdsa/) is a library written in Rust under GPLv3 license with support for `t`-of-`n` signing treshold specification
+- **Multi-party ECDSA** by [ZenGo-X](https://github.com/ZenGo-X/multi-party-ecdsa/) is a library written in Rust under GPLv3 license with support for `t`-of-`n` signing treshold specification, so it was a natural choice
 - **Plain HTML & JS & CSS3** for a single frontend webpage, which uses [Bootstrap](https://getbootstrap.com/docs/5.0/) to unify the look and feel on all browsers with effortless scaling for mobile devices together with few useful components like progress bar. To simplify the DOM operations in JavaScript a microframework [GRenderer](https://github.com/QRGameStudio/web-libs/tree/main/GRenderer) was used.
 - To simplify communication between frontend and backend teams, **OpenAPI v3** schema was created. Furthermore, with this schema, the process of implementing client in another language is as effortless as using the [codegen](https://github.com/swagger-api/swagger-codegen) tool to generate all code required for communication
 
@@ -28,7 +28,7 @@ During first setup, each server accepts three arguments:
 2. address of the second server in the group
 3. address of the third server in the group
 
-These arguments are then saved into a local file and are automatically loaded during subsequent runs of the server.
+These arguments are then saved into a local file  (together with a generated key in a later phase) and are automatically loaded during subsequent runs of the server.
 
 ### Creating communication channel
 
@@ -38,9 +38,12 @@ Given that a communication channel needs to be established for both initial gene
 
 During initial setup, after all of the servers have indicated, that they are able to connect to all other servers, a process of generating a shared key can begin. The generation is mostly handled by the underlining library over the created communication channel, the resulting local share of the MPC generated key is then stored into a local file.
 
+<img src="key_generation.png" style="margin: auto; display: block" />
+<center><i>Figure 2: How key generation is requested</i></center>
+
 ### Creating a timestamp
 
-Each server publishes an HTTP endpoint on which it expects a SHA256 hash of a file and index of another server that that is supposed to perform MPC timestamping together with this server. After the endpoint is called, the server then utilizes the provided library function to perform a signature where the signed message is the received hash. If the signing process succeeds, the signature is then returned as a response to the original HTTP query.
+Each server publishes an HTTP endpoint on which it expects a SHA256 hash of a file,  timestamp and index of another server that that is supposed to perform MPC timestamping together with this server. The timestamp needs to be in a time range for it to be considered valid. After the endpoint is called, the server then utilizes the provided library function to perform a signature where the signed message is the received hash. If the signing process succeeds, the signature together with the timestamp is then returned as a response to the original HTTP query.
 
 ## Frontend
 
