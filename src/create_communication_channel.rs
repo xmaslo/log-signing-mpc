@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use futures::{Sink, SinkExt, Stream, StreamExt};
 use futures::channel::mpsc::{SendError};
 use tokio::sync::RwLock;
@@ -7,16 +8,12 @@ use round_based::Msg;
 use anyhow::{Context, Result};
 use std::sync::Arc;
 use rocket::http::Status;
-use serde::{de::DeserializeOwned, Serialize, Deserialize};
+use serde::{de::DeserializeOwned, Serialize};
 use rocket::tokio::io::AsyncReadExt;
 
 use std::thread;
 use std::time::Duration;
 use rocket::data::ToByteUnit;
-
-pub trait SerializableMessage: Serialize + DeserializeOwned + Send + 'static {}
-
-impl<T> SerializableMessage for T where T: Serialize + DeserializeOwned + Send + 'static {}
 
 // This function creates the communication channels between the servers
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
@@ -61,8 +58,11 @@ pub fn create_communication_channels<SerializableMessage: Serialize + Deserializ
 }
 
 // Handling the messages received from the other servers
-#[rocket::post("/receive_broadcast", data = "<data>")]
-pub async fn receive_broadcast(room: &State<Room>, data: Data<'_>) -> Result<Status, std::io::Error> {
+#[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
+pub async fn receive_broadcast(db: &State<Db>,
+                               room_state: &State<Room>,
+                               room_id: u16,
+                               data: Data<'_>) -> Result<Status, std::io::Error> {
     let mut buffer = Vec::new();
     let data_length = data.open(1.mebibytes()).read_to_end(&mut buffer).await?;
 
@@ -70,8 +70,17 @@ pub async fn receive_broadcast(room: &State<Room>, data: Data<'_>) -> Result<Sta
 
     let message = String::from_utf8(buffer).unwrap_or_else(|_| String::from("Invalid UTF-8"));
 
-    room.receive(message).await;
+    if let Some(room) = db.get_room(room_id).await {
+        room.receive(message).await;
+    } else {
+        room_state.receive(message).await;
+    }
+
     Ok(Status::Ok)
+}
+
+pub struct Db {
+    rooms: RwLock<HashMap<String, Arc<Room>>>
 }
 
 pub struct Room {
@@ -80,6 +89,59 @@ pub struct Room {
     outgoing_stream: Arc<RwLock<Box<dyn Stream<Item = Result<String>> + Send + Sync + Unpin>>>,
     client: reqwest::Client,
 }
+
+impl Db {
+    pub fn empty() -> Self {
+        Self {
+            rooms: RwLock::new(HashMap::new()),
+        }
+    }
+
+    pub async fn create_room<SerializableMessage: Serialize + DeserializeOwned>(&self, id: u16) -> (
+        impl Stream<Item = Result<Msg<SerializableMessage>>>,
+        impl Sink<Msg<SerializableMessage>, Error = anyhow::Error>,
+    ) {
+        let (receiving_sink, mut receiving_stream) = futures::channel::mpsc::unbounded();
+        let (outgoing_sink, mut outgoing_stream) = futures::channel::mpsc::unbounded();
+
+        let room = Room::new(id, Box::new(receiving_sink), Box::new(outgoing_stream));
+
+        let receiving_stream = receiving_stream.map(move |msg| {
+            let msg_value: serde_json::Value = serde_json::from_str(&msg).context("parse message as JSON value")?;
+            let sender = msg_value["sender"].as_u64().ok_or(anyhow::Error::msg("Invalid 'sender' field"))? as u16;
+            let receiver = msg_value["receiver"].as_u64().map(|r| r as u16);
+            let body_value = msg_value["body"].clone();
+            let body = SerializableMessage::deserialize(body_value).context("deserialize message")?;
+
+            Ok(Msg {
+                sender,
+                receiver,
+                body,
+            })
+        });
+
+        let outgoing_sink = futures::sink::unfold(outgoing_sink, |mut sink, message: Msg<SerializableMessage>| async move {
+            let serialized = serde_json::to_string(&message).context("serialize message")?;
+            sink.send(Ok(serialized)).await.map_err(|err| anyhow::Error::from(err));
+            Ok(sink)
+        });
+
+        // add room to db
+        self.rooms.write().await.insert(id.to_string(), Arc::new(room));
+
+        (receiving_stream, outgoing_sink)
+    }
+
+    pub async fn get_room(&self, id: u16) -> Option<Arc<Room>> {
+        self.rooms.read().await.get(&id.to_string()).cloned()
+    }
+
+    pub async fn insert_room(&self, id: u16, room: Arc<Room>) {
+        self.rooms.write().await.insert(id.to_string(), room);
+    }
+
+}
+
 
 impl Room {
     pub fn new(
@@ -106,7 +168,7 @@ impl Room {
                     counter += 1;
                     println!("Sending: {}  in round {}\n", message, counter);
                     for url in server_urls {
-                        let endpoint = format!("http://{}/receive_broadcast", url);
+                        let endpoint = format!("http://{}/receive_broadcast/{}", url, self.id); // Include room_id in the URL
                         println!("Sending: {} to {}", message, url);
                         match self.client.post(&endpoint).body(message.clone()).send().await {
                             Ok(response) => {

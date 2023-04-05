@@ -12,11 +12,11 @@ server3_pid=$!
 sleep 5
 
 # Initialize the servers in the background
-curl -X POST localhost:8000/init_room -d "127.0.0.1:8001,127.0.0.1:8002" &
+curl -X POST localhost:8000/init_room/1 -d "127.0.0.1:8001,127.0.0.1:8002" &
 init1_pid=$!
-curl -X POST localhost:8001/init_room -d "127.0.0.1:8002,127.0.0.1:8000" &
+curl -X POST localhost:8001/init_room/1 -d "127.0.0.1:8002,127.0.0.1:8000" &
 init2_pid=$!
-curl -X POST localhost:8002/init_room -d "127.0.0.1:8001,127.0.0.1:8000" &
+curl -X POST localhost:8002/init_room/1 -d "127.0.0.1:8001,127.0.0.1:8000" &
 init3_pid=$!
 
 

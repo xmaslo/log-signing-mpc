@@ -2,6 +2,7 @@ mod create_communication_channel;
 mod key_generation;
 
 use std::path::Path;
+use std::sync::Arc;
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
 
 use futures::{StreamExt};
@@ -11,16 +12,39 @@ use rocket::data::{ByteUnit, Limits};
 
 use rocket::http::Status;
 use rocket::State;
+use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
 
-#[rocket::post("/init_room", data = "<urls>")]
-async fn init_room(room: &State<Room>, urls: String) -> Status
-{
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
+use round_based::{AsyncProtocol, Msg};
+
+#[rocket::post("/init_room/<room_id>", data = "<urls>")]
+async fn init_room(db: &State<Db>, room: &State<Room>, room_id: u16, urls: String) -> Status {
     let urls = urls.split(',').map(|s| s.to_string()).collect();
-    // Necessary step 1, calling the .init_room with correct urls on the rocket managed state
-    room.init_room(&urls).await;
+
+    if let Some(room) = db.get_room(room_id).await {
+        // Necessary step 1, calling the .init_room with correct urls on the rocket managed state
+        room.init_room(&urls).await;
+    } else {
+        room.init_room(&urls).await;
+    }
     Status::Ok
 }
+
+
+#[rocket::post("/sign", data = "<data>")]
+async fn sign(db: &State<Db>, data: String) -> Status
+{
+    // TODO: Get id and message from data
+    let id = 1;
+    // No check if the id is not already in use
+    let (receiving_stream, outgoing_sink)
+        = db.create_room::<Msg<ProtocolMessage>>(id).await;
+
+    Status::Ok
+}
+
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -37,6 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
+    // Create a figment with the desired configuration
     let figment = rocket::Config::figment()
         .merge(("address", "127.0.0.1"))
         .merge(("port", port))
@@ -47,7 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Replace `let server = rocket::custom(figment)` with the following lines
     let rocket_instance = rocket::custom(figment)
         .mount("/", rocket::routes![receive_broadcast, init_room])
-        .manage(room);
+        .manage(room)
+        .manage(Db::empty());
 
     let file_name: String = format!("local_share{}.json", id);
 
