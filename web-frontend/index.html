@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <script src="https://cdn.adamhlavacek.com/GRenderer.js" crossorigin="anonymous"></script>
     <script>
+        /** @typedef {{ url: string, parties: number[] }} StampServerParams */
         /** @type {string[]} */
         const SERVERS = [
             'http://localhost:8001',
@@ -17,13 +18,24 @@
 
         /**
          * Reorders servers in random order
-         * @return {string[]}
+         * @return {StampServerParams[]}
          */
         function getRandomServers() {
-            let serversOriginal = [...SERVERS];
+            /** @type StampServerParams[] */
+            let serverParams = [];
+            SERVERS.forEach((url, index, array) => {
+                for (let i = 0; i < array.length; i++) {
+                    if (i === index) {
+                        continue; // skip current index, cannot stamp with itself
+                    }
+                    serverParams.push({url, parties: [index, i]});
+                }
+            });
+
+            /** @type StampServerParams[] */
             let serversRandom = [];
-            while (serversOriginal.length > 0) {
-                serversRandom.push(...serversOriginal.splice(Math.floor(serversOriginal.length * Math.random()), 1));
+            while (serverParams.length > 0) {
+                serversRandom.push(...serverParams.splice(Math.floor(serverParams.length * Math.random()), 1));
             }
 
             return serversRandom;
@@ -31,11 +43,12 @@
 
         /**
          * Attempts to timestamp a hash of a file with given server
-         * @param server {string}
+         * @param server {string} url of the signing server
+         * @param parties {number[]} index of parties that are supposed to sign
          * @param hash {string} hex-encoded hash
          * @return {Promise<Blob | null>}
          */
-        async function stamp(server, hash) {
+        async function stamp(server, parties, hash) {
             try {
                 return new Promise((resolve) => {
                     setTimeout(() => {
@@ -146,7 +159,7 @@
                     for (let i = 0; i < servers.length; i++) {
                         const server = servers[i];
                         setProgressbar(`Asking ${server} to sign`, 50 + (25 * i / servers.length));
-                        const timestamp = await stamp(server, hash);
+                        const timestamp = await stamp(server.url, server.parties, hash);
                         if (timestamp === null) {
                             continue;
                         }

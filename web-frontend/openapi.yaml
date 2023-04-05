@@ -36,11 +36,21 @@ components:
     TimestampRequest:
       required:
         - hash
+        - timestamp
+        - parties
       type: object
       properties:
         hash:
           type: string
           description: SHA-256 hash as hex-string
+        timestamp:
+          type: integer
+          description: The timestamp that is supposed to be added
+        parties:
+          type: array
+          items:
+            type: integer
+          description: Which parties are supposed to perform MPC
     TimestampResponse:
       type: string
       format: binary
