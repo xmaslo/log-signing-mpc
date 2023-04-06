@@ -1,5 +1,6 @@
 mod create_communication_channel;
 mod key_generation;
+mod signing;
 
 use std::path::Path;
 use std::sync::Arc;
@@ -16,7 +17,9 @@ use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
-use round_based::{AsyncProtocol, Msg};
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
+use round_based::{Msg};
+use crate::signing::{do_offline_stage, sign_hash};
 
 #[rocket::post("/init_room/<room_id>", data = "<urls>")]
 async fn init_room(db: &State<Db>, room: &State<Room>, room_id: u16, urls: String) -> Status {
@@ -24,6 +27,7 @@ async fn init_room(db: &State<Db>, room: &State<Room>, room_id: u16, urls: Strin
 
     if let Some(room) = db.get_room(room_id).await {
         // Necessary step 1, calling the .init_room with correct urls on the rocket managed state
+        // TODO: What is the point of this if?
         room.init_room(&urls).await;
     } else {
         room.init_room(&urls).await;
@@ -36,10 +40,27 @@ async fn init_room(db: &State<Db>, room: &State<Room>, room_id: u16, urls: Strin
 async fn sign(db: &State<Db>, data: String) -> Status
 {
     // TODO: Get id and message from data
-    let id = 1;
+    let id = 2;
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<Msg<ProtocolMessage>>(id).await;
+        = db.create_room::<OfflineProtocolMessage>(id).await;
+
+    let receiving_stream = receiving_stream.fuse();
+    tokio::pin!(receiving_stream);
+    tokio::pin!(outgoing_sink);
+
+    let participants = Vec::<u16>::new();
+    let complete_offline_stage =
+        do_offline_stage(Path::new("local_share1.json"),1, vec![1,2], receiving_stream, outgoing_sink).await;
+
+    let id = 3;
+    let (receiving_stream, outgoing_sink)
+        = db.create_room::<PartialSignature>(id).await;
+
+    tokio::pin!(receiving_stream);
+    tokio::pin!(outgoing_sink);
+
+    sign_hash("hash_to_sign", complete_offline_stage, 1, 3, receiving_stream, outgoing_sink);
 
     Status::Ok
 }
