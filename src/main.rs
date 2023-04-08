@@ -3,7 +3,6 @@ mod key_generation;
 mod signing;
 
 use std::path::Path;
-use std::sync::Arc;
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
 
 use futures::{StreamExt};
@@ -16,9 +15,7 @@ use rocket::State;
 use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
 
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
-use round_based::{Msg};
 use crate::signing::{do_offline_stage, sign_hash};
 
 #[rocket::post("/init_room/<room_id>", data = "<urls>")]
@@ -35,38 +32,38 @@ async fn init_room(db: &State<Db>, room: &State<Room>, room_id: u16, urls: Strin
     Status::Ok
 }
 
-
-#[rocket::post("/sign", data = "<data>")]
-async fn sign(db: &State<Db>, data: String) -> Status
+#[rocket::post("/sign/<room_id>", data = "<data>")]
+async fn sign(db: &State<Db>, room_id: u16, data: String) -> Status
 {
-    // TODO: Get id and message from data
-    let id = 2;
+    let splited_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
+    let hash: &String = &splited_data[0];
+    let file_name: &String = &splited_data[1];
+    let party_index: u16 = splited_data[2].as_str().parse::<u16>().unwrap();
+
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<OfflineProtocolMessage>(id).await;
+        = db.create_room::<OfflineProtocolMessage>(room_id).await;
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
     let complete_offline_stage =
-        do_offline_stage(Path::new("local_share1.json"),1, vec![1,2], receiving_stream, outgoing_sink).await;
+        do_offline_stage(Path::new(file_name), party_index, vec![1,2], receiving_stream, outgoing_sink).await;
 
-    let id = 3;
+    let id = room_id + 1;
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(id).await;
 
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    sign_hash("hash_to_sign", complete_offline_stage, 1, 3, receiving_stream, outgoing_sink)
+    sign_hash(&hash, complete_offline_stage, 1, 3, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed for some reason");
 
     Status::Ok
 }
-
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -93,7 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Replace `let server = rocket::custom(figment)` with the following lines
     let rocket_instance = rocket::custom(figment)
-        .mount("/", rocket::routes![receive_broadcast, init_room])
+        .mount("/", rocket::routes![receive_broadcast, init_room, sign])
         .manage(room)
         .manage(Db::empty());
 

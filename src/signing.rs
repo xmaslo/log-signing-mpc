@@ -5,11 +5,10 @@ use anyhow::{anyhow, Context, Error, Result};
 use curv::arithmetic::Converter;
 use curv::BigInt;
 use curv::elliptic::curves::Secp256k1;
-use futures::{Sink, SinkExt, Stream, StreamExt, TryFutureExt, TryStreamExt};
+use futures::{Sink, SinkExt, Stream, StreamExt, TryStreamExt};
 use futures::stream::Fuse;
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{LocalKey, ProtocolMessage};
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{LocalKey};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{CompletedOfflineStage, OfflineProtocolMessage, OfflineStage, PartialSignature, SignManual};
-use rocket::http::Status;
 use round_based::{AsyncProtocol, Msg};
 
 fn read_file(file_name: &Path) -> LocalKey<Secp256k1> {
@@ -25,8 +24,8 @@ pub async fn do_offline_stage(
     file_name: &Path,
     party_index: u16,
     participants: Vec<u16>,
-    receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<OfflineProtocolMessage>>> + Sized>>,
-    outgoing_sink: Pin<&mut (impl Sink<Msg<OfflineProtocolMessage>, Error=Error> + Sized)>
+    receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<OfflineProtocolMessage>>>>>,
+    outgoing_sink: Pin<&mut (impl Sink<Msg<OfflineProtocolMessage>, Error=Error>)>
 ) -> CompletedOfflineStage
 {
     let local_share = read_file(file_name);
@@ -41,7 +40,7 @@ pub async fn do_offline_stage(
     completed_offline_stage.unwrap()
 }
 
-pub async fn sign_hash(hash_to_sign: &str,
+pub async fn sign_hash(hash_to_sign: &String,
                  completed_offline_stage: CompletedOfflineStage,
                  party_index: u16,
                  number_of_parties: usize,
