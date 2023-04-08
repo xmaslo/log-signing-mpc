@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     let (receiving_stream, outgoing_sink, room)
-        = create_communication_channels(id);
+        = create_communication_channels(id, 0);
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
