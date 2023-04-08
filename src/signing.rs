@@ -59,8 +59,6 @@ pub async fn sign_hash(hash_to_sign: &String,
         body: partial_signature,
     }).await?;
 
-    // receiving_stream.take(number_of_parties - 1);
-
     let partial_signatures: Vec<_> = receiving_stream
         .take(number_of_parties - 1)
         .map_ok(|msg| msg.body)

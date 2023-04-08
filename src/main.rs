@@ -7,6 +7,7 @@ use create_communication_channel::{create_communication_channels, Room, receive_
 
 use futures::{StreamExt};
 use anyhow::{Result};
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::ProtocolMessage;
 
 use rocket::data::{ByteUnit, Limits};
 
@@ -74,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     let (receiving_stream, outgoing_sink, room)
-        = create_communication_channels(id);
+        = create_communication_channels::<ProtocolMessage>(id);
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
