@@ -49,7 +49,6 @@ async fn sign(db: &State<Db>, data: String) -> Status
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let participants = Vec::<u16>::new();
     let complete_offline_stage =
         do_offline_stage(Path::new("local_share1.json"),1, vec![1,2], receiving_stream, outgoing_sink).await;
 
@@ -60,7 +59,9 @@ async fn sign(db: &State<Db>, data: String) -> Status
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    sign_hash("hash_to_sign", complete_offline_stage, 1, 3, receiving_stream, outgoing_sink);
+    sign_hash("hash_to_sign", complete_offline_stage, 1, 3, receiving_stream, outgoing_sink)
+        .await
+        .expect("Message could not be signed for some reason");
 
     Status::Ok
 }

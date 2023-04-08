@@ -41,24 +41,24 @@ pub async fn do_offline_stage(
     completed_offline_stage.unwrap()
 }
 
-pub fn sign_hash(hash_to_sign: &str,
+pub async fn sign_hash(hash_to_sign: &str,
                  completed_offline_stage: CompletedOfflineStage,
                  party_index: u16,
                  number_of_parties: usize,
                  receiving_stream: Pin<&mut impl Stream<Item = Result<Msg<PartialSignature>, Error>>>,
                  mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>
-) -> Status {
+) -> Result<()> {
     let (signing, partial_signature) = SignManual::new(
         BigInt::from_bytes(hash_to_sign.as_bytes()),
         completed_offline_stage,
-    ).unwrap();
+    )?;
 
-    let sent = outgoing_sink
+    outgoing_sink
         .send(Msg {
         sender: party_index,
         receiver: None,
         body: partial_signature,
-    });
+    }).await?;
 
     // receiving_stream.take(number_of_parties - 1);
 
@@ -66,17 +66,13 @@ pub fn sign_hash(hash_to_sign: &str,
         .take(number_of_parties - 1)
         .map_ok(|msg| msg.body)
         .try_collect()
-        .map_err(|e| anyhow!("protocol execution terminated with error: {}", e));
+        .await?;
 
     let signature = signing
         .complete(&partial_signatures)
-        .context("online stage failed")
-        .unwrap();
-    let signature = serde_json::to_string(&signature).context("serialize signature")?;
+        .context("online stage failed")?;
+    let signature = serde_json::to_string(&signature).context("serialize signature").unwrap();
     println!("{}", signature);
 
-    Status::Ok
-
-        // .map_ok(|msg| msg.body)
-        // .try_collect();
+    Ok(())
 }
