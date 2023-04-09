@@ -2,10 +2,10 @@ mod create_communication_channel;
 mod key_generation;
 
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use create_communication_channel::{create_communication_channels, Room, receive_broadcast};
 
-use futures::{StreamExt};
+use futures::{SinkExt, StreamExt};
 use anyhow::{Result};
 
 use rocket::data::{ByteUnit, Limits};
@@ -17,6 +17,8 @@ use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
 use round_based::{AsyncProtocol, Msg};
+use tokio::spawn;
+
 
 #[rocket::post("/init_room/<room_id>", data = "<urls>")]
 async fn init_room(db: &State<Db>, room: &State<Room>, room_id: u16, urls: String) -> Status {
@@ -33,18 +35,29 @@ async fn init_room(db: &State<Db>, room: &State<Room>, room_id: u16, urls: Strin
 
 
 #[rocket::post("/sign", data = "<data>")]
-async fn sign(db: &State<Db>, data: String) -> Status
+async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String) -> Status
 {
+
+    let urls = data.split(',').map(|s| s.to_string()).collect();
+
     // TODO: Get id and message from data
-    let id = 1;
+    let room_id = 1;
+    let server_id = server_id.server_id.lock().unwrap().clone();
     // No check if the id is not already in use
+
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<Msg<ProtocolMessage>>(id).await;
+            = db.create_room::<Msg<ProtocolMessage>>(server_id, room_id, urls).await;
+
+    let receiving_stream = receiving_stream.fuse();
+    tokio::pin!(receiving_stream);
+    tokio::pin!(outgoing_sink);
 
     Status::Ok
 }
 
-
+struct ServerIdState{
+    server_id: Mutex<u16>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -71,9 +84,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Replace `let server = rocket::custom(figment)` with the following lines
     let rocket_instance = rocket::custom(figment)
-        .mount("/", rocket::routes![receive_broadcast, init_room])
+        .mount("/", rocket::routes![receive_broadcast, init_room, sign])
         .manage(room)
-        .manage(Db::empty());
+        .manage(Db::empty())
+        .manage(ServerIdState{server_id: Mutex::new(id)});
 
     let file_name: String = format!("local_share{}.json", id);
 

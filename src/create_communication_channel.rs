@@ -14,6 +14,7 @@ use rocket::tokio::io::AsyncReadExt;
 use std::thread;
 use std::time::Duration;
 use rocket::data::ToByteUnit;
+use tokio::spawn;
 
 // This function creates the communication channels between the servers
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
@@ -98,7 +99,8 @@ impl Db {
         }
     }
 
-    pub async fn create_room<SerializableMessage: Serialize + DeserializeOwned>(&self, server_id: u16, room_id: u16) -> (
+    pub async fn create_room<SerializableMessage: Serialize + DeserializeOwned>(
+        &self, server_id: u16, room_id: u16, server_urls: Vec<String>) -> (
         impl Stream<Item = Result<Msg<SerializableMessage>>>,
         impl Sink<Msg<SerializableMessage>, Error = anyhow::Error>,
     ) {
@@ -127,8 +129,16 @@ impl Db {
             Ok(sink)
         });
 
-        // add room to db
-        self.rooms.write().await.insert(id.to_string(), Arc::new(room));
+
+
+        let room = Arc::new(room);
+        self.rooms.write().await.insert(room_id.to_string(), Arc::clone(&room));
+
+        let room_clone = Arc::clone(&room);
+
+        spawn(async move {
+            room_clone.init_room(&server_urls).await;
+        });
 
         (receiving_stream, outgoing_sink)
     }
