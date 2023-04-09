@@ -3,12 +3,12 @@ mod key_generation;
 mod signing;
 
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Mutex};
 use std::thread;
 use std::time::Duration;
-use create_communication_channel::{Room, receive_broadcast};
+use create_communication_channel::{receive_broadcast};
 
-use futures::{SinkExt, StreamExt};
+use futures::{StreamExt};
 use anyhow::{Result};
 
 use rocket::data::{ByteUnit, Limits};
@@ -19,9 +19,10 @@ use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
-use round_based::{AsyncProtocol, Msg};
-use tokio::spawn;
-use serde::{Deserialize, Serialize};
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
+use round_based::{Msg};
+use serde::{Serialize};
+use crate::signing::{do_offline_stage, sign_hash};
 
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
@@ -55,22 +56,43 @@ async fn key_gen(
     Status::Ok
 }
 
-
-
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, room_id: u16) -> Status
 {
+    let splitted_data = data.split(';').map(|s| s.to_string()).collect::<Vec<String>>();
 
-    let urls = data.split(',').map(|s| s.to_string()).collect();
+    let participant1 = splitted_data[0].as_str().parse::<u16>().unwrap();
+    let participant2 = splitted_data[1].as_str().parse::<u16>().unwrap();
+    let participants = vec![participant1, participant2];
+
+    let hash: &String = &splitted_data[2];
+    let file_name: &String = &splitted_data[3];
+    let party_index: u16 = splitted_data[4].as_str().parse::<u16>().unwrap();
+    let urls = &splitted_data[5];
+
+    let urls = urls.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let server_id = server_id.server_id.lock().unwrap().clone();
 
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
-            = db.create_room::<Msg<ProtocolMessage>>(server_id, room_id, urls).await;
+            = db.create_room::<OfflineProtocolMessage>(server_id, room_id, urls.clone()).await;
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
+
+    let complete_offline_stage =
+        do_offline_stage(Path::new(file_name), party_index, participants, receiving_stream, outgoing_sink).await;
+
+    let (receiving_stream, outgoing_sink)
+        = db.create_room::<PartialSignature>(server_id, room_id, urls).await;
+
+    tokio::pin!(receiving_stream);
+    tokio::pin!(outgoing_sink);
+
+    sign_hash(&hash, complete_offline_stage, 1, 3, receiving_stream, outgoing_sink)
+        .await
+        .expect("Message could not be signed for some reason");
 
     Status::Ok
 }
