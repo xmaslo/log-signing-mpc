@@ -58,7 +58,8 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
     let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
-    let participants = vec![server_id, participant2];
+    let mut participants = vec![server_id, participant2];
+    participants.sort();
 
     let mut url = Vec::new();
     url.push(splitted_data[1].clone());
@@ -79,12 +80,16 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     let (receiving_stream, outgoing_sink)
             = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
 
+    // thread::sleep(Duration::from_secs(15));
+
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
     let complete_offline_stage =
         do_offline_stage(Path::new(file_name.as_str()), server_id, participants, receiving_stream, outgoing_sink).await;
+
+    // thread::sleep(Duration::from_secs(15));
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id, url).await;
