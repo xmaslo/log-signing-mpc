@@ -16,8 +16,8 @@ const NUMBER_OF_PARTIES: u16 = 3;
 
 pub async fn generate_keys(file_name: &Path,
                            index: u16,
-                           receiving_stream: Pin<&mut Fuse<(impl Stream<Item=Result<Msg<ProtocolMessage>>> + Sized)>>,
-                           outgoing_sink: Pin<&mut (impl Sink<Msg<ProtocolMessage>, Error=Error> + Sized)>
+                           receiving_stream: Pin<&mut Fuse<(impl Stream<Item=Result<Msg<ProtocolMessage>>>)>>,
+                           outgoing_sink: Pin<&mut (impl Sink<Msg<ProtocolMessage>, Error=Error>)>
 ) {
     let keygen: Keygen = Keygen::new(index, THRESHOLD, NUMBER_OF_PARTIES).unwrap();
     let results: Result<LocalKey<Secp256k1>, Error> = AsyncProtocol::new(keygen, receiving_stream, outgoing_sink)

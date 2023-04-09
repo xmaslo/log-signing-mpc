@@ -1,5 +1,6 @@
 mod create_communication_channel;
 mod key_generation;
+mod signing;
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
