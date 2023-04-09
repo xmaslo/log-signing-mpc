@@ -22,12 +22,12 @@ Run all three timestamping servers as follows:
 2. .\timestamping-server.exe 2 8001
 3. .\timestamping-server.exe 3 8002
 
-To generate keys, curl */keygen* endpoint (you can download curl at https://curl.se/windows/):
+To generate keys, curl the */keygen* endpoint (you can download curl at https://curl.se/windows/):
 1. curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8002"
 2. curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:8002,127.0.0.1:8000"
 3. curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8000"
 
-To sign message, curl */sign* endpoint:
+To sign a message, curl the  */sign* endpoint:
 1. curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data"
 2. curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data"
 
