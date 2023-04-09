@@ -20,48 +20,14 @@ use tokio::spawn;
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
 // And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
 // To enable this functionality, it is necessary to:
-//  1. add the room to the rocket state
-//  2. call the init_room function on the rocket managed room state with the addresses of the communication partners
-//      2.1 this can be now done by the call to the init_room endpoint
+//  1. add the db to the rocket state
 //  3. Mount the receive_broadcast endpoint to the rocket instance
-pub fn create_communication_channels<SerializableMessage: Serialize + DeserializeOwned>(server_id: u16, room_id: u16) -> (
-    impl Stream<Item = Result<Msg<SerializableMessage>>>,
-    impl Sink<Msg<SerializableMessage>, Error = anyhow::Error>,
-    Room,
-)
-{
-    let (receiving_sink, mut receiving_stream) = futures::channel::mpsc::unbounded();
-    let (outgoing_sink, mut outgoing_stream) = futures::channel::mpsc::unbounded();
 
-    let room = Room::new(server_id, room_id, Box::new(receiving_sink), Box::new(outgoing_stream));
-
-    let receiving_stream = receiving_stream.map(move |msg| {
-        let msg_value: serde_json::Value = serde_json::from_str(&msg).context("parse message as JSON value")?;
-        let sender = msg_value["sender"].as_u64().ok_or(anyhow::Error::msg("Invalid 'sender' field"))? as u16;
-        let receiver = msg_value["receiver"].as_u64().map(|r| r as u16);
-        let body_value = msg_value["body"].clone();
-        let body = SerializableMessage::deserialize(body_value).context("deserialize message")?;
-
-        Ok(Msg {
-            sender,
-            receiver,
-            body,
-        })
-    });
-
-    let outgoing_sink = futures::sink::unfold(outgoing_sink, |mut sink, message: Msg<SerializableMessage>| async move {
-        let serialized = serde_json::to_string(&message).context("serialize message")?;
-        sink.send(Ok(serialized)).await.map_err(|err| anyhow::Error::from(err));
-        Ok(sink)
-    });
-
-    (receiving_stream, outgoing_sink, room)
-}
 
 // Handling the messages received from the other servers
 #[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
 pub async fn receive_broadcast(db: &State<Db>,
-                               room_state: &State<Room>,
+                               // room_state: &State<Room>,
                                room_id: u16,
                                data: Data<'_>) -> Result<Status, std::io::Error> {
     let mut buffer = Vec::new();
@@ -73,9 +39,10 @@ pub async fn receive_broadcast(db: &State<Db>,
 
     if let Some(room) = db.get_room(room_id).await {
         room.receive(message).await;
-    } else {
-        room_state.receive(message).await;
     }
+    // else {
+    //     room_state.receive(message).await;
+    // }
 
     Ok(Status::Ok)
 }
@@ -171,7 +138,11 @@ impl Room {
     }
 
     pub async fn init_room(&self, server_urls: &Vec<String>) {
-        thread::sleep(Duration::from_secs(15));
+
+        // In updated better to sleep in key_gen after the initialization, as the key_gen is called after the init_room
+        // and not possibly concurrently
+        // thread::sleep(Duration::from_secs(15));
+
 
         let mut counter = 0;
 
