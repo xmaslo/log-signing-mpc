@@ -37,8 +37,6 @@ async fn key_gen(
     let (receiving_stream, outgoing_sink) =
         db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
 
-    // thread::sleep(Duration::from_secs(15));
-
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
@@ -49,15 +47,19 @@ async fn key_gen(
 }
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
-async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, room_id: u16) -> Status
-{
+async fn sign(
+    db: &State<Db>,
+    server_id: &State<ServerIdState>,
+    data: String,
+    room_id: u16
+) -> Status {
     let server_id = server_id.server_id.lock().unwrap().clone();
 
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
     let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
     let mut participants = vec![server_id, participant2];
-    participants.sort();
+    participants.sort(); // participants must be specified in the same order by both servers
 
     let mut url = Vec::new();
     url.push(splitted_data[1].clone());
