@@ -78,8 +78,6 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     let (receiving_stream, outgoing_sink)
             = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
 
-    // thread::sleep(Duration::from_secs(15));
-
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
@@ -87,12 +85,10 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     let complete_offline_stage =
         do_offline_stage(Path::new(file_name.as_str()), server_id, participants, receiving_stream, outgoing_sink).await;
 
-    // thread::sleep(Duration::from_secs(5));
-
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
 
-    // thread::sleep(Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
@@ -100,8 +96,6 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     sign_hash(&hash, complete_offline_stage, server_id, 2, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
-
-    thread::sleep(Duration::from_secs(5));
 
     Status::Ok
 }

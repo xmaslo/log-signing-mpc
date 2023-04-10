@@ -69,7 +69,7 @@ pub async fn sign_hash(hash_to_sign: &String,
         .complete(&partial_signatures)
         .context("online stage failed")?;
     let signature = serde_json::to_string(&signature).context("serialize signature").unwrap();
-    println!("HERE IS YOURS LONG AWAITED SIGNATURE:\n{}", signature);
+    println!("SIGNATURE:\n{}", signature);
 
     Ok(())
 }
