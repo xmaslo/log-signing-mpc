@@ -41,11 +41,11 @@ pub async fn do_offline_stage(
 }
 
 pub async fn sign_hash(hash_to_sign: &String,
-                 completed_offline_stage: CompletedOfflineStage,
-                 party_index: u16,
-                 number_of_parties: usize,
-                 receiving_stream: Pin<&mut impl Stream<Item = Result<Msg<PartialSignature>, Error>>>,
-                 mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>
+                       completed_offline_stage: CompletedOfflineStage,
+                       party_index: u16,
+                       signing_parties_n: usize,
+                       receiving_stream: Pin<&mut impl Stream<Item = Result<Msg<PartialSignature>, Error>>>,
+                       mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>
 ) -> Result<()> {
     let (signing, partial_signature) = SignManual::new(
         BigInt::from_bytes(hash_to_sign.as_bytes()),
@@ -60,7 +60,7 @@ pub async fn sign_hash(hash_to_sign: &String,
     }).await?;
 
     let partial_signatures: Vec<_> = receiving_stream
-        .take(number_of_parties - 1)
+        .take(signing_parties_n - 1)
         .map_ok(|msg| msg.body)
         .try_collect()
         .await?;
@@ -69,7 +69,7 @@ pub async fn sign_hash(hash_to_sign: &String,
         .complete(&partial_signatures)
         .context("online stage failed")?;
     let signature = serde_json::to_string(&signature).context("serialize signature").unwrap();
-    println!("{}", signature);
+    println!("HERE IS YOURS LONG AWAITED SIGNATURE:\n{}", signature);
 
     Ok(())
 }

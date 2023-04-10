@@ -43,7 +43,7 @@ async fn key_gen(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let file_name: String = format!("local_share{}.json", server_id);
+    let file_name: String = format!("local-share{}.json", server_id);
 
     generate_keys(Path::new(&file_name), server_id, receiving_stream, outgoing_sink).await;
 
@@ -66,7 +66,7 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
 
     let hash: &String = &splitted_data[2];
 
-    let file_name = format!("local_share{}.json", server_id);
+    let file_name = format!("local-share{}.json", server_id);
 
     println!(
         "My ID: {}\n\
@@ -89,17 +89,19 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     let complete_offline_stage =
         do_offline_stage(Path::new(file_name.as_str()), server_id, participants, receiving_stream, outgoing_sink).await;
 
-    // thread::sleep(Duration::from_secs(15));
+    // thread::sleep(Duration::from_secs(5));
 
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<PartialSignature>(server_id, room_id, url).await;
+        = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
+
+    // thread::sleep(Duration::from_secs(5));
 
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    sign_hash(&hash, complete_offline_stage, server_id, 3, receiving_stream, outgoing_sink)
+    sign_hash(&hash, complete_offline_stage, server_id, 2, receiving_stream, outgoing_sink)
         .await
-        .expect("Message could not be signed for some reason");
+        .expect("Message could not be signed");
 
     Status::Ok
 }
@@ -129,8 +131,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             sign])
         .manage(Db::empty())
         .manage(ServerIdState{server_id: Mutex::new(id)});
-
-    let file_name: String = format!("local_share{}.json", id);
 
     // TODO: I will use these lines when implementing TLS
     // let server_future = tokio::spawn(async { rocket_instance.launch().await });
