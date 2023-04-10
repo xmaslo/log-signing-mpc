@@ -1,20 +1,25 @@
-use std::collections::HashMap;
-use futures::{Sink, SinkExt, Stream, StreamExt};
-use futures::channel::mpsc::{SendError};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+};
+use futures::{
+    channel::mpsc::SendError,
+    Sink, SinkExt, Stream, StreamExt,
+};
 use tokio::sync::RwLock;
-use rocket::{Data, State};
+use rocket::{
+    Data, State,
+    http::Status,
+    tokio::io::AsyncReadExt,
+    data::ToByteUnit,
+};
 use round_based::Msg;
 
 use anyhow::{Context, Result};
-use std::sync::Arc;
-use rocket::http::Status;
 use serde::{de::DeserializeOwned, Serialize};
-use rocket::tokio::io::AsyncReadExt;
-
-use std::thread;
-use std::time::Duration;
-use rocket::data::ToByteUnit;
 use tokio::spawn;
+use crate::rocket_instances::SharedDb;
+
 
 // This function creates the communication channels between the servers
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
@@ -26,8 +31,7 @@ use tokio::spawn;
 
 // Handling the messages received from the other servers
 #[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
-pub async fn receive_broadcast(db: &State<Db>,
-                               // room_state: &State<Room>,
+pub async fn receive_broadcast(db: &State<SharedDb>,
                                room_id: u16,
                                data: Data<'_>) -> Result<Status, std::io::Error> {
     let mut buffer = Vec::new();
@@ -40,9 +44,6 @@ pub async fn receive_broadcast(db: &State<Db>,
     if let Some(room) = db.get_room(room_id).await {
         room.receive(message).await;
     }
-    // else {
-    //     room_state.receive(message).await;
-    // }
 
     Ok(Status::Ok)
 }
@@ -71,6 +72,9 @@ impl Db {
         impl Stream<Item = Result<Msg<SerializableMessage>>>,
         impl Sink<Msg<SerializableMessage>, Error = anyhow::Error>,
     ) {
+        // if room already exists, delete it first
+        self.delete_room(room_id).await;
+
         let (receiving_sink, mut receiving_stream) = futures::channel::mpsc::unbounded();
         let (outgoing_sink, mut outgoing_stream) = futures::channel::mpsc::unbounded();
 
@@ -92,7 +96,7 @@ impl Db {
 
         let outgoing_sink = futures::sink::unfold(outgoing_sink, |mut sink, message: Msg<SerializableMessage>| async move {
             let serialized = serde_json::to_string(&message).context("serialize message")?;
-            sink.send(Ok(serialized)).await.map_err(|err| anyhow::Error::from(err));
+            let _ = sink.send(Ok(serialized)).await.map_err(|err| anyhow::Error::from(err));
             Ok(sink)
         });
 
@@ -114,8 +118,8 @@ impl Db {
         self.rooms.read().await.get(&room_id.to_string()).cloned()
     }
 
-    pub async fn insert_room(&self, room_id: u16, room: Arc<Room>) {
-        self.rooms.write().await.insert(room_id.to_string(), room);
+    pub async fn delete_room(&self, room_id: u16) {
+        self.rooms.write().await.remove(&room_id.to_string());
     }
 
 }
@@ -155,7 +159,7 @@ impl Room {
                         let endpoint = format!("http://{}/receive_broadcast/{}", url, self.room_id); // Include room_id in the URL
                         println!("Sending: {} to {}", message, url);
                         match self.client.post(&endpoint).body(message.clone()).send().await {
-                            Ok(response) => {
+                            Ok(_response) => {
                                 println!("Successfully sent message to {}", url);
                             }
                             Err(e) => {
