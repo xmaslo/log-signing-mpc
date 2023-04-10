@@ -20,7 +20,7 @@ use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
-use crate::signing::{do_offline_stage, sign_hash};
+use crate::signing::KeyGenerator;
 
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
@@ -84,8 +84,9 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let complete_offline_stage =
-        do_offline_stage(Path::new(file_name.as_str()), server_id, participants, receiving_stream, outgoing_sink).await;
+    let mut kg = KeyGenerator::new();
+
+    kg.do_offline_stage(Path::new(file_name.as_str()), server_id, participants, receiving_stream, outgoing_sink).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
@@ -95,7 +96,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    sign_hash(&hash, complete_offline_stage, server_id, 2, receiving_stream, outgoing_sink)
+    kg.sign_hash(&hash, server_id, 2, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
 
