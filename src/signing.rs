@@ -12,28 +12,39 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sig
 use round_based::{AsyncProtocol, Msg};
 
 pub struct KeyGenerator {
-    completed_offline_stage: Option<CompletedOfflineStage>
+    participants: Vec<u16>,
+    participants_n: usize,
+    party_index: u16,
+    completed_offline_stage: Option<CompletedOfflineStage>,
 }
 
 impl KeyGenerator {
-    pub fn new() -> KeyGenerator {
+    pub fn new(mut p: Vec<u16>, n: usize, pi: u16) -> KeyGenerator {
+        p.sort(); // participants must be specified in the same order by both servers
         KeyGenerator {
+            participants: p,
+            participants_n: n,
+            party_index: pi,
             completed_offline_stage: None
         }
     }
 
     pub async fn do_offline_stage(
         &mut self,
-        file_name: &Path,
-        party_index: u16,
-        participants: Vec<u16>,
         receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<OfflineProtocolMessage>>>>>,
         outgoing_sink: Pin<&mut impl Sink<Msg<OfflineProtocolMessage>, Error=Error>>
     ) -> Result<()>
     {
-        let local_share = self.read_file(file_name);
+        println!("Participants: {}:{}", self.participants[0], self.participants[1]);
+        println!("Number of participants: {}", self.participants_n);
+        println!("My real index: {}", self.party_index);
+        println!("My other index: {}", self.get_different_party_index());
 
-        let signing = OfflineStage::new(party_index, participants, local_share).unwrap();
+        let file_name = format!("local-share{}.json", self.party_index);
+
+        let local_share = self.read_file(Path::new(file_name.as_str()));
+
+        let signing = OfflineStage::new(self.get_different_party_index(), self.participants.clone(), local_share)?;
 
         let offline_stage = AsyncProtocol::new(signing, receiving_stream, outgoing_sink)
             .run()
@@ -42,14 +53,14 @@ impl KeyGenerator {
 
         self.completed_offline_stage = Some(offline_stage?);
 
+        println!("OFFLINE STAGE IS COMPLETED");
+
         Ok(())
     }
 
     pub async fn sign_hash(
         &self,
         hash_to_sign: &String,
-        party_index: u16,
-        signing_parties_n: usize,
         receiving_stream: Pin<&mut impl Stream<Item = Result<Msg<PartialSignature>, Error>>>,
         mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>
     ) -> Result<String> {
@@ -60,13 +71,13 @@ impl KeyGenerator {
 
         outgoing_sink
             .send(Msg {
-                sender: party_index,
+                sender: self.get_different_party_index(),
                 receiver: None,
                 body: partial_signature,
             }).await?;
 
         let partial_signatures: Vec<_> = receiving_stream
-            .take(signing_parties_n - 1)
+            .take(self.participants_n - 1)
             .map_ok(|msg| msg.body)
             .try_collect()
             .await?;
@@ -87,5 +98,22 @@ impl KeyGenerator {
         let local_share = serde_json::from_slice(&contents).context("parse local share").unwrap();
 
         local_share
+    }
+
+    // parties participating in signing => their index
+    // [1,2] => [1,2]
+    // [2,3] => [1,2]
+    // [1,2,3] => [1,2,3] note: we do not support signatures of all 3 parties
+    fn get_different_party_index(&self) -> u16 {
+        if self.participants_n == 2
+        {
+            return if self.party_index == self.participants[0] {
+                1
+            } else {
+                2
+            }
+        }
+
+        self.party_index
     }
 }

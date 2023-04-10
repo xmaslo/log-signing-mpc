@@ -58,22 +58,18 @@ async fn sign(
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
     let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
-    let mut participants = vec![server_id, participant2];
-    participants.sort(); // participants must be specified in the same order by both servers
+    let participants = vec![server_id, participant2];
 
     let mut url = Vec::new();
     url.push(splitted_data[1].clone());
 
     let hash: &String = &splitted_data[2];
 
-    let file_name = format!("local-share{}.json", server_id);
-
     println!(
         "My ID: {}\n\
          Other server ID: {}\n\
          Other server URL: {}\n\
-         Data to sign: {}\n\
-         Local share in: {}", server_id, participant2, url[0], hash, file_name
+         Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
     // No check if the id is not already in use
@@ -84,9 +80,9 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let mut kg = KeyGenerator::new();
+    let mut kg = KeyGenerator::new(participants.clone(), participants.len(), server_id);
 
-    kg.do_offline_stage(Path::new(file_name.as_str()), server_id, participants, receiving_stream, outgoing_sink).await.unwrap();
+    kg.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
@@ -96,7 +92,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    kg.sign_hash(&hash, server_id, 2, receiving_stream, outgoing_sink)
+    kg.sign_hash(&hash, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
 
