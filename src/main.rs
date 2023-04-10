@@ -37,15 +37,13 @@ async fn key_gen(
     let (receiving_stream, outgoing_sink) =
         db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
 
-    thread::sleep(Duration::from_secs(15));
+    // thread::sleep(Duration::from_secs(15));
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let file_name: String = format!("local-share{}.json", server_id);
-
-    generate_keys(Path::new(&file_name), server_id, receiving_stream, outgoing_sink).await;
+    generate_keys(server_id, receiving_stream, outgoing_sink).await;
 
     Status::Ok
 }
@@ -102,6 +100,8 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     sign_hash(&hash, complete_offline_stage, server_id, 2, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
+
+    thread::sleep(Duration::from_secs(5));
 
     Status::Ok
 }
