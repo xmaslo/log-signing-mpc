@@ -72,6 +72,9 @@ async fn sign(
          Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
+    let mut kg = KeyGenerator::new(participants.clone(), participants.len(), server_id);
+    let server_id = kg.get_different_party_index();
+
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
             = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
@@ -79,8 +82,6 @@ async fn sign(
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
-
-    let mut kg = KeyGenerator::new(participants.clone(), participants.len(), server_id);
 
     kg.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
 

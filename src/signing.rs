@@ -104,7 +104,7 @@ impl KeyGenerator {
     // [1,2] => [1,2]
     // [2,3] => [1,2]
     // [1,2,3] => [1,2,3] note: we do not support signatures of all 3 parties
-    fn get_different_party_index(&self) -> u16 {
+    pub fn get_different_party_index(&self) -> u16 {
         if self.participants_n == 2
         {
             return if self.party_index == self.participants[0] {
