@@ -22,10 +22,16 @@ Run all three timestamping servers as follows:
 2. .\timestamping-server.exe 2 8001
 3. .\timestamping-server.exe 3 8002
 
-Then, curl */init_room* endpoint (you can download curl at https://curl.se/windows/):
-1. .\curl.exe -X POST localhost:8000/init_room -d "127.0.0.1:8001,127.0.0.1:8002"
-2. .\curl.exe -X POST localhost:8001/init_room -d "127.0.0.1:8002,127.0.0.1:8000"
-3. .\curl.exe -X POST localhost:8002/init_room -d "127.0.0.1:8001,127.0.0.1:8000"
+To generate keys, curl the */keygen* endpoint (you can download curl at https://curl.se/windows/):
+1. curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8002"
+2. curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:8002,127.0.0.1:8000"
+3. curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8000"
+
+To sign a message, curl the  */sign* endpoint:
+1. curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data"
+2. curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data"
+
+Format is -d "other_party_id,other_party_address,data_to_sign".
 
 After completed all these steps, servers are running, and you can begin to use our frontend to timestamp your files.
 
