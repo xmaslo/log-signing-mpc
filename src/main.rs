@@ -20,7 +20,7 @@ use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
-use crate::signing::{do_offline_stage, sign_hash};
+use crate::signing::KeyGenerator;
 
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
@@ -37,8 +37,6 @@ async fn key_gen(
     let (receiving_stream, outgoing_sink) =
         db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
 
-    // thread::sleep(Duration::from_secs(15));
-
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
@@ -49,30 +47,33 @@ async fn key_gen(
 }
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
-async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, room_id: u16) -> Status
-{
+async fn sign(
+    db: &State<Db>,
+    server_id: &State<ServerIdState>,
+    data: String,
+    room_id: u16
+) -> Status {
     let server_id = server_id.server_id.lock().unwrap().clone();
 
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
     let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
-    let mut participants = vec![server_id, participant2];
-    participants.sort();
+    let participants = vec![server_id, participant2];
 
     let mut url = Vec::new();
     url.push(splitted_data[1].clone());
 
     let hash: &String = &splitted_data[2];
 
-    let file_name = format!("local-share{}.json", server_id);
-
     println!(
         "My ID: {}\n\
          Other server ID: {}\n\
          Other server URL: {}\n\
-         Data to sign: {}\n\
-         Local share in: {}", server_id, participant2, url[0], hash, file_name
+         Data to sign: {}\n", server_id, participant2, url[0], hash
     );
+
+    let mut kg = KeyGenerator::new(participants.clone(), participants.len(), server_id);
+    let server_id = kg.get_different_party_index();
 
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
@@ -82,8 +83,7 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let complete_offline_stage =
-        do_offline_stage(Path::new(file_name.as_str()), server_id, participants, receiving_stream, outgoing_sink).await;
+    kg.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
@@ -93,7 +93,7 @@ async fn sign(db: &State<Db>, server_id: &State<ServerIdState>, data: String, ro
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    sign_hash(&hash, complete_offline_stage, server_id, 2, receiving_stream, outgoing_sink)
+    kg.sign_hash(&hash, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
 
