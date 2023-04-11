@@ -6,7 +6,7 @@ tags:
   - name: stamp
     description: Perform document timestamping
 paths:
-  /timestamp:
+  /sign/2:
     post:
       tags:
         - stamp
@@ -15,9 +15,10 @@ paths:
       requestBody:
         description: Request for a new timestamp
         content:
-          application/x-www-form-urlencoded:
+          text/plain:
             schema:
-              $ref: '#/components/schemas/TimestampRequest'
+              description: "Data in format: other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp"
+              type: string
         required: true
       responses:
         '200':
@@ -33,14 +34,6 @@ paths:
 
 components:
   schemas:
-    TimestampRequest:
-      required:
-        - hash
-      type: object
-      properties:
-        hash:
-          type: string
-          description: SHA-256 hash as hex-string
     TimestampResponse:
       type: string
       format: binary

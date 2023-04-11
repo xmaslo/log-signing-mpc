@@ -7,47 +7,56 @@ Trusted timestamping server with threshold signing key
 - David Rajnoha
 
 ## Installation
-1. git@github.com:davidmaslo/timestamping-server.git (or use https instead)
-2. cd timestamping-server
-3. cargo run
+1. `git@github.com:davidmaslo/timestamping-server.git` (or use https instead)
+2. `cd timestamping-server`
+3. `cargo build`
 
 ## Server Setup and Key Generation
 
 ### Linux
-Run *keygen_example.sh* script.
+Run `keygen_example.sh` script. For subsequent runs, a `start-stop.sh` script is available:
+```bash
+./start-stop.sh start 1  # starts first server
+./start-stop.sh stop 1 # stops first server
+./start-stop.sh restart 1 # restarts first server
+./start-stop.sh start all # starts all servers
+```
 
 ### Windows
 Run all three timestamping servers as follows:
-1. .\timestamping-server.exe 1 8000
-2. .\timestamping-server.exe 2 8001
-3. .\timestamping-server.exe 3 8002
+1. `.\timestamping-server.exe 1 8000`
+2. `.\timestamping-server.exe 2 8001`
+3. `.\timestamping-server.exe 3 8002`
 
 To generate keys, curl the */keygen* endpoint (you can download curl at https://curl.se/windows/):
-1. curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8002"
-2. curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:8002,127.0.0.1:8000"
-3. curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8000"
+1. `curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8002"`
+2. `curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:8002,127.0.0.1:8000"`
+3. `curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8000"`
+
+## Signing
 
 To sign a message, curl the  */sign* endpoint:
-1. curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data"
-2. curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data"
+1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data"`
+2. `curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data"`
 
-Format is -d "other_party_id,other_party_address,data_to_sign".
+Format is -d `"other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp"`.
 
 After completed all these steps, servers are running, and you can begin to use our frontend to timestamp your files.
 
 ## Static Analysis
-cargo clippy
+
+Execute `cargo clippy`
 
 ## Example Running with Cargo Run For Debugging Purposes
-- cargo run --example gg20_sm_manager --no-default-features --features curv-kzen/num-bigint
-- cargo run --example gg20_keygen --no-default-features --features curv-kzen/num-bigint -- -t 1 -n 3 -i 1 --output local-share1.json
-- cargo run --example gg20_signing --no-default-features --features curv-kzen/num-bigint -- -p 1,2 -d "hello" -l local-share1.json
+- `cargo run --example gg20_sm_manager --no-default-features --features curv-kzen/num-bigint`
+- `cargo run --example gg20_keygen --no-default-features --features curv-kzen/num-bigint -- -t 1 -n 3 -i 1 --output local-share1.json`
+- `cargo run --example gg20_signing --no-default-features --features curv-kzen/num-bigint -- -p 1,2 -d "hello" -l local-share1.json`
 
 ## Cargo Test With Command Line Output
-- cargo test -- --nocapture
+- `cargo test -- --nocapture`
 
 ## Signing
-My understanding is that gg_20 is a demonstration of https://eprint.iacr.org/2020/540.pdf implementation.
+gg_20 is a demonstration of https://eprint.iacr.org/2020/540.pdf implementation.
 
 ### Connection
 First, the application joins_computation() with the server on "http://localhost:8000/" in "default-signing" room. By joining computation, it creates an http client that is issued a unique id (read from local_share json file) and creates two streams:
