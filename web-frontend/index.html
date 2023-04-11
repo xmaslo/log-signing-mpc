@@ -11,6 +11,7 @@
         // check if debugging should be enabled (with possibly sensitive data)
         const DEBUG = localStorage.getItem('DEBUG') === '1';
 
+        /** @typedef {{signature: string, timestamp: number, blinding: string}} Signature */
         /** @typedef {{ index: number, url: string }} StampServerLocation */
         /** @typedef {{ url: string, parties: StampServerLocation[] }} StampServerParams */
         /** @typedef {{ hex: string, blinding: string, unixSeconds: number }} BlindedHash */
@@ -24,6 +25,7 @@
         if (!DEBUG) {
             console.debug = () => {};
         }
+        console.debug('[DEBUG]', 'Debugging is enabled');
 
         /**
          * Reorders servers in random order
@@ -38,7 +40,7 @@
                         continue; // skip current index, cannot stamp with itself
                     }
                     // indexes are 1-based
-                    serverParams.push({url, parties: [{url: SERVERS[i], index: i + 1}]});
+                    serverParams.push({url, parties: [{url, index: index + 1}, {url: SERVERS[i], index: i + 1}]});
                 }
             });
 
@@ -56,9 +58,9 @@
          * @param server {string} url of the signing server
          * @param parties {StampServerLocation[]} other parties that are supposed to sign with this server
          * @param hash {BlindedHash} hash to be signed
-         * @return {Promise<Blob | null>}
+         * @return {Promise<Signature | null>}
          */
-        async function stamp(server, parties, hash) {
+        async function stampSingle(server, parties, hash) {
             console.debug('[STAMP]', server, parties, hash);
             // remove http(s):// from the address
             const partiesString = parties.map((p) => `${p.index},${p.url.split('://')[1]}`).join(',');
@@ -75,21 +77,45 @@
                     },
                     body: `${partiesString},${hash.hex},${hash.unixSeconds}`,
                 });
-            } catch {
+            } catch (e) {
+                console.debug('[STAMP]', 'Error', e);
                 return null;
             }
 
+            console.debug('[STAMP]', 'Response is OK?', response.ok);
             if (!response.ok) {
                 return null;
             }
 
-            const signature64 = blobToBase64(await response.blob());
-            const signatureData = {
+            const signature64 = await blobToBase64(await response.blob());
+            return {
                 signature: signature64,
                 timestamp: hash.unixSeconds,
                 blinding: hash.blinding
+            };
+        }
+
+        /**
+         * Attempts to timestamp a hash of a file with given parties
+         * @param parties {StampServerLocation[]} other parties that are supposed to sign with this server
+         * @param hash {BlindedHash} hash to be signed
+         * @return {Promise<Blob | null>}
+         */
+        async function stamp(parties, hash) {
+            const signatures = await Promise.all(
+                    parties.map((party) => stampSingle(party.url, parties.filter(x => x !== party), hash))
+            );
+            console.debug('[STAMP]', 'result', signatures);
+            if (signatures.find((r) => r === null) !== undefined) {
+                return null;
             }
-            return new Blob([JSON.stringify(signatureData)]);
+
+            if ((new Set(signatures.map((sig) => sig.signature))).size !== 1) {
+                // all signatures must be the same
+                return null;
+            }
+
+            return new Blob([JSON.stringify(signatures[0])]);
         }
 
         /**
@@ -225,8 +251,8 @@
                     const servers = getRandomServers();
                     for (let i = 0; i < servers.length; i++) {
                         const server = servers[i];
-                        setProgressbar(`${i + 1}/${servers.length}: Asking ${server.url} to sign (with ${server.parties.map(p => p.url).join(', ')})`, 50 + (25 * i / servers.length));
-                        const timestamp = await stamp(server.url, server.parties, hash);
+                        setProgressbar(`${i + 1}/${servers.length}: Asking ${server.parties.map(p => p.url).join(' & ')} to sign`, 50 + (25 * i / servers.length));
+                        const timestamp = await stamp(server.parties, hash);
                         if (timestamp === null) {
                             continue;  // try next server, no single point of failure
                         }
