@@ -72,7 +72,9 @@ async fn sign(
         Err(_) => return Status::BadRequest,
     };
 
-    verify_timestamp_10_minute_window(timestamp);
+    if !verify_timestamp_10_minute_window(timestamp) {
+        return Status::BadRequest;
+    }
 
     hash += &splitted_data[3];
 
