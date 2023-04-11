@@ -10,6 +10,7 @@
     <script>
         /** @typedef {{ index: number, url: string }} StampServerLocation */
         /** @typedef {{ url: string, parties: StampServerLocation[] }} StampServerParams */
+        /** @typedef {{ hex: string, blinding: string, unixSeconds: number }} BlindedHash */
         /** @type {string[]} */
         const SERVERS = [
             'http://localhost:8000',
@@ -46,17 +47,16 @@
          * Attempts to timestamp a hash of a file with given server
          * @param server {string} url of the signing server
          * @param parties {StampServerLocation[]} other parties that are supposed to sign with this server
-         * @param hash {string} hex-encoded hash
+         * @param hash {BlindedHash} hash to be signed
          * @return {Promise<Blob | null>}
          */
         async function stamp(server, parties, hash) {
+            // remove http(s):// from the address
+            const partiesString = parties.map((p) => `${p.index},${p.url.split('://')[1]}`).join(',');
+            /** @type Response */
+            let response;
             try {
-                /** @type number */
-                const timestamp = Math.floor((new Date()).getTime() / 1000);
-                // remove http(s):// from the address
-                const partiesString = parties.map((p) => `${p.index},${p.url.split('://')[1]}`).join(',');
-
-                return fetch(`${server}/sign/2`, {
+                response = await fetch(`${server}/sign/2`, {
                     method: "POST",
                     mode: "no-cors", // allow detaching the client from the server
                     cache: "no-cache",
@@ -64,26 +64,23 @@
                     headers: {
                         "Content-Type": "text/plain",
                     },
-                    body: `${partiesString},${hash},${timestamp}`,
-                }).then((response) => {
-                    if (!response.ok) {
-                        throw new Error("Server error");
-                    }
-
-                    return response.blob();
-                }).then((blob) => blobToBase64(blob))
-                        .then((signature) => {
-                            const data = {
-                                signature,
-                                timestamp
-                            };
-
-                            return new Blob([JSON.stringify(data)]);
-                        }).catch(() => null);
-            } catch (e) {
-                console.error(e);
+                    body: `${partiesString},${hash.hex}`,
+                });
+            } catch {
                 return null;
             }
+
+            if (!response.ok) {
+                return null;
+            }
+
+            const signature64 = blobToBase64(await response.blob());
+            const signatureData = {
+                signature: signature64,
+                timestamp: hash.unixSeconds,
+                blinding: hash.blinding
+            }
+            return new Blob([JSON.stringify(signatureData)]);
         }
 
         /**
@@ -100,19 +97,42 @@
         }
 
         /**
-         * Creates a SHA256 hash of a file
-         * @param file {File} file to be hashed
-         * @return {Promise<string>} hex-string of its SHA256 hash
+         * Creates a SHA256 hash of a file with given timestamp and additional blinding data
+         * @param file {Blob} file to be hashed
+         * @param time {Date} the requested timestamp
+         * @param randomData {Blob} additional data to be hashed
+         * @return {Promise<BlindedHash>} hex-string of its SHA256 hash
          */
-        async function sha256(file) {
+        async function sha256(file, time, randomData) {
             console.assert(file !== null);
+            const fileData = await file.arrayBuffer();
+            const unixSeconds = Math.floor(time.getTime() / 1000);
+            const timeBlob = new Blob([`${unixSeconds}`]);
+
+            const data = await new Blob([timeBlob, fileData, randomData]).arrayBuffer();
+
             // Adapted from https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest#converting_a_digest_to_a_hex_string
-            const hashBuffer = await crypto.subtle.digest("SHA-256", await file.arrayBuffer()); // hash the message
+            const hashBuffer = await crypto.subtle.digest("SHA-256", data); // hash the message
             const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-             // convert bytes to hex string
-            return hashArray
+            const hexString = hashArray
                     .map((b) => b.toString(16).padStart(2, "0"))
                     .join("");
+            return {
+                hex: hexString,
+                blinding: await blobToBase64(randomData),
+                unixSeconds: unixSeconds
+            }
+        }
+
+        /**
+         * Generates a secure-random blob
+         * @param length {number} length in bytes
+         * @return {Blob} random blob
+         */
+        function randomBlob(length = 256) {
+            const randomData = new Uint8Array(length);
+            window.crypto.getRandomValues(randomData);
+            return new Blob([randomData]);
         }
 
         /**
@@ -178,10 +198,10 @@
                     _renderer.render();
 
                     setProgressbar('Computing file hash', 25);
-                    /** @type {string} */
+                    /** @type {BlindedHash} */
                     let hash;
                     try {
-                        hash = await sha256(selectedFile);
+                        hash = await sha256(selectedFile, new Date(), randomBlob());
                     } catch (e) {
                         showError('Could not hash given file');
                         console.error(e);
