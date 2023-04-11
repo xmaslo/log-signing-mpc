@@ -8,12 +8,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <script src="https://cdn.adamhlavacek.com/GRenderer.js" crossorigin="anonymous"></script>
     <script>
-        /** @typedef {{ url: string, parties: number[] }} StampServerParams */
+        /** @typedef {{ index: number, url: string }} StampServerLocation */
+        /** @typedef {{ url: string, parties: StampServerLocation[] }} StampServerParams */
         /** @type {string[]} */
         const SERVERS = [
+            'http://localhost:8000',
             'http://localhost:8001',
             'http://localhost:8002',
-            'http://localhost:8003',
         ];
 
         /**
@@ -28,7 +29,7 @@
                     if (i === index) {
                         continue; // skip current index, cannot stamp with itself
                     }
-                    serverParams.push({url, parties: [index, i]});
+                    serverParams.push({url, parties: [{url: SERVERS[i], index: i}]});
                 }
             });
 
@@ -44,21 +45,27 @@
         /**
          * Attempts to timestamp a hash of a file with given server
          * @param server {string} url of the signing server
-         * @param parties {number[]} index of parties that are supposed to sign
+         * @param parties {StampServerLocation[]} other parties that are supposed to sign with this server
          * @param hash {string} hex-encoded hash
          * @return {Promise<Blob | null>}
          */
         async function stamp(server, parties, hash) {
             try {
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        if (Math.random() > 0.7) {
-                            resolve(new Blob(["TEST BLOB"]));
-                        } else {
-                            resolve(null);
-                        }
-                    }, Math.random() * 3000);
-                });
+                /** @type number */
+                const timestamp = Math.floor((new Date()).getTime() / 1000);
+                // remove http(s):// from the address
+                const partiesString = parties.map((p) => `${p.index},${p.url.split('://')[1]}`).join(',');
+
+                return fetch(`${server}/sign/2`, {
+                    method: "POST",
+                    mode: "no-cors", // allow detaching the client from the server
+                    cache: "no-cache",
+                    credentials: "same-origin", // in case the backend is at same domain with basic auth reverse proxy
+                    headers: {
+                        "Content-Type": "text/plain",
+                    },
+                    body: `${partiesString},${hash},${timestamp}`,
+                }).then((response) => response.blob()).catch(() => null);
             } catch (e) {
                 console.error(e);
                 return null;
@@ -158,7 +165,7 @@
                     const servers = getRandomServers();
                     for (let i = 0; i < servers.length; i++) {
                         const server = servers[i];
-                        setProgressbar(`Asking ${server} to sign`, 50 + (25 * i / servers.length));
+                        setProgressbar(`Asking ${server.url} to sign (with ${server.parties.map(p => p.url).join(', ')})`, 50 + (25 * i / servers.length));
                         const timestamp = await stamp(server.url, server.parties, hash);
                         if (timestamp === null) {
                             continue;
@@ -175,7 +182,7 @@
                     }
 
                     if (!success) {
-                        showError('No of the servers responded in time, try again later');
+                        showError('None of the servers responded in time, try again later');
                     }
 
                     _renderer.variables.submitDisabled = undefined;
