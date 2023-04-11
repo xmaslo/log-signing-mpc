@@ -3,13 +3,17 @@ ACTION="$1"
 INDEX="$2"
 PORT_BASE=7999
 
+set -e
+
 function help() {
     echo "Usage: $0 start|stop index|all"
     exit 1
 }
 
+echo "Building..."
+cargo build &>/dev/null
+
 if [ "$INDEX" == "all" ]; then
-  set -e
   "$0" "$ACTION" 1
   "$0" "$ACTION" 2
   "$0" "$ACTION" 3
@@ -22,7 +26,7 @@ if [ "$PORT" -eq "$PORT_BASE" ]; then
   help
 fi
 
-set -euo pipefail
+set -uo pipefail
 PID_FILE="/var/run/user/$(id -u)/timestamping-$INDEX.pid"
 
 cd "$(dirname "$(realpath "$0")")"
