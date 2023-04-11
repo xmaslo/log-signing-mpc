@@ -8,6 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <script src="https://cdn.adamhlavacek.com/GRenderer.js" crossorigin="anonymous"></script>
     <script>
+        // check if debugging should be enabled (with possibly sensitive data)
+        const DEBUG = localStorage.getItem('DEBUG') === '1';
+
         /** @typedef {{ index: number, url: string }} StampServerLocation */
         /** @typedef {{ url: string, parties: StampServerLocation[] }} StampServerParams */
         /** @typedef {{ hex: string, blinding: string, unixSeconds: number }} BlindedHash */
@@ -17,6 +20,10 @@
             'http://localhost:8001',
             'http://localhost:8002',
         ];
+
+        if (!DEBUG) {
+            console.debug = () => {};
+        }
 
         /**
          * Reorders servers in random order
@@ -30,7 +37,8 @@
                     if (i === index) {
                         continue; // skip current index, cannot stamp with itself
                     }
-                    serverParams.push({url, parties: [{url: SERVERS[i], index: i}]});
+                    // indexes are 1-based
+                    serverParams.push({url, parties: [{url: SERVERS[i], index: i + 1}]});
                 }
             });
 
@@ -51,6 +59,7 @@
          * @return {Promise<Blob | null>}
          */
         async function stamp(server, parties, hash) {
+            console.debug('[STAMP]', server, parties, hash);
             // remove http(s):// from the address
             const partiesString = parties.map((p) => `${p.index},${p.url.split('://')[1]}`).join(',');
             /** @type Response */
@@ -64,7 +73,7 @@
                     headers: {
                         "Content-Type": "text/plain",
                     },
-                    body: `${partiesString},${hash.hex}`,
+                    body: `${partiesString},${hash.hex},${hash.unixSeconds}`,
                 });
             } catch {
                 return null;
@@ -91,7 +100,11 @@
         async function blobToBase64(blob) {
             const reader = new FileReader();
             return new Promise((resolve) => {
-                reader.addEventListener("load", () => resolve(reader.result), false);
+                reader.addEventListener("load", () => {
+                    const dataStartPrefix = ';base64,';
+                    const dataStart = reader.result.indexOf(dataStartPrefix);
+                    resolve(reader.result.substring(dataStart + dataStartPrefix.length));
+                }, false);
                 reader.readAsDataURL(blob);
             })
         }
@@ -215,7 +228,7 @@
                         setProgressbar(`${i + 1}/${servers.length}: Asking ${server.url} to sign (with ${server.parties.map(p => p.url).join(', ')})`, 50 + (25 * i / servers.length));
                         const timestamp = await stamp(server.url, server.parties, hash);
                         if (timestamp === null) {
-                            continue;
+                            continue;  // try next server, no single point of failure
                         }
                         setProgressbar(selectedFile.name + ' successfuly signed', 100);
                         _renderer.variables.stamp = {
