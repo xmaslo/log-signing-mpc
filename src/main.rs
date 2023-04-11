@@ -1,8 +1,8 @@
 mod create_communication_channel;
 mod key_generation;
 mod signing;
+mod check_timestamp;
 
-use std::path::Path;
 use std::sync::{Mutex};
 use std::thread;
 use std::time::Duration;
@@ -20,6 +20,7 @@ use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
+use crate::check_timestamp::verify_timestamp_10_minute_window;
 use crate::signing::KeyGenerator;
 
 
@@ -63,7 +64,17 @@ async fn sign(
     let mut url = Vec::new();
     url.push(splitted_data[1].clone());
 
-    let hash: &String = &splitted_data[2];
+    let mut hash = splitted_data[2].clone();
+
+    let parsed_unix_seconds = splitted_data[3].clone().parse::<u64>();
+    let timestamp = match parsed_unix_seconds {
+        Ok(v) => v,
+        Err(_) => return Status::BadRequest,
+    };
+
+    verify_timestamp_10_minute_window(timestamp);
+
+    hash += &splitted_data[3];
 
     println!(
         "My ID: {}\n\
