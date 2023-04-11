@@ -65,11 +65,38 @@
                         "Content-Type": "text/plain",
                     },
                     body: `${partiesString},${hash},${timestamp}`,
-                }).then((response) => response.blob()).catch(() => null);
+                }).then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Server error");
+                    }
+
+                    return response.blob();
+                }).then((blob) => blobToBase64(blob))
+                        .then((signature) => {
+                            const data = {
+                                signature,
+                                timestamp
+                            };
+
+                            return new Blob([JSON.stringify(data)]);
+                        }).catch(() => null);
             } catch (e) {
                 console.error(e);
                 return null;
             }
+        }
+
+        /**
+         * Converts arbitrary blob into base64 string
+         * @param blob {Blob} blob to be converted
+         * @return {Promise<string>} base64 representation of blob
+         */
+        async function blobToBase64(blob) {
+            const reader = new FileReader();
+            return new Promise((resolve) => {
+                reader.addEventListener("load", () => resolve(reader.result), false);
+                reader.readAsDataURL(blob);
+            })
         }
 
         /**
@@ -165,7 +192,7 @@
                     const servers = getRandomServers();
                     for (let i = 0; i < servers.length; i++) {
                         const server = servers[i];
-                        setProgressbar(`Asking ${server.url} to sign (with ${server.parties.map(p => p.url).join(', ')})`, 50 + (25 * i / servers.length));
+                        setProgressbar(`${i + 1}/${servers.length}: Asking ${server.url} to sign (with ${server.parties.map(p => p.url).join(', ')})`, 50 + (25 * i / servers.length));
                         const timestamp = await stamp(server.url, server.parties, hash);
                         if (timestamp === null) {
                             continue;
