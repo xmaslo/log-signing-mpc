@@ -50,6 +50,11 @@ case "$ACTION" in
     kill "$(cat "$PID_FILE")"
     rm "$PID_FILE"
     ;;
+  restart)
+    "$0" stop "$INDEX"
+    sleep 10
+    "$0" start "$INDEX"
+    ;;
   *)
     help
     ;;
