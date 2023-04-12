@@ -69,7 +69,6 @@
             try {
                 response = await fetch(`${server}/sign/2`, {
                     method: "POST",
-                    mode: "no-cors", // allow detaching the client from the server
                     cache: "no-cache",
                     credentials: "same-origin", // in case the backend is at same domain with basic auth reverse proxy
                     headers: {
@@ -107,11 +106,13 @@
             );
             console.debug('[STAMP]', 'result', signatures);
             if (signatures.find((r) => r === null) !== undefined) {
+                console.debug('[STAMP]', 'at least one server has failed');
                 return null;
             }
 
             if ((new Set(signatures.map((sig) => sig.signature))).size !== 1) {
                 // all signatures must be the same
+                console.debug('[STAMP]', 'signature mismatch');
                 return null;
             }
 
