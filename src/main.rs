@@ -14,7 +14,10 @@ use anyhow::{Result};
 use rocket::data::{ByteUnit, Limits};
 
 use rocket::http::Status;
+use rocket::response::status;
 use rocket::State;
+use rocket::serde::json::Json;
+
 use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
 
@@ -52,7 +55,7 @@ async fn sign(
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16
-) -> Status {
+) -> status::Accepted<String> {
     let server_id = server_id.server_id.lock().unwrap().clone();
 
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
@@ -93,11 +96,11 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    kg.sign_hash(&hash, receiving_stream, outgoing_sink)
+    let signature = kg.sign_hash(&hash, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
 
-    Status::Ok
+    status::Accepted(Some(signature.to_string()))
 }
 
 struct ServerIdState{
