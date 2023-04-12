@@ -13,13 +13,21 @@ use anyhow::{Result};
 
 use rocket::data::{ByteUnit, Limits};
 
+use rocket::http::Header;
+use rocket::response::{self, Responder};
+use rocket::Request;
+
 use rocket::http::Status;
+use rocket::response::status;
 use rocket::State;
+use rocket::serde::json::Json;
+
 use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
+use rocket::response::status::Custom;
 use crate::signing::KeyGenerator;
 
 
@@ -46,13 +54,25 @@ async fn key_gen(
     Status::Ok
 }
 
+struct Cors<R>(R);
+
+impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
+    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
+        let mut response = self.0.respond_to(req)?;
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        Ok(response)
+    }
+}
+
+
+
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 async fn sign(
     db: &State<Db>,
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16
-) -> Status {
+) -> Custom<Cors<status::Accepted<String>>> {
     let server_id = server_id.server_id.lock().unwrap().clone();
 
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
@@ -77,7 +97,7 @@ async fn sign(
 
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
-            = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
+        = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
@@ -93,11 +113,15 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    kg.sign_hash(&hash, receiving_stream, outgoing_sink)
+    let signature = kg.sign_hash(&hash, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
 
-    Status::Ok
+    let signature = signature.to_string();
+    let response = status::Accepted(Some(signature));
+
+    Custom(Status::Accepted, Cors(response))
+
 }
 
 struct ServerIdState{
