@@ -20,7 +20,8 @@ For development purposes, one can serve the client with the Python in-build HTTP
 ( cd web-frontend && python3 -m http.server )
 ```
 
-Then navigate to [127.0.0.1:8000](http://127.0.0.1:8000)
+Then navigate to [127.0.0.1:8000](http://127.0.0.1:8000).
+
 The client also support DEBUG mode, which can be enabled by pasting
 
 ```js

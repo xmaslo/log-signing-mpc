@@ -47,7 +47,7 @@ case "$ACTION" in
       echo "Not running"
         exit 0
     fi
-    kill "$(cat "$PID_FILE")"
+    kill "$(cat "$PID_FILE")" || true
     rm "$PID_FILE"
     ;;
   restart)

@@ -58,24 +58,29 @@
          * @param server {string} url of the signing server
          * @param parties {StampServerLocation[]} other parties that are supposed to sign with this server
          * @param hash {BlindedHash} hash to be signed
+         * @param timeout {number} maximal number of seconds to wait for server response
          * @return {Promise<Signature | null>}
          */
-        async function stampSingle(server, parties, hash) {
+        async function stampSingle(server, parties, hash, timeout = 300) {
             console.debug('[STAMP]', server, parties, hash);
             // remove http(s):// from the address
             const partiesString = parties.map((p) => `${p.index},${p.url.split('://')[1]}`).join(',');
             /** @type Response */
             let response;
             try {
-                response = await fetch(`${server}/sign/2`, {
-                    method: "POST",
-                    cache: "no-cache",
-                    credentials: "same-origin", // in case the backend is at same domain with basic auth reverse proxy
-                    headers: {
-                        "Content-Type": "text/plain",
-                    },
-                    body: `${partiesString},${hash.hex},${hash.unixSeconds}`,
-                });
+                response = await Promise.race([
+                    fetch(`${server}/sign/2`, {
+                        method: "POST",
+                        cache: "no-cache",
+                        credentials: "same-origin", // in case the backend is at same domain with basic auth reverse proxy
+                        headers: {
+                            "Content-Type": "text/plain",
+                        },
+                        body: `${partiesString},${hash.hex},${hash.unixSeconds}`,
+                    }),
+                    // reject the promise after timeout
+                    new Promise((_, reject) => setTimeout(() => reject('Timeout'), timeout * 1000))
+                ]);
             } catch (e) {
                 console.debug('[STAMP]', 'Error', e);
                 return null;
