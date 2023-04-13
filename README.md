@@ -11,6 +11,24 @@ Trusted timestamping server with threshold signing key
 2. `cd timestamping-server`
 3. `cargo build`
 
+## Client start-up
+
+Included client is a standalone webpage that can be served with any HTTP(S)-capable server.
+For development purposes, one can serve the client with the Python in-build HTTP server:
+
+```bash
+( cd web-frontend && python3 -m http.server )
+```
+
+Then navigate to [127.0.0.1:8000](http://127.0.0.1:8000)
+The client also support DEBUG mode, which can be enabled by pasting
+
+```js
+localStorage.setItem('DEBUG', '1')
+```
+
+into browser's console while on page.
+
 ## Server Setup and Key Generation
 
 ### Linux
