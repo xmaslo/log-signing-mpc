@@ -2,6 +2,7 @@ mod create_communication_channel;
 mod key_generation;
 mod signing;
 mod check_timestamp;
+mod check_signature;
 
 use std::sync::{Mutex};
 use std::thread;
@@ -29,7 +30,6 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sig
 use crate::check_timestamp::verify_timestamp_10_minute_window;
 use rocket::response::status::Custom;
 use crate::signing::KeyGenerator;
-
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 async fn key_gen(
