@@ -11,15 +11,17 @@
         // check if debugging should be enabled (with possibly sensitive data)
         const DEBUG = localStorage.getItem('DEBUG') === '1';
 
+        // TYPE definitions
         /** @typedef {{signature: string, timestamp: number, blinding: string}} Signature */
-        /** @typedef {{ index: number, url: string }} StampServerLocation */
-        /** @typedef {{ url: string, parties: StampServerLocation[] }} StampServerParams */
+        /** @typedef {{ index: number, url: string, internalAddress: string }} StampServerLocation */
+        /** @typedef {{ url: string, parties: StampServerLocation[] }} StampRequestParams */
         /** @typedef {{ hex: string, blinding: string, unixSeconds: number }} BlindedHash */
-        /** @type {string[]} */
+
+        /** @type {StampServerLocation[]} */
         const SERVERS = [
-            'http://localhost:8000',
-            'http://localhost:8001',
-            'http://localhost:8002',
+            {index: 1, url: 'http://localhost:8000', internalAddress: 'localhost:8000'},
+            {index: 2, url: 'http://localhost:8001', internalAddress: 'localhost:8001'},
+            {index: 3, url: 'http://localhost:8002', internalAddress: 'localhost:8002'},
         ];
 
         if (!DEBUG) {
@@ -28,23 +30,26 @@
         console.debug('[DEBUG]', 'Debugging is enabled');
 
         /**
-         * Reorders servers in random order
-         * @return {StampServerParams[]}
+         * Reorders servers in random order and pairs them
+         * @return {StampRequestParams[]}
          */
         function getRandomServers() {
-            /** @type StampServerParams[] */
+            /** @type StampRequestParams[] */
             let serverParams = [];
-            SERVERS.forEach((url, index, array) => {
+
+            // create all possible pairs
+            SERVERS.forEach((server, index, array) => {
                 for (let i = 0; i < array.length; i++) {
                     if (i === index) {
                         continue; // skip current index, cannot stamp with itself
                     }
                     // indexes are 1-based
-                    serverParams.push({url, parties: [{url, index: index + 1}, {url: SERVERS[i], index: i + 1}]});
+                    serverParams.push({url: server.url, parties: [server, SERVERS[i]]});
                 }
             });
 
-            /** @type StampServerParams[] */
+            // reorder all pairs randomly
+            /** @type StampRequestParams[] */
             let serversRandom = [];
             while (serverParams.length > 0) {
                 serversRandom.push(...serverParams.splice(Math.floor(serverParams.length * Math.random()), 1));
@@ -64,7 +69,7 @@
         async function stampSingle(server, parties, hash, timeout = 300) {
             console.debug('[STAMP]', server, parties, hash);
             // remove http(s):// from the address
-            const partiesString = parties.map((p) => `${p.index},${p.url.split('://')[1]}`).join(',');
+            const partiesString = parties.map((p) => `${p.index},${p.internalAddress}`).join(',');
             /** @type Response */
             let response;
             try {
