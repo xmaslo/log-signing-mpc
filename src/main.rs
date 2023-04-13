@@ -73,6 +73,7 @@ async fn sign(
     };
 
     if !verify_timestamp_10_minute_window(timestamp) {
+        println!("TIMESTAMP IS OLDER THAN 10 MINUTES. REFUSING TO SING!!!");
         return Status::BadRequest;
     }
 

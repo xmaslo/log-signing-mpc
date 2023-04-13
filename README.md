@@ -41,10 +41,7 @@ To sign a message, curl the  */sign* endpoint:
 
 Format is -d `"other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp"`.
 
-To get the example timestamp on Windows, run: \
-`$date1 = Get-Date -Date "01/01/1970"` \
-`$date2 = Get-Date` \
-`(New-TimeSpan -Start $date1 -End $date2).TotalSeconds`
+You can find current timestamp at https://www.epochconverter.com/.
 
 Sometimes, the servers just get stuck. In that case, re-run the curls.
 
