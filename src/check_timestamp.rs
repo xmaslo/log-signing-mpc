@@ -18,7 +18,7 @@ mod tests {
     use crate::check_timestamp::verify_timestamp_10_minute_window;
 
     #[test]
-    fn checkThatNowIsTrue() {
+    fn check_that_now_is_true() {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards");
@@ -27,7 +27,7 @@ mod tests {
     }
 
     #[test]
-    fn checkTooOld() {
+    fn check_too_old() {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards");
