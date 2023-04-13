@@ -66,7 +66,7 @@
          * @param timeout {number} maximal number of seconds to wait for server response
          * @return {Promise<Signature | null>}
          */
-        async function stampSingle(server, parties, hash, timeout = 300) {
+        async function stampSingle(server, parties, hash, timeout = 30) {
             console.debug('[STAMP]', server, parties, hash);
             // remove http(s):// from the address
             const partiesString = parties.map((p) => `${p.index},${p.internalAddress}`).join(',');
