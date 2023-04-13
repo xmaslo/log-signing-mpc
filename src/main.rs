@@ -1,8 +1,8 @@
 mod create_communication_channel;
 mod key_generation;
 mod signing;
+mod check_timestamp;
 
-use std::path::Path;
 use std::sync::{Mutex};
 use std::thread;
 use std::time::Duration;
@@ -20,13 +20,13 @@ use rocket::Request;
 use rocket::http::Status;
 use rocket::response::status;
 use rocket::State;
-use rocket::serde::json::Json;
 
 use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
+use crate::check_timestamp::verify_timestamp_10_minute_window;
 use rocket::response::status::Custom;
 use crate::signing::KeyGenerator;
 
@@ -64,8 +64,6 @@ impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
     }
 }
 
-
-
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 async fn sign(
     db: &State<Db>,
@@ -83,7 +81,21 @@ async fn sign(
     let mut url = Vec::new();
     url.push(splitted_data[1].clone());
 
-    let hash: &String = &splitted_data[2];
+    let mut hash = splitted_data[2].clone();
+
+    let parsed_unix_seconds = splitted_data[3].clone().parse::<u64>();
+    let timestamp = match parsed_unix_seconds {
+        Ok(v) => v,
+        Err(_) => return Custom(Status::BadRequest, Cors(status::Accepted(Some("TIMESTAMP IN BAD FORMAT".to_string())))),
+    };
+
+    if !verify_timestamp_10_minute_window(timestamp) {
+        let too_old_timestamp: String = "TIMESTAMP IS OLDER THAN 10 MINUTES".to_string();
+        println!("{}", too_old_timestamp.as_str());
+        return Custom(Status::BadRequest, Cors(status::Accepted(Some(too_old_timestamp))));
+    }
+
+    hash += &splitted_data[3];
 
     println!(
         "My ID: {}\n\

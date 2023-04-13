@@ -54,12 +54,14 @@ To generate keys, curl the */keygen* endpoint (you can download curl at https://
 ## Signing
 
 To sign a message, curl the  */sign* endpoint:
-1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data"`
-2. `curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data"`
+1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data,1681399682"`
+2. `curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data,1681399682"`
 
 Format is -d `"other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp"`.
 
-After completed all these steps, servers are running, and you can begin to use our frontend to timestamp your files.
+You can find current timestamp at https://www.epochconverter.com/.
+
+Sometimes, the servers just get stuck. In that case, re-run the curls.
 
 ## Static Analysis
 
