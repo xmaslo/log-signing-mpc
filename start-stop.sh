@@ -21,6 +21,7 @@ if [ "$INDEX" == "all" ]; then
 fi
 
 PORT="$(("$PORT_BASE" + "$INDEX"))"
+PORT_INTERNAL="$(("$PORT" - 5000))"
 if [ "$PORT" -eq "$PORT_BASE" ]; then
   # Index is NaN or empty
   help
@@ -38,7 +39,7 @@ case "$ACTION" in
       exit 0
     fi
     echo "Starting server with index $INDEX on http://localhost:$PORT"
-    cargo run -- "$INDEX" "$PORT" &
+    cargo run -- "$INDEX" "$PORT" "$PORT_INTERNAL" &
     PID="$!"
     echo "$PID" > "$PID_FILE"
     ;;
