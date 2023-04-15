@@ -16,6 +16,8 @@
         /** @typedef {{ index: number, url: string, internalAddress: string }} StampServerLocation */
         /** @typedef {{ url: string, parties: StampServerLocation[] }} StampRequestParams */
         /** @typedef {{ hex: string, blinding: string, unixSeconds: number }} BlindedHash */
+        /** @typedef {'STAMP' | 'VERIFY'} OperationMode */
+        /** @typedef {true | undefined} DisabledMode */
 
         /** @type {StampServerLocation[]} */
         const SERVERS = [
@@ -59,6 +61,30 @@
         }
 
         /**
+         * Sends POST request to a server
+         * @param server {string} url of the signing server
+         * @param path {string} endpoint path on the server
+         * @param data {string} body content
+         * @param timeout {number} maximal number of seconds to wait for server response
+         * @return {Promise<Response>}
+         */
+        async function sendRequest(server, path, data, timeout = 30) {
+            return  Promise.race([
+                fetch(`${server}/${path}`, {
+                    method: "POST",
+                    cache: "no-cache",
+                    credentials: "same-origin", // in case the backend is at same domain with basic auth reverse proxy
+                    headers: {
+                        "Content-Type": "text/plain",
+                    },
+                    body: data,
+                }),
+                // reject the promise after timeout
+                new Promise((_, reject) => setTimeout(() => reject('Timeout'), timeout * 1000))
+            ]);
+        }
+
+        /**
          * Attempts to timestamp a hash of a file with given server
          * @param server {string} url of the signing server
          * @param parties {StampServerLocation[]} other parties that are supposed to sign with this server
@@ -68,24 +94,11 @@
          */
         async function stampSingle(server, parties, hash, timeout = 30) {
             console.debug('[STAMP]', server, parties, hash);
-            // remove http(s):// from the address
             const partiesString = parties.map((p) => `${p.index},${p.internalAddress}`).join(',');
             /** @type Response */
             let response;
             try {
-                response = await Promise.race([
-                    fetch(`${server}/sign/2`, {
-                        method: "POST",
-                        cache: "no-cache",
-                        credentials: "same-origin", // in case the backend is at same domain with basic auth reverse proxy
-                        headers: {
-                            "Content-Type": "text/plain",
-                        },
-                        body: `${partiesString},${hash.hex},${hash.unixSeconds}`,
-                    }),
-                    // reject the promise after timeout
-                    new Promise((_, reject) => setTimeout(() => reject('Timeout'), timeout * 1000))
-                ]);
+                response = await sendRequest(server, 'sign/2', `${partiesString},${hash.hex},${hash.unixSeconds}`, timeout);
             } catch (e) {
                 console.debug('[STAMP]', 'Error', e);
                 return null;
@@ -102,6 +115,42 @@
                 timestamp: hash.unixSeconds,
                 blinding: hash.blinding
             };
+        }
+
+        /**
+         * Attempts to verify timestamp of a file with given server
+         * @param server {string} url of the signing server
+         * @param signature {string} raw signature data
+         * @param hash {BlindedHash} hash to be verified
+         * @param timeout {number} maximal number of seconds to wait for server response
+         * @return {Promise<boolean | null>}
+         */
+        async function verify(server, signature, hash, timeout = 30) {
+            console.debug('[VERIFY]', server, signature, hash);
+            /** @type Response */
+            let response;
+            try {
+                response = await sendRequest(server, 'verify', `${signature};${hash.hex};${hash.unixSeconds}`, timeout);
+            } catch (e) {
+                console.debug('[VERIFY]', 'Error', e);
+                return null;
+            }
+
+            console.debug('[VERIFY]', 'Response is OK?', response.ok);
+            if (!response.ok) {
+                return null;
+            }
+
+            const text = (await response.text()).trim().toLowerCase();
+            console.debug('[VERIFY]', `Response text: "${text}"`);
+            switch (text) {
+                case 'true':
+                    return true;
+                case 'false':
+                    return false;
+                default:
+                    return null;
+            }
         }
 
         /**
@@ -147,6 +196,16 @@
         }
 
         /**
+         * Converts arbitrary base64 string into blob
+         * @param data {string} base64 data string
+         * @return {Promise<Blob>} original blob
+         */
+        async function base64ToBlob(data) {
+            const base64url = `data:application/ocet-stream;base64,${data}`;
+            return fetch(base64url).then(res => res.blob());
+        }
+
+        /**
          * Creates a SHA256 hash of a file with given timestamp and additional blinding data
          * @param file {Blob} file to be hashed
          * @param time {Date} the requested timestamp
@@ -186,6 +245,23 @@
         }
 
         /**
+         * Loads timestamp from a file
+         * @param file {File} file contain timestamp
+         * @return {Promise<Signature>} loaded signature file
+         */
+        async function loadTimestamp(file) {
+            const dataString = await file.text();
+            const data = JSON.parse(dataString);
+            if (typeof data['timestamp'] !== "number") {
+                throw new Error('Invalid timestamp format');
+            }
+            if (typeof data['signature'] !== "string" || typeof data['blinding'] !== "string") {
+                throw new Error('Invalid string format');
+            }
+            return data;
+        }
+
+        /**
          * Sets new progressbar text, null for disabling progressbar
          * @param text {string | null}
          * @param percentage {number}
@@ -220,6 +296,12 @@
             /** @type {HTMLInputElement} */
             const inputFile = document.querySelector('#inputFile');
             console.assert(inputFile !== null);
+            /** @type {HTMLInputElement} */
+            const inputStamp = document.querySelector('#inputStamp');
+            console.assert(inputStamp !== null);
+            /** @type {HTMLInputElement} */
+            const inputMode = document.querySelector('#inputMode');
+            console.assert(inputMode !== null);
             /** @type {HTMLFormElement} */
             const inputFileForm = document.querySelector('#inputFileForm');
             console.assert(inputFileForm !== null);
@@ -228,15 +310,25 @@
             console.assert(btnDownloadStamp !== null);
 
             /** @type {File | null} */
-            let selectedFile;
+            let fileData = null;
+            /** @type {File | null} */
+            let fileStamp = null;
 
             _renderer = new GRenderer(document.querySelector('body'), {
+                /** @type DisabledMode */
                 selectDisabled: undefined,
-                submitDisabled: true
+                /** @type DisabledMode */
+                submitDisabled: true,
+                /** @type OperationMode */
+                mode: 'STAMP'
             }, undefined, {
                 onFileSelect: () => {
-                    selectedFile = inputFile.files.item(0);
-                    _renderer.variables.submitDisabled = selectedFile === null ? true : undefined;
+                    fileData = inputFile.files.item(0);
+                    _renderer.functions.disableEnableSubmit();
+                },
+                onStampSelect: () => {
+                    fileStamp = inputStamp.files.item(0);
+                    _renderer.functions.disableEnableSubmit();
                     _renderer.render();
                 },
                 onFormSubmit: async () => {
@@ -247,33 +339,80 @@
                     showError(null);
                     _renderer.render();
 
+                    let stampDate = new Date();
+                    let blindingData = randomBlob();
+                    /** @type {string | null} */
+                    let signature = null;
+
+                    if (_renderer.variables.mode === 'VERIFY') {
+                        setProgressbar('Loading timestamp from file', 15);
+                        try {
+                            /** @type Signature */
+                            const loadedStamp = await loadTimestamp(fileStamp);
+                            stampDate = new Date(loadedStamp.timestamp * 1000);
+                            blindingData = await base64ToBlob(loadedStamp.blinding);
+                            signature = await (await base64ToBlob(loadedStamp.signature)).text();
+                            console.debug('[VERIFY] Loaded stamp', loadedStamp, stampDate);
+                        }  catch (e) {
+                            showError('Could not load timestamp file');
+                            console.error(e);
+                            return;
+                        }
+                        setProgressbar('Timestamp loaded', 16);
+                    }
+
                     setProgressbar('Computing file hash', 25);
                     /** @type {BlindedHash} */
                     let hash;
                     try {
-                        hash = await sha256(selectedFile, new Date(), randomBlob());
+                        hash = await sha256(fileData, stampDate, blindingData);
                     } catch (e) {
                         showError('Could not hash given file');
                         console.error(e);
                         return;
                     }
+                    setProgressbar('Hash computed', 26);
 
                     let success = false;
                     const servers = getRandomServers();
                     for (let i = 0; i < servers.length; i++) {
                         const server = servers[i];
-                        setProgressbar(`${i + 1}/${servers.length}: Asking ${server.parties.map(p => p.url).join(' & ')} to sign`, 50 + (25 * i / servers.length));
-                        const timestamp = await stamp(server.parties, hash);
-                        if (timestamp === null) {
-                            continue;  // try next server, no single point of failure
+                        const progress = 50 + (25 * i / servers.length);
+
+                        switch (_renderer.variables.mode) {
+                            case 'STAMP':
+                                setProgressbar(`${i + 1}/${servers.length}: Asking ${server.parties.map(p => p.url).join(' & ')} to sign`, progress);
+                                const timestamp = await stamp(server.parties, hash);
+                                if (timestamp === null) {
+                                    continue;  // try next server, no single point of failure
+                                }
+                                setProgressbar(fileData.name + ' successfully signed', 100);
+                                _renderer.variables.stamp = {
+                                    url: URL.createObjectURL(timestamp),
+                                    filename: fileData.name + '.stamp'
+                                };
+                                btnDownloadStamp.download = _renderer.variables.stamp.filename;
+                                btnDownloadStamp.href = _renderer.variables.stamp.url;
+                                break;
+                            case 'VERIFY':
+                                setProgressbar(`${i + 1}/${servers.length}: Asking ${server.url} to verify`, progress);
+                                const verification = await verify(server.url, signature, hash);
+
+                                if (verification === null) {
+                                    continue;
+                                }
+
+                                if (verification) {
+                                    setProgressbar(fileData.name + ' successfully verified with stamp at ' + stampDate, 100);
+                                } else {
+                                    showError('Verification rejected, timestamp or file itself is not valid');
+                                    setProgressbar(fileData.name + ' COULD NOT BE VERIFIED TO BE STAMPED AT ' + stampDate, 100);
+                                }
+                                break;
+                            default:
+                                throw new Error('Invalid mode');
                         }
-                        setProgressbar(selectedFile.name + ' successfuly signed', 100);
-                        _renderer.variables.stamp = {
-                            url: URL.createObjectURL(timestamp),
-                            filename: selectedFile.name + '.stamp'
-                        };
-                        btnDownloadStamp.download = _renderer.variables.stamp.filename;
-                        btnDownloadStamp.href = _renderer.variables.stamp.url;
+
                         success = true;
                         break;
                     }
@@ -285,17 +424,30 @@
                     _renderer.variables.submitDisabled = undefined;
                     _renderer.variables.selectDisabled = undefined;
                     _renderer.render();
+                },
+                onModeChange: () => {
+                    _renderer.variables.mode = inputMode.checked ? 'VERIFY' : 'STAMP';
+                    _renderer.functions.disableEnableSubmit();
+                },
+                disableEnableSubmit: () => {
+                    _renderer.variables.submitDisabled = fileData === null ? true : undefined;
+                    if (!_renderer.variables.submitDisabled && _renderer.variables.mode === 'VERIFY') {
+                        _renderer.variables.submitDisabled = fileStamp === null ? true : undefined;
+                    }
+                    _renderer.render();
                 }
             });
 
             // handle UI events
             inputFile.onchange = _renderer.functions.onFileSelect;
+            inputStamp.onchange = _renderer.functions.onStampSelect;
             inputFileForm.onsubmit = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 _renderer.functions.onFormSubmit();
                 return false;
             }
+            inputMode.onchange = _renderer.functions.onModeChange;
             // run first render
             _renderer.render();
         }
@@ -309,12 +461,29 @@
     <div class="row">
         <form id="inputFileForm">
             <div class="mb-3">
-                <label for="inputFile" class="form-label">File to timestamp</label>
+                <label for="inputFile" class="form-label">
+                    File to
+                    <span r-if="v.mode === 'STAMP'">timestamp</span>
+                    <span r-if="v.mode === 'VERIFY'">verify</span>
+                </label>
                 <input type="file" r-attr="{&quot;disabled&quot;: &quot;v.selectDisabled&quot;}" class="form-control" id="inputFile" aria-describedby="helpFile">
-                <div id="helpFile" class="form-text">Hash of the file is computed locally and then sent to the server</div>
+                <div id="helpFile" class="form-text">No data that could identify what are you inputting is ever sent to the server</div>
             </div>
-            <button r-attr="{&quot;disabled&quot;: &quot;v.submitDisabled&quot;}" type="submit" class="btn btn-primary">Submit</button>
-            <a r-if="v.stamp" id="btnDownloadStamp" class="btn btn-secondary">Download stamp</a>
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="inputMode">
+                    <label class="form-check-label" for="inputMode">Perform verification instead of stamping</label>
+                </div>
+            </div>
+            <div r-attr="{&quot;style&quot;: &quot;'display: ' + (v.mode === 'VERIFY' ? 'initial' : 'none') + ';'&quot;}" class="mb-3">
+                <label for="inputFile" class="form-label">Timestamp file</label>
+                <input type="file" class="form-control" id="inputStamp" aria-describedby="helpStamp">
+                <div id="helpStamp" class="form-text">Previously computed timestamp to verify the file with</div>
+            </div>
+            <div class="mb-3">
+                <button r-attr="{&quot;disabled&quot;: &quot;v.submitDisabled&quot;}" type="submit" class="btn btn-primary">Submit</button>
+                <a r-if="v.stamp" id="btnDownloadStamp" class="btn btn-secondary">Download stamp</a>
+            </div>
         </form>
     </div>
     <div r-if="v.error" class="row mt-3">
