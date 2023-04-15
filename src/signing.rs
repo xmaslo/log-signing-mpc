@@ -64,7 +64,7 @@ impl KeyGenerator {
         mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>
     ) -> Result<String> {
         let (signing, partial_signature) = SignManual::new(
-            BigInt::from_bytes(hash_to_sign.as_bytes()),
+            BigInt::from_bytes(&hex::decode(hash_to_sign).unwrap()),
             self.completed_offline_stage.as_ref().unwrap().clone(),
         )?;
 

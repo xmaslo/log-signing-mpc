@@ -1,4 +1,5 @@
 extern crate core;
+extern crate hex;
 
 mod create_communication_channel;
 mod key_generation;
@@ -7,6 +8,7 @@ mod check_timestamp;
 mod check_signature;
 mod common;
 
+use sha256::digest;
 use std::path::Path;
 use std::sync::{Mutex};
 use std::thread;
@@ -76,10 +78,11 @@ impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
 async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<status::Accepted<String>>> {
     let splitted_data = data.split(';').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature = splitted_data[0].clone();
-    let signed_data = &splitted_data[1];
+    let signed_data = digest(splitted_data[1].clone() + &splitted_data[2]);
+    println!("{}", signed_data);
 
     let (r,s) = extract_rs(signature.as_str());
-    let msg = BigInt::from_bytes(signed_data.as_bytes());
+    let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
     let server_id = server_id.server_id.lock().unwrap().clone();
     let local_share_file_name = format!("local-share{}.json", server_id);
@@ -108,7 +111,7 @@ async fn sign(
     let mut url = Vec::new();
     url.push(splitted_data[1].clone());
 
-    let mut hash = splitted_data[2].clone();
+    let file_hash = splitted_data[2].clone();
 
     let parsed_unix_seconds = splitted_data[3].clone().parse::<u64>();
     let timestamp = match parsed_unix_seconds {
@@ -122,7 +125,7 @@ async fn sign(
         return Custom(Status::BadRequest, Cors(status::Accepted(Some(too_old_timestamp))));
     }
 
-    hash += &splitted_data[3];
+    let hash = digest(file_hash + &splitted_data[3]);
 
     println!(
         "My ID: {}\n\
