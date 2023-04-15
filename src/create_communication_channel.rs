@@ -3,6 +3,7 @@ use std::{
     sync::Arc,
     fs::File,
     io::BufReader,
+    io::Read,
 };
 use futures::{
     channel::mpsc::SendError,
@@ -73,11 +74,16 @@ pub fn create_tls_config(server_id: u16) -> Client {
         }
     }
 
-    // // Load public certificates
-    // let public_cert = File::open(format!("certs/public/cert_{}.pem", server_id))?;
-    // let public_cert_reader = BufReader::new(public_cert);
-    //
-    // let public_certs = certs(public_cert_reader).unwrap();
+    // Load public certificates
+    let mut buf = Vec::new();
+    let _ = File::open(format!("certs/private/cert_and_key_{}.pem", server_id))
+        .unwrap()
+        .read_to_end(&mut buf)
+        .unwrap();
+
+    let identity = Identity::from_pem(&buf).unwrap();
+
+    client = client.identity(identity);
 
     client.build().unwrap()
 

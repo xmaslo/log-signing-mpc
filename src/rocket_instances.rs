@@ -41,7 +41,7 @@ pub fn rocket_with_client_auth(
 ) -> rocket::Rocket<Build> {
     let tls_config = TlsConfig::from_paths(format!("certs/public/cert_{}.pem", server_id),
                                            format!("certs/private/private_key_{}.pem", server_id),)
-        // .with_mutual(MutualTls::from_path("certs/ca_cert.pem"));
+        .with_mutual(MutualTls::from_path("certs/ca_cert.pem").mandatory(true))
     ;
 
 
