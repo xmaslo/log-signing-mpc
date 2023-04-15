@@ -17,10 +17,10 @@ Included client is a standalone webpage that can be served with any HTTP(S)-capa
 For development purposes, one can serve the client with the Python in-build HTTP server:
 
 ```bash
-( cd web-frontend && python3 -m http.server )
+( cd web-frontend && python3 -m http.server 8080 )
 ```
 
-Then navigate to [127.0.0.1:8000](http://127.0.0.1:8000).
+Then navigate to [127.0.0.1:8080](http://127.0.0.1:8080).
 
 The client also support DEBUG mode, which can be enabled by pasting
 

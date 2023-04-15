@@ -31,6 +31,31 @@ paths:
           description: Invalid input
         '502':
           description: Not enough servers participated in time
+  /verify:
+    post:
+      tags:
+        - stamp
+      summary: Verifies an existing document stamp
+      operationId: verify
+      requestBody:
+        description: Tries to verify existing timestamp
+        content:
+          text/plain:
+            schema:
+              description: "Data in format: signature_output;signed_data;unix_seconds_timestamp"
+              type: string
+        required: true
+      responses:
+        '200':
+          description: Successful signature
+          content:
+            application/octet-stream:
+              schema:
+                $ref: '#/components/schemas/TimestampResponse'
+        '405':
+          description: Invalid input
+        '502':
+          description: Not enough servers participated in time
 
 components:
   schemas:
