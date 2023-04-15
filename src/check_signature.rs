@@ -1,4 +1,3 @@
-use std::path::Path;
 use anyhow::Context;
 use curv::{
     arithmetic::traits::Converter,
@@ -20,8 +19,21 @@ pub fn extract_rs(signature: &str) -> (Scalar<Secp256k1>, Scalar<Secp256k1>) {
     (parsed_signature.r, parsed_signature.s)
 }
 
-pub fn get_public_key(file_name: &Path) {
-    
+#[derive(Debug, Serialize, Deserialize)]
+struct YSumS {
+    curve: String,
+    point: Vec<u8>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MyObject {
+    y_sum_s: YSumS,
+}
+
+pub fn get_public_key(json_str: &str) -> Vec<u8> {
+    let obj: MyObject = serde_json::from_str(json_str).unwrap();
+    let point = obj.y_sum_s.point;
+    point
 }
 
 // implementation from https://github.com/ZenGo-X/multi-party-ecdsa/blob/master/examples/common.rs
@@ -61,10 +73,11 @@ pub fn check_sig(
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
     use curv::arithmetic::Converter;
     use curv::BigInt;
     use curv::elliptic::curves::{Point, Secp256k1};
-    use crate::check_signature::{check_sig, extract_rs};
+    use crate::check_signature::{check_sig, extract_rs, get_public_key};
 
     const PUBLIC_KEY_COMPRESSED: [u8; 33] = [3, 183, 191, 143, 211, 92, 155, 44, 130, 59, 29, 152, 124, 146, 233, 81, 9, 70, 219, 20, 100, 4, 243, 31, 227, 146, 20, 116, 205, 145, 227, 57, 0];
 
@@ -94,5 +107,54 @@ mod tests {
         let public_key: Point<Secp256k1> = Point::from_bytes(&PUBLIC_KEY_COMPRESSED).unwrap();
 
         assert!(!check_sig(&r, &s, &msg, &public_key));
+    }
+
+    #[test]
+    fn extract_public_key() {
+        let json_str = r#"{
+            "y_sum_s": {
+              "curve": "secp256k1",
+              "point": [
+                2,
+                137,
+                233,
+                76,
+                83,
+                210,
+                173,
+                139,
+                125,
+                48,
+                202,
+                72,
+                69,
+                133,
+                79,
+                72,
+                137,
+                20,
+                18,
+                29,
+                235,
+                13,
+                67,
+                1,
+                76,
+                189,
+                174,
+                222,
+                34,
+                237,
+                1,
+                79,
+                188
+              ]
+            },
+            "i": 1,
+            "t": 1,
+            "n": 3
+        }"#;
+        let public_compressed = get_public_key(json_str);
+        assert_eq!(public_compressed, [2, 137, 233, 76, 83, 210, 173, 139, 125, 48, 202, 72, 69, 133, 79, 72, 137, 20, 18, 29, 235, 13, 67, 1, 76, 189, 174, 222, 34, 237, 1, 79, 188]);
     }
 }

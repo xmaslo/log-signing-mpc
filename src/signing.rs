@@ -7,7 +7,7 @@ use futures::{Sink, SinkExt, Stream, StreamExt, TryStreamExt};
 use futures::stream::Fuse;
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{CompletedOfflineStage, OfflineProtocolMessage, OfflineStage, PartialSignature, SignManual};
 use round_based::{AsyncProtocol, Msg};
-use crate::common::read_file;
+use crate::common::{read_file, file_to_local_key};
 
 pub struct KeyGenerator {
     participants: Vec<u16>,
@@ -40,7 +40,8 @@ impl KeyGenerator {
 
         let file_name = format!("local-share{}.json", self.party_index);
 
-        let local_share = read_file(Path::new(file_name.as_str()));
+        let file_content = read_file(Path::new(file_name.as_str()));
+        let local_share = file_to_local_key(&file_content);
 
         let signing = OfflineStage::new(self.get_different_party_index(), self.participants.clone(), local_share)?;
 
