@@ -1,3 +1,5 @@
+extern crate core;
+
 mod create_communication_channel;
 mod key_generation;
 mod signing;
