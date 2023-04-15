@@ -1,4 +1,8 @@
 #!/bin/bash
+set -xeuo pipefail
+
+# First generate the SSL certificates
+bash examples/certs_creation.sh
 
 # Start the three servers
 cargo run -- 1 8000 3000 &
