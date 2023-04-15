@@ -43,7 +43,7 @@ use crate::common::read_file;
 use crate::{
     create_communication_channel::{receive_broadcast, Db},
     rocket_instances::{rocket_with_client_auth, rocket_without_client_auth, ServerIdState, SharedDb},
-    signing::{do_offline_stage, sign_hash, KeyGenerator},
+    signing::{KeyGenerator},
 };
 
 struct Cors<R>(R);
@@ -55,6 +55,28 @@ impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
         Ok(response)
     }
 }
+
+
+#[rocket::post("/tls/<room_id>", data = "<data>")]
+async fn tls(
+    db: &State<SharedDb>,
+    server_id: &State<ServerIdState>,
+    data: String,
+    room_id: u16,
+) -> Status {
+
+    let urls: Vec<String> = data.split(',').map(|s| s.to_string()).collect();
+    let server_id = server_id.server_id.lock().unwrap().clone();
+    let urls_2 = urls.clone();
+
+    let (receiving_stream, outgoing_sink) =
+        db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
+
+    db.test_tls(room_id, urls_2).await;
+
+    Status::Ok
+}
+
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 async fn key_gen(
@@ -112,7 +134,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<s
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 async fn sign(
-    db: &State<Db>,
+    db: &State<SharedDb>,
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16
@@ -201,7 +223,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(("log_level", "normal"))
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
-    let shared_db = SharedDb(Arc::new(Db::empty()));
+
+
+
+
+    let shared_db = SharedDb(Arc::new(Db::empty(server_id)));
 
     // Create two Rocket instances with different ports and TLS settings
     let rocket_instance_protected = rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
@@ -214,6 +240,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     let (protected_result, public_result) = tokio::join!(server_future_protected, server_future_public);
+
 
     // Check the results
     println!("Protected Rocket server result: {:?}", protected_result);

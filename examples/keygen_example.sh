@@ -18,13 +18,8 @@ curl -X POST localhost:8002/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3000" &
 
 sleep 60
 
-curl -X POST localhost:8000/sign/2 -d "2,127.0.0.1:3001,sign_this_data" &
-curl -X POST localhost:8001/sign/2 -d "1,127.0.0.1:3000,sign_this_data" &
-
-sleep 45
-
-curl -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data" &
-curl -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data"
+curl -X POST localhost:8000/sign/2 -d "2,127.0.0.1:3001,sign_this_data,$(date +%s)" &
+curl -X POST localhost:8001/sign/2 -d "1,127.0.0.1:3000,sign_this_data,$(date +%s)" &
 
 sleep 100
 

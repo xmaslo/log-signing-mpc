@@ -20,9 +20,13 @@ anyhow = "1"
 tokio = { version = "1.25.0", features = ["full"] }
 hyper = {version = "0.14.13", features = ["full"] }
 
-reqwest = "0.11.14"
+reqwest = { version = "0.11.14", features = ["rustls-tls", "native-tls"] }
+tokio-rustls = "0.23.4"
+
+rustls = "0.20.8"
+rustls-pemfile = "1.0.0"
 
 [dependencies.rocket]
 rocket = "0.5.0-rc.2"
-features = ["json"]
+features = ["json", "mtls", "tls"]
 

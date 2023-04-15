@@ -1,6 +1,8 @@
 use std::{
     collections::HashMap,
     sync::Arc,
+    fs::File,
+    io::BufReader,
 };
 use futures::{
     channel::mpsc::SendError,
@@ -13,6 +15,10 @@ use rocket::{
     tokio::io::AsyncReadExt,
     data::ToByteUnit,
 };
+use reqwest::{Client, Certificate, Identity, tls};
+
+use rustls::{ClientConfig, RootCertStore, Certificate as RustlsCertificate};
+use rustls_pemfile::{certs};
 use round_based::Msg;
 
 use anyhow::{Context, Result};
@@ -48,7 +54,37 @@ pub async fn receive_broadcast(db: &State<SharedDb>,
     Ok(Status::Ok)
 }
 
+pub fn create_tls_config(server_id: u16) -> Client {
+    // Load CA certificate
+    let ca_cert = File::open("certs/ca_cert.pem");
+
+    let mut client = Client::builder()
+        .use_rustls_tls()
+        .danger_accept_invalid_certs(true)
+        ;
+
+    if let Ok(ca_cert) = ca_cert {
+        let mut ca_cert_reader = BufReader::new(ca_cert);
+        if let Ok(ca_certs) = certs(&mut ca_cert_reader) {
+            for ca_cert in ca_certs {
+                let cert = Certificate::from_der(&*ca_cert);
+                client = client.add_root_certificate(cert.unwrap());
+            }
+        }
+    }
+
+    // // Load public certificates
+    // let public_cert = File::open(format!("certs/public/cert_{}.pem", server_id))?;
+    // let public_cert_reader = BufReader::new(public_cert);
+    //
+    // let public_certs = certs(public_cert_reader).unwrap();
+
+    client.build().unwrap()
+
+}
+
 pub struct Db {
+    client: Client,
     rooms: RwLock<HashMap<String, Arc<Room>>>
 }
 
@@ -57,13 +93,15 @@ pub struct Room {
     room_id: u16,
     receiving_sink: Arc<RwLock<Box<dyn Sink<String, Error = SendError> + Send + Sync + Unpin>>>,
     outgoing_stream: Arc<RwLock<Box<dyn Stream<Item = Result<String>> + Send + Sync + Unpin>>>,
-    client: reqwest::Client,
+    client: Client,
 }
 
 impl Db {
-    pub fn empty() -> Self {
+    pub fn empty(server_id: u16) -> Self {
+
         Self {
             rooms: RwLock::new(HashMap::new()),
+            client: create_tls_config(server_id),
         }
     }
 
@@ -78,7 +116,8 @@ impl Db {
         let (receiving_sink, mut receiving_stream) = futures::channel::mpsc::unbounded();
         let (outgoing_sink, mut outgoing_stream) = futures::channel::mpsc::unbounded();
 
-        let room = Room::new(server_id, room_id, Box::new(receiving_sink), Box::new(outgoing_stream));
+        let room = Room::new(server_id, room_id, Box::new(receiving_sink),
+                             Box::new(outgoing_stream), self.client.clone());
 
         let receiving_stream = receiving_stream.map(move |msg| {
             let msg_value: serde_json::Value = serde_json::from_str(&msg).context("parse message as JSON value")?;
@@ -114,6 +153,12 @@ impl Db {
         (receiving_stream, outgoing_sink)
     }
 
+    pub async fn test_tls(&self, room_id: u16, server_urls: Vec<String>) {
+        if let Some(room) = self.get_room(room_id).await {
+            room.test_tls(&server_urls).await;
+        }
+    }
+
     pub async fn get_room(&self, room_id: u16) -> Option<Arc<Room>> {
         self.rooms.read().await.get(&room_id.to_string()).cloned()
     }
@@ -131,13 +176,14 @@ impl Room {
         room_id: u16,
         sink: Box<dyn Sink<String, Error = SendError> + Send + Sync + Unpin>,
         stream: Box<dyn Stream<Item = Result<String>> + Send + Sync + Unpin>,
+        client: Client,
     ) -> Self {
         Self {
             server_id,
             room_id,
             receiving_sink: Arc::new(RwLock::new(sink)),
             outgoing_stream: Arc::new(RwLock::new(stream)),
-            client: reqwest::Client::new(),
+            client,
         }
     }
 
@@ -156,7 +202,7 @@ impl Room {
                     counter += 1;
                     println!("Sending: {}  in round {}\n", message, counter);
                     for url in server_urls {
-                        let endpoint = format!("http://{}/receive_broadcast/{}", url, self.room_id); // Include room_id in the URL
+                        let endpoint = format!("https://{}/receive_broadcast/{}", url, self.room_id); // Include room_id in the URL
                         println!("Sending: {} to {}", message, url);
                         match self.client.post(&endpoint).body(message.clone()).send().await {
                             Ok(_response) => {
@@ -170,6 +216,21 @@ impl Room {
                 }
                 Some(Err(_)) => break,
                 None => break,
+            }
+        }
+    }
+
+    pub async fn test_tls(&self, server_urls: &Vec<String>) {
+        for url in server_urls {
+            let endpoint = format!("https://{}/receive_broadcast/{}", url, self.room_id); // Include room_id in the URL
+            println!("Sending: {} to {}", "test", url);
+            match self.client.post(&endpoint).body("Test").send().await {
+                Ok(_response) => {
+                    println!("Successfully sent message to {}", url);
+                }
+                Err(e) => {
+                    eprintln!("Error sending message to {}: {}", url, e);
+                }
             }
         }
     }

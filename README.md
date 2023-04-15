@@ -73,6 +73,16 @@ Format is -d "other_party_id,other_party_address,data_to_sign".
 
 After completed all these steps, servers are running, and you can begin to use our frontend to timestamp your files.
 
+
+### TLS
+To run the server with TLS, you need to provide a certificate, certificate authority, and a private key.
+The server will look for them in the `certs` directory. The directory must be located in the same directory as the executable.
+The ca certificate lies directly in that directory and is named ca_cert.pem.
+The public certificate and the private key must be located in a subdirectory named `private` and public respectively.
+The certificate and the private key must be named `cert_{server_id}.pem` and `private_key_{server_id}.pem` respectively.
+
+
+
 ## Static Analysis
 cargo clippy
 

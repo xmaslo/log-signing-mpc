@@ -1,11 +1,14 @@
 // First code snippet
 use std::sync::{Arc, Mutex};
 use rocket::Build;
+use rocket::config::{Config, TlsConfig, MutualTls, CipherSuite};
 use crate::{
     create_communication_channel::Db,
     create_communication_channel::receive_broadcast,
     key_gen,
     sign,
+    tls,
+    verify
 };
 
 
@@ -36,16 +39,16 @@ pub fn rocket_with_client_auth(
     db: SharedDb,
     port: u16,
 ) -> rocket::Rocket<Build> {
-    // let tls_config = TlsConfig {
-    //     certs: "path/to/your/certificate.pem".into(),
-    //     key: "path/to/your/private/key.pem".into(),
-    //     ca: "path/to/your/ca_certificate.pem".into(),
-    //     client_auth: ClientAuth::Required,
-    // };
+    let tls_config = TlsConfig::from_paths(format!("certs/public/cert_{}.pem", server_id),
+                                           format!("certs/private/private_key_{}.pem", server_id),)
+        // .with_mutual(MutualTls::from_path("certs/ca_cert.pem"));
+    ;
+
+
 
 // Create a figment with the desired configuration
     let figment = figment
-        // .merge(("tls", tls_config))
+        .merge(("tls", tls_config))
         .merge(("port", port));
 
     rocket::custom(figment)
@@ -63,7 +66,7 @@ pub fn rocket_without_client_auth(
     let figment = figment.merge(("port", port));
 
     rocket::custom(figment)
-        .mount("/", rocket::routes![key_gen, sign, verify])
+        .mount("/", rocket::routes![key_gen, sign, verify, tls])
         .manage(ServerIdState{server_id: Mutex::new(server_id)})
         .manage(db)
 }
