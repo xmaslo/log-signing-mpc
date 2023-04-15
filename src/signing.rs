@@ -1,15 +1,13 @@
-use std::fs;
 use std::path::Path;
 use std::pin::Pin;
 use anyhow::{anyhow, Context, Error, Result};
 use curv::arithmetic::Converter;
 use curv::BigInt;
-use curv::elliptic::curves::Secp256k1;
 use futures::{Sink, SinkExt, Stream, StreamExt, TryStreamExt};
 use futures::stream::Fuse;
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{LocalKey};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{CompletedOfflineStage, OfflineProtocolMessage, OfflineStage, PartialSignature, SignManual};
 use round_based::{AsyncProtocol, Msg};
+use crate::common::read_file;
 
 pub struct KeyGenerator {
     participants: Vec<u16>,
@@ -42,7 +40,7 @@ impl KeyGenerator {
 
         let file_name = format!("local-share{}.json", self.party_index);
 
-        let local_share = self.read_file(Path::new(file_name.as_str()));
+        let local_share = read_file(Path::new(file_name.as_str()));
 
         let signing = OfflineStage::new(self.get_different_party_index(), self.participants.clone(), local_share)?;
 
@@ -89,15 +87,6 @@ impl KeyGenerator {
         println!("SIGNATURE:\n{}", signature);
 
         Ok(signature)
-    }
-
-    fn read_file(&self, file_name: &Path) -> LocalKey<Secp256k1> {
-        let contents = fs::read(file_name)
-            .expect("Should have been able to read the file");
-
-        let local_share = serde_json::from_slice(&contents).context("parse local share").unwrap();
-
-        local_share
     }
 
     // parties participating in signing => their index

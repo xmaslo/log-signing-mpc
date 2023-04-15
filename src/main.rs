@@ -5,6 +5,7 @@ mod key_generation;
 mod signing;
 mod check_timestamp;
 mod check_signature;
+mod common;
 
 use std::sync::{Mutex};
 use std::thread;
