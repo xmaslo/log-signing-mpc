@@ -30,7 +30,7 @@ localStorage.setItem('DEBUG', '1')
 
 into browser's console while on page.
 
-## Server Setup and Key Generation
+## Server Setup
 
 ### Linux
 Run `keygen_example.sh` script. For subsequent runs, a `start-stop.sh` script is available:
@@ -47,6 +47,9 @@ Run all three timestamping servers as follows:
 2. `.\timestamping-server.exe 2 8001`
 3. `.\timestamping-server.exe 3 8002`
 
+
+## Key Generation
+
 To generate keys, curl the */keygen* endpoint (you can download curl at https://curl.se/windows/):
 1. `curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8002"`
 2. `curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:8002,127.0.0.1:8000"`
@@ -62,12 +65,14 @@ Format is -d `"other_party_id,other_party_address,data_to_sign,unix_seconds_time
 
 You can find current timestamp at https://www.epochconverter.com/.
 
+NOTE: Sometimes, the servers just get stuck. In that case, re-run the curls.
+
+## Verification
+
 To verify a signature, run:
-1. `curl.exe -X POST localhost:8000/verify -d '{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[139,102,147,178,33,120,45,252,48,92,163,170,108,234,164,3,97,83,6,55,114,62,241,157,76,109,9,244,168,181,150,216]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[11,58,152,231,158,44,193,39,98,99,74,78,217,171,197,230,236,142,171,2,199,82,171,190,237,19,171,10,224,216,233,56]},\"recid\":0};sign_this_data;1681559007'`. NOTE THAT IT IS NECESSARY TO ESCAPE QUOTES.
+1. `curl.exe -X POST localhost:8000/verify -d '{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[139,102,147,178,33,120,45,252,48,92,163,170,108,234,164,3,97,83,6,55,114,62,241,157,76,109,9,244,168,181,150,216]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[11,58,152,231,158,44,193,39,98,99,74,78,217,171,197,230,236,142,171,2,199,82,171,190,237,19,171,10,224,216,233,56]},\"recid\":0};sign_this_data;1681559007'`. NOTE THAT IT IS NECESSARY TO ESCAPE QUOTES ON WINDOWS AND NOT ESCAPE THEM ON LINUX.
 
 Format is -D "signature_output;signed_data_with_timestamp".
-
-Sometimes, the servers just get stuck. In that case, re-run the curls.
 
 ## Static Analysis
 
