@@ -7,6 +7,7 @@ mod check_timestamp;
 mod check_signature;
 mod common;
 
+use std::path::Path;
 use std::sync::{Mutex};
 use std::thread;
 use std::time::Duration;
@@ -14,6 +15,8 @@ use create_communication_channel::{receive_broadcast};
 
 use futures::{StreamExt};
 use anyhow::{Result};
+use curv::arithmetic::Converter;
+use curv::BigInt;
 
 use rocket::data::{ByteUnit, Limits};
 
@@ -32,6 +35,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::key
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
 use crate::check_timestamp::verify_timestamp_10_minute_window;
 use rocket::response::status::Custom;
+use crate::check_signature::{check_sig, extract_rs, get_public_key};
+use crate::common::{read_file};
 use crate::signing::KeyGenerator;
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
@@ -65,6 +70,25 @@ impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
         response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
         Ok(response)
     }
+}
+
+#[rocket::post("/verify", data = "<data>")]
+async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<status::Accepted<String>>> {
+    let splitted_data = data.split(';').map(|s| s.to_string()).collect::<Vec<String>>();
+    let signature = splitted_data[0].clone();
+    let signed_data = &splitted_data[1];
+
+    let (r,s) = extract_rs(signature.as_str());
+    let msg = BigInt::from_bytes(signed_data.as_bytes());
+
+    let server_id = server_id.server_id.lock().unwrap().clone();
+    let local_share_file_name = format!("local-share{}.json", server_id);
+    let file_contents = read_file(Path::new(&local_share_file_name));
+    let public_key = get_public_key(file_contents.as_str());
+
+    let response = status::Accepted(Some(check_sig(&r, &s, &msg, &public_key).to_string()));
+
+    Custom(Status::Accepted, Cors(response))
 }
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
@@ -161,7 +185,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rocket_instance = rocket::custom(figment)
         .mount("/", rocket::routes![receive_broadcast,
             key_gen,
-            sign])
+            sign,
+            verify])
         .manage(Db::empty())
         .manage(ServerIdState{server_id: Mutex::new(id)});
 

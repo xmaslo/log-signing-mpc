@@ -30,9 +30,10 @@ struct MyObject {
     y_sum_s: YSumS,
 }
 
-pub fn get_public_key(json_str: &str) -> Vec<u8> {
+pub fn get_public_key(json_str: &str) -> Point<Secp256k1> {
     let obj: MyObject = serde_json::from_str(json_str).unwrap();
-    let point = obj.y_sum_s.point;
+    let data = obj.y_sum_s.point;
+    let point: Point<Secp256k1> = Point::from_bytes(&data).unwrap();
     point
 }
 
@@ -73,7 +74,6 @@ pub fn check_sig(
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
     use curv::arithmetic::Converter;
     use curv::BigInt;
     use curv::elliptic::curves::{Point, Secp256k1};
@@ -155,6 +155,8 @@ mod tests {
             "n": 3
         }"#;
         let public_compressed = get_public_key(json_str);
-        assert_eq!(public_compressed, [2, 137, 233, 76, 83, 210, 173, 139, 125, 48, 202, 72, 69, 133, 79, 72, 137, 20, 18, 29, 235, 13, 67, 1, 76, 189, 174, 222, 34, 237, 1, 79, 188]);
+        let expected: [u8; 33] = [2, 137, 233, 76, 83, 210, 173, 139, 125, 48, 202, 72, 69, 133, 79, 72, 137, 20, 18, 29, 235, 13, 67, 1, 76, 189, 174, 222, 34, 237, 1, 79, 188];
+        let expected: Point<Secp256k1> = Point::from_bytes(&expected).unwrap();
+        assert_eq!(public_compressed, expected);
     }
 }
