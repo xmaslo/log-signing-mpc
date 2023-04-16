@@ -46,12 +46,13 @@ paths:
               type: string
         required: true
       responses:
-        '200':
-          description: Successful signature
+        '202':
+          description: Successful operation
           content:
-            application/octet-stream:
+            text/plain:
               schema:
-                $ref: '#/components/schemas/TimestampResponse'
+                description: True if successfully verified, false if not
+                type: boolean
         '405':
           description: Invalid input
         '502':
