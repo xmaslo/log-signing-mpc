@@ -13,11 +13,25 @@ use futures::stream::Fuse;
 const THRESHOLD: u16 = 1;
 const NUMBER_OF_PARTIES: u16 = 3;
 
-pub async fn generate_keys(index: u16,
-                           receiving_stream: Pin<&mut Fuse<(impl Stream<Item=Result<Msg<ProtocolMessage>>>)>>,
-                           outgoing_sink: Pin<&mut impl Sink<Msg<ProtocolMessage>, Error=Error>>
-) {
+fn are_keys_already_generated(index: u16) -> Result<String, String> {
     let file_name: String = format!("local-share{}.json", index);
+    let file_path: &Path = Path::new(file_name.as_str());
+    if file_path.exists() {
+        let error_msg = format!("{} already exists. If you want to generate keys, remove already existing ones.", file_name.clone());
+        return Err(error_msg);
+    }
+    Ok(file_name)
+}
+
+pub async fn generate_keys(index: u16,
+                           receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<ProtocolMessage>>>>>,
+                           outgoing_sink: Pin<&mut impl Sink<Msg<ProtocolMessage>, Error=Error>>
+) -> Result<(), String> {
+    let file = are_keys_already_generated(index);
+    let file = match file {
+        Ok(f) => f,
+        Err(e) => return Err(e),
+    };
 
     let keygen: Keygen = Keygen::new(index, THRESHOLD, NUMBER_OF_PARTIES).unwrap();
     let results: Result<LocalKey<Secp256k1>, Error> = AsyncProtocol::new(keygen, receiving_stream, outgoing_sink)
@@ -27,24 +41,24 @@ pub async fn generate_keys(index: u16,
 
     let local_key: LocalKey<Secp256k1> = results.unwrap();
 
-    generate_file(Path::new(file_name.as_str()), &local_key);
+    let generation_result = generate_file(&file, &local_key);
+    match generation_result {
+        Ok(_) => Ok(()),
+        Err(_) => Err("Unable to generate file".to_string()),
+    }
 }
 
-fn generate_file(file_name: &Path, result: &LocalKey<Secp256k1>) -> usize {
-    if file_name.exists() {
-        println!("{:?} already exists. Removing it...", file_name);
-    }
-    let open_result = File::create(file_name);
+fn generate_file(file_name: &String, result: &LocalKey<Secp256k1>) -> Result<usize> {
+    let open_result = File::create(Path::new(file_name));
     let mut file = match open_result {
         Ok(f) => f,
         Err(error) => panic!("Problem with opening file {:?}", error)
     };
-
     let output = serde_json::to_vec_pretty(result);
 
-    let write_result = file.write(output.unwrap().as_ref()).unwrap();
+    let write_result = file.write(output.unwrap().as_ref())?;
 
-    println!("Generated key written into {:?}", file_name);
+    println!("Generated key written into {}", file_name);
 
-    write_result
+    Ok(write_result)
 }
