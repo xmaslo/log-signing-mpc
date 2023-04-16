@@ -43,6 +43,7 @@ Run `keygen_example.sh` script. For subsequent runs, a `start-stop.sh` script is
 
 ### Windows
 Run all three timestamping servers as follows:
+
 1. `.\timestamping-server.exe 1 8000`
 2. `.\timestamping-server.exe 2 8001`
 3. `.\timestamping-server.exe 3 8002`
@@ -54,6 +55,46 @@ To generate keys, curl the */keygen* endpoint (you can download curl at https://
 1. `curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8002"`
 2. `curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:8002,127.0.0.1:8000"`
 3. `curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8000"`
+
+3. .\timestamping-server.exe 1 8000 3000
+2. .\timestamping-server.exe 2 8001 3001
+3. .\timestamping-server.exe 3 8002 3002
+
+To generate keys, curl the */keygen* endpoint (you can download curl at https://curl.se/windows/):
+1. curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3002"
+2. curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:3002,127.0.0.1:3000"
+3. curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3000"
+
+To sign a message, curl the  */sign* endpoint:
+1. curl.exe -X POST localhost:3000/sign/2 -d "2,127.0.0.1:3001,sign_this_data"
+2. curl.exe -X POST localhost:3001/sign/2 -d "1,127.0.0.1:3000,sign_this_data"
+
+Format is -d "other_party_id,other_party_address,data_to_sign".
+
+After completed all these steps, servers are running, and you can begin to use our frontend to timestamp your files.
+
+
+## TLS
+
+To run the server with TLS, you need to provide a certificate, certificate authority, and a private key.
+The server will look for them in the `certs` directory. The directory must be located in the same directory as the executable.
+The ca certificate lies directly in that directory and is named ca_cert.pem.
+The public certificate and the private key must be located in a subdirectory named `private` and public respectively.
+The certificate and the private key must be named `cert_{server_id}.pem` and `private_key_{server_id}.pem` respectively.
+
+For easier development usage, you can unpack the certificates stored in `examples/certs.zip` or run the `certs_creation.sh` to
+create your own self-signed certificates.
+
+## Static Analysis
+cargo clippy
+
+## Example Running with Cargo Run For Debugging Purposes
+- cargo run --example gg20_sm_manager --no-default-features --features curv-kzen/num-bigint
+- cargo run --example gg20_keygen --no-default-features --features curv-kzen/num-bigint -- -t 1 -n 3 -i 1 --output local-share1.json
+- cargo run --example gg20_signing --no-default-features --features curv-kzen/num-bigint -- -p 1,2 -d "hello" -l local-share1.json
+
+## Cargo Test With Command Line Output
+- cargo test -- --nocapture
 
 ## Signing
 

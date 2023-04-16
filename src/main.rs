@@ -7,39 +7,44 @@ mod signing;
 mod check_timestamp;
 mod check_signature;
 mod common;
+mod rocket_instances;
 
 use sha256::digest;
-use std::path::Path;
-use std::sync::{Mutex};
-use std::thread;
-use std::time::Duration;
-use create_communication_channel::{receive_broadcast};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
-use futures::{StreamExt};
-use anyhow::{Result};
 use curv::arithmetic::Converter;
 use curv::BigInt;
 
-use rocket::data::{ByteUnit, Limits};
+use futures::StreamExt;
+use anyhow::Result;
+use rocket::{
+    data::{ByteUnit, Limits},
+    http::{Status, Header},
+    Build, State,
+    response::{self, Responder, status, status::Custom},
+    Request
+};
 
-use rocket::http::Header;
-use rocket::response::{self, Responder};
-use rocket::Request;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
+    keygen::ProtocolMessage,
+    sign::{OfflineProtocolMessage, PartialSignature},
+};
 
-use rocket::http::Status;
-use rocket::response::status;
-use rocket::State;
-
-use crate::create_communication_channel::Db;
 use crate::key_generation::generate_keys;
-
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{ProtocolMessage};
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
 use crate::check_timestamp::verify_timestamp_10_minute_window;
-use rocket::response::status::Custom;
 use crate::check_signature::{check_sig, extract_rs, get_public_key};
-use crate::common::{read_file};
-use crate::signing::KeyGenerator;
+use crate::common::read_file;
+
+use crate::{
+    create_communication_channel::{receive_broadcast, Db},
+    rocket_instances::{rocket_with_client_auth, rocket_without_client_auth, ServerIdState, SharedDb},
+    signing::{KeyGenerator},
+};
 
 struct Cors<R>(R);
 
@@ -51,9 +56,31 @@ impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
     }
 }
 
+
+#[rocket::post("/tls/<room_id>", data = "<data>")]
+async fn tls(
+    db: &State<SharedDb>,
+    server_id: &State<ServerIdState>,
+    data: String,
+    room_id: u16,
+) -> Status {
+
+    let urls: Vec<String> = data.split(',').map(|s| s.to_string()).collect();
+    let server_id = server_id.server_id.lock().unwrap().clone();
+    let urls_2 = urls.clone();
+
+    let (receiving_stream, outgoing_sink) =
+        db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
+
+    db.test_tls(room_id, urls_2).await;
+
+    Status::Ok
+}
+
+
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 async fn key_gen(
-    db: &State<Db>,
+    db: &State<SharedDb>,
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16,
@@ -107,7 +134,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<s
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 async fn sign(
-    db: &State<Db>,
+    db: &State<SharedDb>,
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16
@@ -164,6 +191,8 @@ async fn sign(
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
+    thread::sleep(Duration::from_secs(15));
+
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
@@ -178,41 +207,44 @@ async fn sign(
 
 }
 
-struct ServerIdState{
-    server_id: Mutex<u16>,
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
+
     // id that will be used to filter out messages
-    let id = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(0);
+    let server_id = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(0);
     let port = args.get(2).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
+    let port_mutual_auth = args.get(3).and_then(|s| s.parse::<u16>().ok()).unwrap_or(3000);
 
     // Create a figment with the desired configuration
     let figment = rocket::Config::figment()
         .merge(("address", "127.0.0.1"))
-        .merge(("port", port))
         .merge(("workers", 4))
         .merge(("log_level", "normal"))
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
-    let rocket_instance = rocket::custom(figment)
-        .mount("/", rocket::routes![receive_broadcast,
-            key_gen,
-            sign,
-            verify])
-        .manage(Db::empty())
-        .manage(ServerIdState{server_id: Mutex::new(id)});
 
-    // TODO: I will use these lines when implementing TLS
-    // let server_future = tokio::spawn(async { rocket_instance.launch().await });
-    // let (server_result) = tokio::join!(server_future);
+
+
+
+    let shared_db = SharedDb(Arc::new(Db::empty(server_id)));
+
+    // Create two Rocket instances with different ports and TLS settings
+    let rocket_instance_protected = rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
+    let rocket_instance_public = rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
+
+
+    // Run the Rocket instances concurrently
+    let server_future_protected = tokio::spawn(async { rocket_instance_protected.launch().await });
+    let server_future_public = tokio::spawn(async { rocket_instance_public.launch().await });
+
+
+    let (protected_result, public_result) = tokio::join!(server_future_protected, server_future_public);
+
 
     // Check the results
-    // println!("Rocket server result: {:?}", server_result);
-
-    let _ = rocket_instance.launch().await.expect("TODO: panic message");
+    println!("Protected Rocket server result: {:?}", protected_result);
+    println!("Public Rocket server result: {:?}", public_result);
 
     Ok(())
 }

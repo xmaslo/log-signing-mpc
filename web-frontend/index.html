@@ -21,9 +21,9 @@
 
         /** @type {StampServerLocation[]} */
         const SERVERS = [
-            {index: 1, url: 'http://localhost:8000', internalAddress: 'localhost:8000'},
-            {index: 2, url: 'http://localhost:8001', internalAddress: 'localhost:8001'},
-            {index: 3, url: 'http://localhost:8002', internalAddress: 'localhost:8002'},
+            {index: 1, url: 'http://localhost:8000', internalAddress: 'localhost:3000'},
+            {index: 2, url: 'http://localhost:8001', internalAddress: 'localhost:3001'},
+            {index: 3, url: 'http://localhost:8002', internalAddress: 'localhost:3002'},
         ];
 
         if (!DEBUG) {
@@ -69,7 +69,7 @@
          * @return {Promise<Response>}
          */
         async function sendRequest(server, path, data, timeout = 30) {
-            return  Promise.race([
+            return Promise.race([
                 fetch(`${server}/${path}`, {
                     method: "POST",
                     cache: "no-cache",
@@ -92,7 +92,7 @@
          * @param timeout {number} maximal number of seconds to wait for server response
          * @return {Promise<Signature | null>}
          */
-        async function stampSingle(server, parties, hash, timeout = 30) {
+        async function stampSingle(server, parties, hash, timeout = 120) {
             console.debug('[STAMP]', server, parties, hash);
             const partiesString = parties.map((p) => `${p.index},${p.internalAddress}`).join(',');
             /** @type Response */
