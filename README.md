@@ -55,6 +55,8 @@ To generate keys, curl the */keygen* endpoint (you can download curl at https://
 2. `curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:3002,127.0.0.1:3000"`
 3. `curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3000"`
 
+NOTE: On our Windows machine, the key generation does not work with release version of our application. If that is the case for you too, generate keys on debug one, and you can continue to use the release one. But since these are servers anyway, we target them on Linux platform. There everything should work.
+
 ## Signing
 To sign a message, curl the  */sign* endpoint:
 1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:3001,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,1681653339"`
@@ -67,7 +69,7 @@ You can find current timestamp at https://www.epochconverter.com/.
 NOTE: Sometimes, the servers just get stuck. In that case, re-run the curls.
 
 ## Verification
-1. `{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[175,82,15,51,82,255,217,105,231,6,105,23,219,149,232,160,124,193,203,209,247,19,67,187,26,191,200,126,133,46,17,141]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[55,211,225,244,240,92,231,193,163,132,214,35,9,17,228,39,57,171,8,196,5,254,175,46,206,148,252,86,249,105,212,236]},\"recid\":0};0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2;1681653339'`
+1. `curl.exe -X POST localhost:8000/verify -d '{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[175,82,15,51,82,255,217,105,231,6,105,23,219,149,232,160,124,193,203,209,247,19,67,187,26,191,200,126,133,46,17,141]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[55,211,225,244,240,92,231,193,163,132,214,35,9,17,228,39,57,171,8,196,5,254,175,46,206,148,252,86,249,105,212,236]},\"recid\":0};0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2;1681653339'`
 Note that escaping quotes is only necessary on Windows.
    
 Format is -d "signature_output;signed_data_with_timestamp".
@@ -94,25 +96,6 @@ cargo clippy
 ## Cargo Test With Command Line Output
 - cargo test -- --nocapture
 
-## Signing
-
-To sign a message, curl the  */sign* endpoint:
-1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:8001,sign_this_data,1681399682"`
-2. `curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:8000,sign_this_data,1681399682"`
-
-Format is -d `"other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp"`.
-
-You can find current timestamp at https://www.epochconverter.com/.
-
-NOTE: Sometimes, the servers just get stuck. In that case, re-run the curls.
-
-## Verification
-
-1. `curl.exe -X POST localhost:8000/verify -d '{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[139,102,147,178,33,120,45,252,48,92,163,170,108,234,164,3,97,83,6,55,114,62,241,157,76,109,9,244,168,181,150,216]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[11,58,152,231,158,44,193,39,98,99,74,78,217,171,197,230,236,142,171,2,199,82,171,190,237,19,171,10,224,216,233,56]},\"recid\":0};sign_this_data;1681559007'`
-    - Note that escaping quotes is only necessary on Windows
-
-Format is -d "signature_output;signed_data_with_timestamp".
-
 ## Static Analysis
 
 Execute `cargo clippy`
@@ -124,17 +107,3 @@ Execute `cargo clippy`
 
 ## Cargo Test With Command Line Output
 - `cargo test -- --nocapture`
-
-## Signing
-gg_20 is a demonstration of https://eprint.iacr.org/2020/540.pdf implementation.
-
-### Connection
-First, the application joins_computation() with the server on "http://localhost:8000/" in "default-signing" room. By joining computation, it creates an http client that is issued a unique id (read from local_share json file) and creates two streams:
-- incoming: filters messages addressed to someone else based on index
-- outgoing: creates string from json and brodcasts it to all clients
-
-### Offline Stage
-With its index, parties specified for signing (for some reason, we need to tell it which parties should sign, like party 1,2), and local_share, offline stage can be completed. Offline stage does not mean that no communication is needed between parties, it means that message to be signed does not need to be known. If there are k rounds, then k - 1 rounds are computed in this stage.
-
-### Online Stage
-Now, with a message to be signed known, only a single round needs to be executed by parties (they need to communicate with each other) to produce a valid signature. Each participating party computes a partial signature and broadcasts it. Each party then takes partial signatures computed by other parties and using SigManual::complete() function computes the resulting signature.
