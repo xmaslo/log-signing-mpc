@@ -152,12 +152,6 @@ impl Db {
         (receiving_stream, outgoing_sink)
     }
 
-    pub async fn test_tls(&self, room_id: u16, server_urls: Vec<String>) {
-        if let Some(room) = self.get_room(room_id).await {
-            room.test_tls(&server_urls).await;
-        }
-    }
-
     pub async fn get_room(&self, room_id: u16) -> Option<Arc<Room>> {
         self.rooms.read().await.get(&room_id.to_string()).cloned()
     }
@@ -167,7 +161,6 @@ impl Db {
     }
 
 }
-
 
 impl Room {
     pub fn new(
@@ -187,12 +180,6 @@ impl Room {
     }
 
     pub async fn init_room(&self, server_urls: &Vec<String>) {
-
-        // In updated better to sleep in key_gen after the initialization, as the key_gen is called after the init_room
-        // and not possibly concurrently
-        // thread::sleep(Duration::from_secs(15));
-
-
         let mut counter = 0;
 
         loop {
@@ -219,24 +206,9 @@ impl Room {
         }
     }
 
-    pub async fn test_tls(&self, server_urls: &Vec<String>) {
-        for url in server_urls {
-            let endpoint = format!("https://{}/receive_broadcast/{}", url, self.room_id); // Include room_id in the URL
-            println!("Sending: {} to {}", "test", url);
-            match self.client.post(&endpoint).body("Test").send().await {
-                Ok(_response) => {
-                    println!("Successfully sent message to {}", url);
-                }
-                Err(e) => {
-                    eprintln!("Error sending message to {}: {}", url, e);
-                }
-            }
-        }
-    }
 
     pub async fn receive(&self, message: String) {
         let msg_value: serde_json::Value = serde_json::from_str(&message).unwrap();
-        //TODO: handle error more gracefully
         let receiver = msg_value["receiver"].as_u64().map(|r| r as u16);
 
         // Filter out messages based on the receiver ID

@@ -57,27 +57,6 @@ impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
 }
 
 
-#[rocket::post("/tls/<room_id>", data = "<data>")]
-async fn tls(
-    db: &State<SharedDb>,
-    server_id: &State<ServerIdState>,
-    data: String,
-    room_id: u16,
-) -> Status {
-
-    let urls: Vec<String> = data.split(',').map(|s| s.to_string()).collect();
-    let server_id = server_id.server_id.lock().unwrap().clone();
-    let urls_2 = urls.clone();
-
-    let (_receiving_stream, _outgoing_sink) =
-        db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
-
-    db.test_tls(room_id, urls_2).await;
-
-    Status::Ok
-}
-
-
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 async fn key_gen(
     db: &State<SharedDb>,
@@ -183,7 +162,6 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    // TODO: In future version, skip offline stage in subsequent signing request to save time
     kg.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
@@ -222,9 +200,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(("workers", 4))
         .merge(("log_level", "normal"))
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
-
-
-
 
 
     let shared_db = SharedDb(Arc::new(Db::empty(server_id)));

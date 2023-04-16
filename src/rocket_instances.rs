@@ -7,10 +7,8 @@ use crate::{
     create_communication_channel::receive_broadcast,
     key_gen,
     sign,
-    tls,
     verify
 };
-
 
 
 pub struct ServerIdState{
@@ -45,7 +43,6 @@ pub fn rocket_with_client_auth(
     ;
 
 
-
 // Create a figment with the desired configuration
     let figment = figment
         .merge(("tls", tls_config))
@@ -66,7 +63,7 @@ pub fn rocket_without_client_auth(
     let figment = figment.merge(("port", port));
 
     rocket::custom(figment)
-        .mount("/", rocket::routes![key_gen, sign, verify, tls])
+        .mount("/", rocket::routes![key_gen, sign, verify])
         .manage(ServerIdState{server_id: Mutex::new(server_id)})
         .manage(db)
 }
