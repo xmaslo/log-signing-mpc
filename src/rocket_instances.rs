@@ -1,7 +1,7 @@
 // First code snippet
 use std::sync::{Arc, Mutex};
 use rocket::Build;
-use rocket::config::{Config, TlsConfig, MutualTls, CipherSuite};
+use rocket::config::{TlsConfig, MutualTls};
 use crate::{
     create_communication_channel::Db,
     create_communication_channel::receive_broadcast,

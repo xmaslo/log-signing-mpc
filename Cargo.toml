@@ -26,7 +26,4 @@ tokio-rustls = "0.23.4"
 rustls = "0.21.0-alpha.1"
 rustls-pemfile = "1.0.0"
 
-[dependencies.rocket]
-rocket = "0.5.0-rc.2"
-features = ["json", "mtls", "tls"]
-
+rocket = { version = "0.5.0-rc.2", features = ["json", "mtls", "tls"] }

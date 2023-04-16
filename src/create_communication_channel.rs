@@ -16,9 +16,8 @@ use rocket::{
     tokio::io::AsyncReadExt,
     data::ToByteUnit,
 };
-use reqwest::{Client, Certificate, Identity, tls};
+use reqwest::{Client, Certificate, Identity};
 
-use rustls::{ClientConfig, RootCertStore, Certificate as RustlsCertificate};
 use rustls_pemfile::{certs};
 use round_based::Msg;
 
@@ -31,12 +30,6 @@ use crate::rocket_instances::SharedDb;
 // This function creates the communication channels between the servers
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
 // And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
-// To enable this functionality, it is necessary to:
-//  1. add the db to the rocket state
-//  3. Mount the receive_broadcast endpoint to the rocket instance
-
-
-// Handling the messages received from the other servers
 #[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
 pub async fn receive_broadcast(db: &State<SharedDb>,
                                room_id: u16,
@@ -119,8 +112,8 @@ impl Db {
         // if room already exists, delete it first
         self.delete_room(room_id).await;
 
-        let (receiving_sink, mut receiving_stream) = futures::channel::mpsc::unbounded();
-        let (outgoing_sink, mut outgoing_stream) = futures::channel::mpsc::unbounded();
+        let (receiving_sink,  receiving_stream) = futures::channel::mpsc::unbounded();
+        let (outgoing_sink, outgoing_stream) = futures::channel::mpsc::unbounded();
 
         let room = Room::new(server_id, room_id, Box::new(receiving_sink),
                              Box::new(outgoing_stream), self.client.clone());
@@ -256,7 +249,7 @@ impl Room {
         }
 
         let mut guard = self.receiving_sink.write().await;
-        let mut sink = guard.as_mut();
+        let sink = guard.as_mut();
 
         if let Err(e) = sink.send(message).await {
             eprintln!("Failed to forward received message to sink: {:?}", e);
