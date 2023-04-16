@@ -69,7 +69,7 @@ pub fn check_sig(
 
     let secp_sig = Signature::from_compact(compact.as_slice()).unwrap();
 
-    return SECP256K1.verify(&msg, &secp_sig, &pk).is_ok();
+    SECP256K1.verify(&msg, &secp_sig, &pk).is_ok()
 }
 
 #[cfg(test)]

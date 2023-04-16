@@ -66,7 +66,7 @@ async fn key_gen(
 ) -> Custom<Cors<status::Accepted<String>>> {
 
     let urls = data.split(',').map(|s| s.to_string()).collect();
-    let server_id = server_id.server_id.lock().unwrap().clone();
+    let server_id = *server_id.server_id.lock().unwrap();
 
     let (receiving_stream, outgoing_sink) =
         db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
@@ -101,7 +101,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<s
     let (r,s) = extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
-    let server_id = server_id.server_id.lock().unwrap().clone();
+    let server_id = *server_id.server_id.lock().unwrap();
     let local_share_file_name = format!("local-share{}.json", server_id);
     let file_contents = read_file(Path::new(&local_share_file_name));
     let public_key = get_public_key(file_contents.as_str());
@@ -118,15 +118,14 @@ async fn sign(
     data: String,
     room_id: u16
 ) -> Custom<Cors<status::Accepted<String>>> {
-    let server_id = server_id.server_id.lock().unwrap().clone();
+    let server_id = *server_id.server_id.lock().unwrap();
 
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
     let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
     let participants = vec![server_id, participant2];
 
-    let mut url = Vec::new();
-    url.push(splitted_data[1].clone());
+    let url = vec![splitted_data[1].clone()];
 
     let file_hash = splitted_data[2].clone();
 
@@ -178,7 +177,6 @@ async fn sign(
         .await
         .expect("Message could not be signed");
 
-    let signature = signature.to_string();
     let response = status::Accepted(Some(signature));
 
     Custom(Status::Accepted, Cors(response))
