@@ -41,13 +41,23 @@ use crate::check_signature::{check_sig, extract_rs, get_public_key};
 use crate::common::{read_file};
 use crate::signing::KeyGenerator;
 
+struct Cors<R>(R);
+
+impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
+    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
+        let mut response = self.0.respond_to(req)?;
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        Ok(response)
+    }
+}
+
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 async fn key_gen(
     db: &State<Db>,
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16,
-) -> Status {
+) -> Custom<Cors<status::Accepted<String>>> {
 
     let urls = data.split(',').map(|s| s.to_string()).collect();
     let server_id = server_id.server_id.lock().unwrap().clone();
@@ -59,18 +69,19 @@ async fn key_gen(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    generate_keys(server_id, receiving_stream, outgoing_sink).await;
+    let generation_result = generate_keys(server_id, receiving_stream, outgoing_sink).await;
 
-    Status::Ok
-}
+    let status = match generation_result {
+        Ok(_) => "Ok".to_string(),
+        Err(e) => e,
+    };
 
-struct Cors<R>(R);
-
-impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
-    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
-        let mut response = self.0.respond_to(req)?;
-        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
-        Ok(response)
+    return if status == "Ok" {
+        println!("Keys were successfully generated");
+        Custom(Status::Accepted, Cors(status::Accepted(Some(status))))
+    } else {
+        println!("Keys could NOT be generated");
+        Custom(Status::Accepted, Cors(status::Accepted(Some(status))))
     }
 }
 
@@ -145,6 +156,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
+    // TODO: In future version, skip offline stage in subsequent signing request to save time
     kg.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
 
     let (receiving_stream, outgoing_sink)

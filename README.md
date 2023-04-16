@@ -72,7 +72,7 @@ NOTE: Sometimes, the servers just get stuck. In that case, re-run the curls.
 1. `curl.exe -X POST localhost:8000/verify -d '{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[139,102,147,178,33,120,45,252,48,92,163,170,108,234,164,3,97,83,6,55,114,62,241,157,76,109,9,244,168,181,150,216]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[11,58,152,231,158,44,193,39,98,99,74,78,217,171,197,230,236,142,171,2,199,82,171,190,237,19,171,10,224,216,233,56]},\"recid\":0};sign_this_data;1681559007'`
     - Note that escaping quotes is only necessary on Windows
 
-Format is -D "signature_output;signed_data;timestamp".
+Format is -d "signature_output;signed_data_with_timestamp".
 
 ## Static Analysis
 
