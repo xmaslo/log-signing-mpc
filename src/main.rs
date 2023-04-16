@@ -12,7 +12,7 @@ mod rocket_instances;
 use sha256::digest;
 use std::{
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{Arc},
     thread,
     time::Duration,
 };
@@ -25,7 +25,7 @@ use anyhow::Result;
 use rocket::{
     data::{ByteUnit, Limits},
     http::{Status, Header},
-    Build, State,
+    State,
     response::{self, Responder, status, status::Custom},
     Request
 };
@@ -41,7 +41,7 @@ use crate::check_signature::{check_sig, extract_rs, get_public_key};
 use crate::common::read_file;
 
 use crate::{
-    create_communication_channel::{receive_broadcast, Db},
+    create_communication_channel::{Db},
     rocket_instances::{rocket_with_client_auth, rocket_without_client_auth, ServerIdState, SharedDb},
     signing::{KeyGenerator},
 };
@@ -69,7 +69,7 @@ async fn tls(
     let server_id = server_id.server_id.lock().unwrap().clone();
     let urls_2 = urls.clone();
 
-    let (receiving_stream, outgoing_sink) =
+    let (_receiving_stream, _outgoing_sink) =
         db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
 
     db.test_tls(room_id, urls_2).await;
