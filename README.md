@@ -44,35 +44,33 @@ Run `keygen_example.sh` script. For subsequent runs, a `start-stop.sh` script is
 ### Windows
 Run all three timestamping servers as follows:
 
-1. `.\timestamping-server.exe 1 8000`
-2. `.\timestamping-server.exe 2 8001`
-3. `.\timestamping-server.exe 3 8002`
-
+1. `.\timestamping-server.exe 1 8000 3000`
+2. `.\timestamping-server.exe 2 8001 3001`
+3. `.\timestamping-server.exe 3 8002 3002`
 
 ## Key Generation
 
 To generate keys, curl the */keygen* endpoint (you can download curl at https://curl.se/windows/):
-1. `curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8002"`
-2. `curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:8002,127.0.0.1:8000"`
-3. `curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:8001,127.0.0.1:8000"`
+1. `curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3002"`
+2. `curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:3002,127.0.0.1:3000"`
+3. `curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3000"`
 
-3. .\timestamping-server.exe 1 8000 3000
-2. .\timestamping-server.exe 2 8001 3001
-3. .\timestamping-server.exe 3 8002 3002
-
-To generate keys, curl the */keygen* endpoint (you can download curl at https://curl.se/windows/):
-1. curl.exe -X POST localhost:8000/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3002"
-2. curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:3002,127.0.0.1:3000"
-3. curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3000"
-
+## Signing
 To sign a message, curl the  */sign* endpoint:
-1. curl.exe -X POST localhost:3000/sign/2 -d "2,127.0.0.1:3001,sign_this_data"
-2. curl.exe -X POST localhost:3001/sign/2 -d "1,127.0.0.1:3000,sign_this_data"
+1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:3001,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,1681653339"`
+2. `curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:3000,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,1681653339"`
 
-Format is -d "other_party_id,other_party_address,data_to_sign".
+Format is -d "other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp".
 
-After completed all these steps, servers are running, and you can begin to use our frontend to timestamp your files.
+You can find current timestamp at https://www.epochconverter.com/.
 
+NOTE: Sometimes, the servers just get stuck. In that case, re-run the curls.
+
+## Verification
+1. `{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[175,82,15,51,82,255,217,105,231,6,105,23,219,149,232,160,124,193,203,209,247,19,67,187,26,191,200,126,133,46,17,141]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[55,211,225,244,240,92,231,193,163,132,214,35,9,17,228,39,57,171,8,196,5,254,175,46,206,148,252,86,249,105,212,236]},\"recid\":0};0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2;1681653339'`
+Note that escaping quotes is only necessary on Windows.
+   
+Format is -d "signature_output;signed_data_with_timestamp".
 
 ## TLS
 
