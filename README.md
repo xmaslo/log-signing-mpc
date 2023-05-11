@@ -1,4 +1,4 @@
-# PV204-Project
+# MPC-Log-Signing
 Trusted timestamping server with threshold signing key
 
 ## Team Members
@@ -29,6 +29,17 @@ localStorage.setItem('DEBUG', '1')
 ```
 
 into browser's console while on page.
+
+## TLS
+
+First, you need to create and provide a TLS certificate, certificate authority, and a private key.
+The server will look for them in the `certs` directory. The directory must be located in the same directory as the executable.
+The ca certificate lies directly in that directory and is named ca_cert.pem.
+The public certificate and the private key must be located in a subdirectory named `private` and public respectively.
+The certificate and the private key must be named `cert_{server_id}.pem` and `private_key_{server_id}.pem` respectively.
+
+For easier development usage, you can unpack the certificates stored in `examples/certs.zip` or run the `certs_creation.sh` to
+create your own self-signed certificates.
 
 ## Server Setup
 
@@ -73,17 +84,6 @@ NOTE: Sometimes, the servers just get stuck. In that case, re-run the curls.
 Note that escaping quotes is only necessary on Windows.
    
 Format is -d "signature_output;signed_data_with_timestamp".
-
-## TLS
-
-To run the server with TLS, you need to provide a certificate, certificate authority, and a private key.
-The server will look for them in the `certs` directory. The directory must be located in the same directory as the executable.
-The ca certificate lies directly in that directory and is named ca_cert.pem.
-The public certificate and the private key must be located in a subdirectory named `private` and public respectively.
-The certificate and the private key must be named `cert_{server_id}.pem` and `private_key_{server_id}.pem` respectively.
-
-For easier development usage, you can unpack the certificates stored in `examples/certs.zip` or run the `certs_creation.sh` to
-create your own self-signed certificates.
 
 ## Static Analysis
 cargo clippy

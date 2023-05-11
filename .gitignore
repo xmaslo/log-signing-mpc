@@ -17,3 +17,5 @@ Cargo.lock
 
 # Json files
 *.json
+
+examples/certs
