@@ -1,10 +1,11 @@
 FROM rust:1.69
 
-RUN useradd -ms /bin/bash xdavid
+RUN useradd -ms /bin/bash xdavid | chpasswd && adduser xdavid sudo
 USER xdavid
 
 COPY . .
 
-RUN sudo cargo install --path .
+USER root
+RUN cargo install --path .
 
 CMD ["log-signing-mpc"]
