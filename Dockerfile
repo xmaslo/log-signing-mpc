@@ -5,5 +5,4 @@ USER xdavid
 
 COPY . .
 
-USER root
-RUN cargo install --path .
+RUN cargo test && cargo install --path .
