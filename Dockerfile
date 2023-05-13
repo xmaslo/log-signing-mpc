@@ -5,6 +5,6 @@ USER xdavid
 
 COPY . .
 
-RUN cargo install --path .
+RUN sudo cargo install --path .
 
 CMD ["log-signing-mpc"]
