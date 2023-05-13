@@ -7,5 +7,3 @@ COPY . .
 
 USER root
 RUN cargo install --path .
-
-CMD ["log-signing-mpc"]
