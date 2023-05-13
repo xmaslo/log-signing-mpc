@@ -36,6 +36,7 @@ pub async fn generate_keys(index: u16,
     };
 
     // wait for other servers to catch up (if started manually)
+    // TODO: do this synchronization in a better way then sleeping
     let five_seconds:Duration = time::Duration::from_secs(5);
     thread::sleep(five_seconds);
 

@@ -46,6 +46,7 @@ impl KeyGenerator {
         let local_share = file_to_local_key(&file_content);
 
         // wait for servers to synchronize
+        // TODO: do this synchronization in a better way then sleeping
         let one_second:Duration = time::Duration::from_secs(1);
         thread::sleep(one_second);
         let signing = OfflineStage::new(self.get_different_party_index(), self.participants.clone(), local_share)?;
