@@ -2,6 +2,8 @@ use std::fs::File;
 use std::io::{Write};
 use std::path::Path;
 use std::pin::Pin;
+use std::{thread, time};
+use std::time::Duration;
 use anyhow::{anyhow, Error, Result};
 use curv::elliptic::curves::Secp256k1;
 use futures::{Sink, Stream};
@@ -32,6 +34,10 @@ pub async fn generate_keys(index: u16,
         Ok(f) => f,
         Err(e) => return Err(e),
     };
+
+    // wait for other servers to catch up (if started manually)
+    let five_seconds:Duration = time::Duration::from_secs(5);
+    thread::sleep(five_seconds);
 
     let keygen: Keygen = Keygen::new(index, THRESHOLD, NUMBER_OF_PARTIES).unwrap();
     let results: Result<LocalKey<Secp256k1>, Error> = AsyncProtocol::new(keygen, receiving_stream, outgoing_sink)
