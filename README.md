@@ -72,8 +72,6 @@ To generate keys, curl the */keygen* endpoint (you can download curl at https://
 2. `curl.exe -X POST localhost:8001/key_gen/1 -d "127.0.0.1:3002,127.0.0.1:3000"`
 3. `curl.exe -X POST localhost:8002/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3000"`
 
-NOTE: On our Windows machine, the key generation does not work with release version of our application. If that is the case for you too, generate keys on debug one, and you can continue to use the release one. But since these are servers anyway, we target them on Linux platform. There everything should work.
-
 ## Signing
 To sign a message, curl the  */sign* endpoint:
 1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:3001,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,1681653339"`

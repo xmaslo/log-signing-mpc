@@ -1,5 +1,7 @@
 use std::path::Path;
 use std::pin::Pin;
+use std::{thread, time};
+use std::time::Duration;
 use anyhow::{anyhow, Context, Error, Result};
 use curv::arithmetic::Converter;
 use curv::BigInt;
@@ -43,6 +45,9 @@ impl KeyGenerator {
         let file_content = read_file(Path::new(file_name.as_str()));
         let local_share = file_to_local_key(&file_content);
 
+        // wait for servers to synchronize
+        let one_second:Duration = time::Duration::from_secs(1);
+        thread::sleep(one_second);
         let signing = OfflineStage::new(self.get_different_party_index(), self.participants.clone(), local_share)?;
 
         let offline_stage = AsyncProtocol::new(signing, receiving_stream, outgoing_sink)
