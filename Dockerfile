@@ -2,4 +2,8 @@ FROM rust:1.69
 
 COPY . .
 
-RUN cargo test && cargo install --path .
+FROM base as test
+RUN cargo test
+
+FROM base as install
+RUN cargo install --path .
