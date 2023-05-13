@@ -189,7 +189,6 @@ impl Room {
                     println!("Sending: {}  in round {}\n", message, counter);
                     for url in server_urls {
                         let endpoint = format!("https://{}/receive_broadcast/{}", url, self.room_id); // Include room_id in the URL
-                        println!("Sending: {} to {}", message, url);
                         match self.client.post(&endpoint).body(message.clone()).send().await {
                             Ok(_response) => {
                                 println!("Successfully sent message to {}", url);
@@ -209,16 +208,18 @@ impl Room {
 
     pub async fn receive(&self, message: String) {
         let msg_value: serde_json::Value = serde_json::from_str(&message).unwrap();
-        let receiver = msg_value["receiver"].as_u64().map(|r| r as u16);
+        let receiver: Option<u16> = msg_value["receiver"].as_u64().map(|r| r as u16);
 
         // Filter out messages based on the receiver ID
         if let Some(receiver_id) = receiver {
             if receiver_id != self.server_id {
-                println!("Filtered out the: {} message, originally to {}", msg_value,
+                println!("Filtered out a message meant for {}",
                          receiver_id);
                 return;
             }
         }
+
+        println!("Received message {}", message);
 
         let mut guard = self.receiving_sink.write().await;
         let sink = guard.as_mut();
