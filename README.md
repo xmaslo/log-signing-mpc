@@ -61,9 +61,9 @@ Run `keygen_example.sh` script. For subsequent runs, a `start-stop.sh` script is
 ### Windows
 Run all three timestamping servers as follows:
 
-1. `.\timestamping-server.exe 1 8000 3000`
-2. `.\timestamping-server.exe 2 8001 3001`
-3. `.\timestamping-server.exe 3 8002 3002`
+1. `.\log-signing-mpc.exe 1 8000 3000`
+2. `.\log-signing-mpc.exe 2 8001 3001`
+3. `.\log-signing-mpc.exe 3 8002 3002`
 
 ## Key Generation
 
