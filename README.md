@@ -6,10 +6,16 @@ Trusted timestamping server with threshold signing key
 - Adam Hlaváček
 - David Rajnoha
 
+## Docker
+```docker
+docker build -t log-signing-mpc .
+```
+
 ## Installation
-1. `git@github.com:davidmaslo/timestamping-server.git` (or use https instead)
-2. `cd timestamping-server`
-3. `cargo build`
+1. `git@github.com:xmaslo/log-signing-mpc.git` (or use https instead)
+2. `cd log-signing-mpc`
+3. Build: `cargo build`
+4. Release: `cargo build --release`
 
 ## Client start-up
 
