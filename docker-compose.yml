@@ -4,6 +4,10 @@ services:
     image: log-signing-mpc-image
     build: .
 
+  unit-tests:
+    image: log-signing-mpc-image
+    entrypoint: cargo test --release
+
   la1:
     image: log-signing-mpc-image
     container_name: la1

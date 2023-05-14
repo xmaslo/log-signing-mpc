@@ -21,7 +21,7 @@ jobs:
       run: docker compose build build-service
 
     - name: Run unit tests
-      run: docker run log-signing-mpc-image cargo test --release
+      run: docker compose run unit-tests
 
     - name: Run servers
       run: docker compose up la1 la2 la3
