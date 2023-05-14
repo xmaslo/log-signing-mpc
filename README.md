@@ -11,6 +11,21 @@ This project defines a standalone server that (combined with others) can be used
 docker build -t log-signing-mpc .
 ```
 
+### Create local network for servers
+1. `docker network create la-net`
+
+### Server setup
+1. `docker run --name la1 --network la-net --rm -p 8000:8000 -p 3000:3000 log-signing-mpc 1 8000 3000`
+2. `docker run --name la2 --network la-net --rm -p 8001:8001 -p 3001:3001 log-signing-mpc 2 8001 3001`
+3. `docker run --name la3 --network la-net --rm -p 8002:8002 -p 3002:3002 log-signing-mpc 3 8002 3002`
+
+### Key generation
+1. `curl.exe -X POST localhost:8000/key_gen/1 -d "la2:3001,la3:3002"`
+2. `curl.exe -X POST localhost:8001/key_gen/1 -d "la3:3002,la1:3000"`
+3. `curl.exe -X POST localhost:8002/key_gen/1 -d "la2:3001,la1:3000"`
+
+For more information about local networking with docker containers follow https://docs.docker.com/network/network-tutorial-standalone/.
+
 ## Installation
 1. `git@github.com:xmaslo/log-signing-mpc.git` (or use https instead)
 2. `cd log-signing-mpc`

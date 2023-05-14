@@ -22,6 +22,7 @@ use curv::BigInt;
 
 use futures::StreamExt;
 use anyhow::Result;
+
 use rocket::{
     data::{ByteUnit, Limits},
     http::{Status, Header},
@@ -180,7 +181,6 @@ async fn sign(
     let response = status::Accepted(Some(signature));
 
     Custom(Status::Accepted, Cors(response))
-
 }
 
 #[tokio::main]
@@ -192,9 +192,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = args.get(2).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
     let port_mutual_auth = args.get(3).and_then(|s| s.parse::<u16>().ok()).unwrap_or(3000);
 
+    // TODO: might be good idea to adjust for development and production (https://rocket.rs/v0.4/guide/configuration/)
     // Create a figment with the desired configuration
     let figment = rocket::Config::figment()
-        .merge(("address", "127.0.0.1"))
+        .merge(("address", "0.0.0.0"))
         .merge(("workers", 4))
         .merge(("log_level", "normal"))
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
@@ -206,14 +207,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rocket_instance_protected = rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
     let rocket_instance_public = rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
 
-
     // Run the Rocket instances concurrently
     let server_future_protected = tokio::spawn(async { rocket_instance_protected.launch().await });
     let server_future_public = tokio::spawn(async { rocket_instance_public.launch().await });
 
-
     let (protected_result, public_result) = tokio::join!(server_future_protected, server_future_public);
-
 
     // Check the results
     println!("Protected Rocket server result: {:?}", protected_result);
