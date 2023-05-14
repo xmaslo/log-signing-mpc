@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag log-signing-mpc:$(date +%s)
+      run: docker build . --file Dockerfile --tag log-signing-mpc
 
     - name: Run unit tests
-      run: docker run log-signing-mpc:$(date +%s) cargo test
+      run: docker run log-signing-mpc cargo test
