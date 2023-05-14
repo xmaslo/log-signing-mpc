@@ -1,5 +1,5 @@
-FROM rust:1.69
+FROM rust:1.69 as base
 
 COPY . .
 
-RUN cargo test && cargo install --path .
+RUN cargo build --release
