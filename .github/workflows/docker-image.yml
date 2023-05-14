@@ -19,4 +19,4 @@ jobs:
       run: docker build . --file Dockerfile --tag log-signing-mpc
 
     - name: Run unit tests
-      run: docker run log-signing-mpc cargo test
+      run: docker run log-signing-mpc cargo test --release
