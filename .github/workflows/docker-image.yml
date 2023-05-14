@@ -23,6 +23,7 @@ jobs:
     - name: Run unit tests
       run: docker compose run unit-tests
 
+    # somehow run in a background
     - name: Run servers
       run: docker compose up la1 la2 la3
 

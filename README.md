@@ -25,6 +25,7 @@ For more information about local networking with docker containers follow https:
 Quickly setup servers by running docker compose.
 1. Build an image of a server: `docker compose build build-service`
 2. Run all three servers: `docker compose up la1 la2 la3`
+3. Run unit-tests: `docker compose run unit-tests`
 
 ### Key generation
 1. `curl.exe -X POST localhost:8000/key_gen/1 -d "la2:3001,la3:3002"`
