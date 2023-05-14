@@ -13,7 +13,7 @@ This project is its direct fork. From commit https://github.com/davidmaslo/times
 
 ### Manual Deployment
 This is a step-by-step guide for better understanding.
-1. Build image from a dockerfile: `docker build -t log-signing-mpc`
+1. Build image from a dockerfile: `docker build -t log-signing-mpc .`
 2. Create local network for servers: `docker network create la-net`
 3. Run server 1: `docker run --name la1 --network la-net --rm -p 8000:8000 -p 3000:3000 log-signing-mpc 1 8000 3000`
 4. Run server 2: `docker run --name la2 --network la-net --rm -p 8001:8001 -p 3001:3001 log-signing-mpc 2 8001 3001`
@@ -23,7 +23,8 @@ For more information about local networking with docker containers follow https:
 
 ### Docker Compose
 Quickly setup servers by running docker compose.
-1. `docker compose up`
+1. Build an image of a server: `docker compose build build-service`
+2. Run all three servers: `docker compose up la1 la2 la3`
 
 ### Key generation
 1. `curl.exe -X POST localhost:8000/key_gen/1 -d "la2:3001,la3:3002"`
