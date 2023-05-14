@@ -1,5 +1,5 @@
 # MPC-Log-Signing
-Trusted timestamping server with threshold signing key
+This project defines a standalone server that (combined with others) can be used for multi-party computation using ECDSA.
 
 ## Team Members
 - Dávid Maslo
