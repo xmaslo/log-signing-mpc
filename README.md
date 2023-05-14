@@ -1,30 +1,34 @@
 # MPC-Log-Signing
 This project defines a standalone server that (combined with others) can be used for multi-party computation using ECDSA.
 
-## Team Members
-- Dávid Maslo
+## Original Project
+This repository is based on the backend of a timestamping project from PV204 course (https://github.com/davidmaslo/timestamping-server). Original authors of said project were:
+- Dávid Maslo (me)
 - Adam Hlaváček
 - David Rajnoha
 
-## Docker
-```docker
-docker build -t log-signing-mpc .
-```
+This project is its direct fork. From commit https://github.com/davidmaslo/timestamping-server/commit/71a01282d7b1577d11576d039573256edef9deee, I worked on this project completely on my own.
 
-### Create local network for servers
-1. `docker network create la-net`
+## Docker Deployment on Localhost
 
-### Server setup
-1. `docker run --name la1 --network la-net --rm -p 8000:8000 -p 3000:3000 log-signing-mpc 1 8000 3000`
-2. `docker run --name la2 --network la-net --rm -p 8001:8001 -p 3001:3001 log-signing-mpc 2 8001 3001`
-3. `docker run --name la3 --network la-net --rm -p 8002:8002 -p 3002:3002 log-signing-mpc 3 8002 3002`
+### Manual Deployment
+This is a step-by-step guide for better understanding.
+1. Build image from a dockerfile: `docker build -t log-signing-mpc`
+2. Create local network for servers: `docker network create la-net`
+3. Run server 1: `docker run --name la1 --network la-net --rm -p 8000:8000 -p 3000:3000 log-signing-mpc 1 8000 3000`
+4. Run server 2: `docker run --name la2 --network la-net --rm -p 8001:8001 -p 3001:3001 log-signing-mpc 2 8001 3001`
+5. Run server 3: `docker run --name la3 --network la-net --rm -p 8002:8002 -p 3002:3002 log-signing-mpc 3 8002 3002`
+
+For more information about local networking with docker containers follow https://docs.docker.com/network/network-tutorial-standalone/.
+
+### Docker Compose
+Quickly setup servers by running docker compose.
+1. `docker compose up`
 
 ### Key generation
 1. `curl.exe -X POST localhost:8000/key_gen/1 -d "la2:3001,la3:3002"`
 2. `curl.exe -X POST localhost:8001/key_gen/1 -d "la3:3002,la1:3000"`
 3. `curl.exe -X POST localhost:8002/key_gen/1 -d "la2:3001,la1:3000"`
-
-For more information about local networking with docker containers follow https://docs.docker.com/network/network-tutorial-standalone/.
 
 ## Installation
 1. `git@github.com:xmaslo/log-signing-mpc.git` (or use https instead)
