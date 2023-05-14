@@ -18,7 +18,17 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag log-signing-mpc
+      run: docker compose build build-service
 
     - name: Run unit tests
-      run: docker run log-signing-mpc cargo test --release
+      run: docker run log-signing-mpc-image cargo test --release
+
+    - name: Run servers
+      run: docker compose up la1 la2 la3
+
+    # TODO: add some integrations tests
+
+    - name: Clean up
+      run: docker compose down
+
+
