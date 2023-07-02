@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir certs certs/public certs/private
+
 # Generate CA key pair and self-signed certificate
 openssl req -new -x509 -days 30 -newkey rsa:4096 -nodes -keyout "certs/ca_key.pem" \
  -out "certs/ca_cert.pem" \
