@@ -23,8 +23,16 @@ The ca certificate lies directly in that directory and is named ca_cert.pem.
 The public certificate and the private key must be located in a subdirectory named `private` and public respectively.
 The certificate and the private key must be named `cert_{server_id}.pem` and `private_key_{server_id}.pem` respectively.
 
-For easier development usage, you can unpack the certificates stored in `examples/certs.zip` or run the `certs_creation.sh` to
-create your own self-signed certificates.
+For easier development usage, you can unpack the certificates stored in `examples/certs.zip`.
+
+If the certificates are already expired you can run provided scripts create your own self-signed certificates:
+- Linux: 
+  - `./examples/certs_creation.sh`
+- Windows: First, install Git Bash (https://git-scm.com/downloads) and then run: \
+  `export MSYS_NO_PATHCONV=1` \
+  `./examples/certs_creation_win.sh`
+
+Make sure you run a script inside root directory of the project. Copy the certs where needed.
 
 
 ## Implemented Features
