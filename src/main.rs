@@ -44,7 +44,7 @@ use crate::common::read_file;
 use crate::{
     create_communication_channel::{Db},
     rocket_instances::{rocket_with_client_auth, rocket_without_client_auth, ServerIdState, SharedDb},
-    signing::{KeyGenerator},
+    signing::{Signer},
 };
 
 struct Cors<R>(R);
@@ -151,8 +151,8 @@ async fn sign(
          Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
-    let mut kg = KeyGenerator::new(participants.clone(), participants.len(), server_id);
-    let server_id = kg.get_different_party_index();
+    let mut signer = Signer::new(participants.clone(), participants.len(), server_id);
+    let server_id = signer.get_different_party_index();
 
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
@@ -162,7 +162,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    kg.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
+    signer.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
@@ -174,7 +174,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = kg.sign_hash(&hash, receiving_stream, outgoing_sink)
+    let signature = signer.sign_hash(&hash, receiving_stream, outgoing_sink)
         .await
         .expect("Message could not be signed");
 

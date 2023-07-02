@@ -11,17 +11,17 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sig
 use round_based::{AsyncProtocol, Msg};
 use crate::common::{read_file, file_to_local_key};
 
-pub struct KeyGenerator {
+pub struct Signer {
     participants: Vec<u16>,
     participants_n: usize,
     party_index: u16,
     completed_offline_stage: Option<CompletedOfflineStage>,
 }
 
-impl KeyGenerator {
-    pub fn new(mut p: Vec<u16>, n: usize, pi: u16) -> KeyGenerator {
+impl Signer {
+    pub fn new(mut p: Vec<u16>, n: usize, pi: u16) -> Signer {
         p.sort(); // participants must be specified in the same order by both servers
-        KeyGenerator {
+        Signer {
             participants: p,
             participants_n: n,
             party_index: pi,
