@@ -169,8 +169,6 @@ async fn sign(
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
-    thread::sleep(Duration::from_secs(15));
-
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
