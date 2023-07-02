@@ -87,20 +87,6 @@ Format is -d "signature_output;signed_data_with_timestamp".
 2. Static analysis: `cargo clippy`
 3. Test project with command line output: `cargo test -- --nocapture`.
 
-## Elasticsearch Setup
-Follow https://www.elastic.co/guide/en/elasticsearch/reference/8.8/docker.html#_enroll_additional_nodes.
-
-If docker exists with error code 78:
-```
-wsl -d docker-desktop
-sysctl -w vm.max_map_count=262144
-```
-
-If you have problem with curling the endpoint (CERT_TRUST_REVOCATION_STATUS_UNKNOWN):
-```curl.exe --cacert http_ca.crt -u elastic https://localhost:9200 --ssl-revoke-best-effort```
-
-
-
 
 
 [//]: # (## Client start-up)
