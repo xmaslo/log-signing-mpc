@@ -166,12 +166,16 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
+    println!("Beginning offline stage");
+
     signer.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
+
+    println!("Beginning online stage");
 
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);

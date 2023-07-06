@@ -101,7 +101,7 @@ impl Signer {
             }).await?;
 
         let partial_signatures: Vec<_> = receiving_stream
-            .take(2)
+            .take(1)
             .map_ok(|msg| msg.body)
             .try_collect()
             .await?;
