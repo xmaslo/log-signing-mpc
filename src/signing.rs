@@ -125,7 +125,7 @@ impl Signer {
     // this function only works if we strictly allow signing of two parties (TODO: rewrite this function when changing this)
     // the function returns 0 is participant was not added by add_participant() function or some other error occurs
     pub fn convert_my_real_index_to_arbitrary_one(&self, other_party_index: u16) -> u16 {
-        if self.is_participant_present(other_party_index) {
+        if !self.is_participant_present(other_party_index) {
             return 0;
         }
 
@@ -162,7 +162,8 @@ impl Signer {
             return Err("Participant is not present");
         }
 
-        let participants: Vec<u16> = vec![self.my_index, other_party_index];
+        let mut participants: Vec<u16> = vec![self.my_index, other_party_index];
+        participants.sort(); // both parties my provide indexes in the same order
         Ok(participants)
     }
 }
@@ -193,7 +194,8 @@ mod tests {
     #[test]
     fn convert_index_other_participant_not_added() {
         let s: Signer = Signer::new(1);
-        assert_eq!(s.convert_my_real_index_to_arbitrary_one(2), 0);
+        let result = s.convert_my_real_index_to_arbitrary_one(2);
+        assert_eq!(result, 0);
     }
 
     #[test]

@@ -119,11 +119,11 @@ async fn sign(
     data: String,
     room_id: u16
 ) -> Custom<Cors<status::Accepted<String>>> {
-    let server_id = *server_id.server_id.lock().unwrap();
+    let server_id: u16 = *server_id.server_id.lock().unwrap();
 
-    let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
+    let splitted_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
-    let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
+    let participant2: u16 = splitted_data[0].as_str().parse::<u16>().unwrap();
 
     let url = vec![splitted_data[1].clone()];
 
@@ -151,6 +151,11 @@ async fn sign(
     );
 
     let mut signer = Signer::new(server_id);
+    let participant_result = signer.add_participant(participant2);
+    match participant_result {
+        Ok(r) => r,
+        Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string()))))
+    };
     let server_id = signer.convert_my_real_index_to_arbitrary_one(participant2);
 
     // No check if the id is not already in use
