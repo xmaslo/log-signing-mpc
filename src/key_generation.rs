@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{Write};
 use std::path::Path;
 use std::pin::Pin;
-use std::{thread, time};
+use std::{thread};
 use std::time::Duration;
 use anyhow::{anyhow, Error, Result};
 use curv::elliptic::curves::Secp256k1;

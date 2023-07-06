@@ -124,7 +124,6 @@ async fn sign(
     let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
     let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
-    let participants = vec![server_id, participant2];
 
     let url = vec![splitted_data[1].clone()];
 
@@ -151,8 +150,8 @@ async fn sign(
          Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
-    let mut signer = Signer::new(participants.clone(), participants.len(), server_id);
-    let server_id = signer.get_different_party_index();
+    let mut signer = Signer::new(server_id);
+    let server_id = signer.convert_my_real_index_to_arbitrary_one(participant2);
 
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
@@ -162,7 +161,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    signer.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
+    signer.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
@@ -172,7 +171,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = signer.sign_hash(&hash, receiving_stream, outgoing_sink)
+    let signature = signer.sign_hash(&hash, receiving_stream, outgoing_sink, participant2)
         .await
         .expect("Message could not be signed");
 
