@@ -85,9 +85,11 @@ To generate keys, curl the */keygen* endpoint (you can download curl at https://
 ## Log Signing
 (TODO)
 
+TODO: I take advantage of the error and set timestamp far in the future.
+
 To sign a message, curl the  */sign* endpoint:
-1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:3001,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,1681653339"`
-2. `curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:3000,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,1681653339"`
+1. `curl.exe -X POST localhost:8000/sign/2 -d "2,127.0.0.1:3001,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,16816533390"`
+2. `curl.exe -X POST localhost:8001/sign/2 -d "1,127.0.0.1:3000,0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2,16816533390"`
 
 Format is -d "other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp".
 

@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{Write};
 use std::path::Path;
 use std::pin::Pin;
-use std::{thread, time};
+use std::{thread};
 use std::time::Duration;
 use anyhow::{anyhow, Error, Result};
 use curv::elliptic::curves::Secp256k1;
@@ -37,7 +37,7 @@ pub async fn generate_keys(index: u16,
 
     // wait for other servers to catch up (if started manually)
     // TODO: do this synchronization in a better way then sleeping
-    let five_seconds:Duration = time::Duration::from_secs(5);
+    let five_seconds:Duration = Duration::from_secs(5);
     thread::sleep(five_seconds);
 
     let keygen: Keygen = Keygen::new(index, THRESHOLD, NUMBER_OF_PARTIES).unwrap();

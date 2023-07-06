@@ -119,12 +119,11 @@ async fn sign(
     data: String,
     room_id: u16
 ) -> Custom<Cors<status::Accepted<String>>> {
-    let server_id = *server_id.server_id.lock().unwrap();
+    let server_id: u16 = *server_id.server_id.lock().unwrap();
 
-    let splitted_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
+    let splitted_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
 
-    let participant2 = splitted_data[0].as_str().parse::<u16>().unwrap();
-    let participants = vec![server_id, participant2];
+    let participant2: u16 = splitted_data[0].as_str().parse::<u16>().unwrap();
 
     let url = vec![splitted_data[1].clone()];
 
@@ -151,8 +150,13 @@ async fn sign(
          Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
-    let mut signer = Signer::new(participants.clone(), participants.len(), server_id);
-    let server_id = signer.get_different_party_index();
+    let mut signer = Signer::new(server_id);
+    let participant_result = signer.add_participant(participant2);
+    match participant_result {
+        Ok(r) => r,
+        Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string()))))
+    };
+    let server_id = signer.convert_my_real_index_to_arbitrary_one(participant2);
 
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
@@ -162,17 +166,21 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    signer.do_offline_stage(receiving_stream, outgoing_sink).await.unwrap();
+    println!("Beginning offline stage");
+
+    signer.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
+    println!("Beginning online stage");
+
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = signer.sign_hash(&hash, receiving_stream, outgoing_sink)
+    let signature = signer.sign_hash(&hash, receiving_stream, outgoing_sink, participant2)
         .await
         .expect("Message could not be signed");
 
