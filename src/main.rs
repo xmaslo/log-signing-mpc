@@ -35,6 +35,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
     keygen::ProtocolMessage,
     sign::{OfflineProtocolMessage, PartialSignature},
 };
+use tokio::sync::RwLock;
 
 use crate::key_generation::generate_keys;
 use crate::check_timestamp::verify_timestamp_10_minute_window;
@@ -116,6 +117,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<s
 async fn sign(
     db: &State<SharedDb>,
     server_id: &State<ServerIdState>,
+    signer: &State<RwLock<Signer>>,
     data: String,
     room_id: u16
 ) -> Custom<Cors<status::Accepted<String>>> {
@@ -150,13 +152,13 @@ async fn sign(
          Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
-    let mut signer = Signer::new(server_id);
-    let participant_result = signer.add_participant(participant2);
+    // let mut signer = Signer::new(server_id);
+    let participant_result = signer.write().await.add_participant(participant2);
     match participant_result {
         Ok(r) => r,
         Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string()))))
     };
-    let server_id = signer.convert_my_real_index_to_arbitrary_one(participant2);
+    let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
 
     // No check if the id is not already in use
     let (receiving_stream, outgoing_sink)
@@ -168,7 +170,7 @@ async fn sign(
 
     println!("Beginning offline stage");
 
-    signer.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
+    signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
@@ -180,7 +182,7 @@ async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = signer.sign_hash(&hash, receiving_stream, outgoing_sink, participant2)
+    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, participant2)
         .await
         .expect("Message could not be signed");
 
@@ -212,6 +214,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create two Rocket instances with different ports and TLS settings
     let rocket_instance_protected = rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
     let rocket_instance_public = rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
+
+    let signer = Signer::new(server_id);
+
+    let rocket_instance_public = rocket_instance_public.manage(signer);
 
     // Run the Rocket instances concurrently
     let server_future_protected = tokio::spawn(async { rocket_instance_protected.launch().await });
