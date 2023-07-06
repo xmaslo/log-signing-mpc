@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::pin::Pin;
 use std::{thread, time};
+use std::collections::HashMap;
 use std::time::Duration;
 use anyhow::{anyhow, Context, Error, Result};
 use curv::arithmetic::Converter;
@@ -11,22 +12,31 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sig
 use round_based::{AsyncProtocol, Msg};
 use crate::common::{read_file, file_to_local_key};
 
+/// The structure that holds current state for the offline stage with other parties
 pub struct Signer {
-    participants: Vec<u16>,
-    participants_n: usize,
-    party_index: u16,
-    completed_offline_stage: Option<CompletedOfflineStage>,
+    my_index: u16,
+    completed_offline_stage: HashMap<u16, Option<CompletedOfflineStage>>,
 }
 
 impl Signer {
-    pub fn new(mut p: Vec<u16>, n: usize, pi: u16) -> Signer {
-        p.sort(); // participants must be specified in the same order by both servers
+    pub fn new(mi: u16) -> Signer {
         Signer {
-            participants: p,
-            participants_n: n,
-            party_index: pi,
-            completed_offline_stage: None
+            my_index: mi,
+            completed_offline_stage: HashMap::new()
         }
+    }
+
+    pub fn add_participant(&self, new_participant: u16) -> Result<u16, &'static str> {
+        if new_participant == self.my_index {
+            Err("New participant must have different index from current instance")
+        }
+
+        if self.completed_offline_stage.contains_key(&new_participant) {
+            Err("Participant with that id is already present")
+        }
+
+        completed_offline_stage.insert(new_participant, None);
+        Ok(new_participant)
     }
 
     pub async fn do_offline_stage(
@@ -111,5 +121,35 @@ impl Signer {
         }
 
         self.party_index
+    }
+    pub fn my_index(&self) -> u16 {
+        self.my_index
+    }
+    pub fn completed_offline_stage(&self) -> &HashMap<u16, Option<CompletedOfflineStage>> {
+        &self.completed_offline_stage
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::signing::Signer;
+
+    #[test]
+    fn add_participant_valid() {
+        let s: Signer = Signer::new(1);
+        assert_eq!(s.add_participant(2), Ok(2));
+    }
+
+    #[test]
+    fn add_participant_already_present() {
+        let s: Signer = Signer::new(1);
+        s.add_participant(2).unwrap();
+        s.add_participant(2).expect_err("Expected error, Ok returned");
+    }
+
+    #[test]
+    fn add_participant_same_as_current_instance() {
+        let s: Signer = Signer::new(1);
+        s.add_participant(1).expect_err("Expected error, Ok returned");
     }
 }
