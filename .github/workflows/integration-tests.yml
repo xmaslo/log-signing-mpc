@@ -1,0 +1,28 @@
+name: Integration Tests
+
+on: workflow_dispatch
+
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build the Docker image
+      run: docker compose build build-service
+    
+    # somehow run in a background
+    - name: Run servers
+      run: docker compose up la1 la2 la3
+
+    # TODO: add some integrations tests
+
+    - name: Clean up
+      run: docker compose down
