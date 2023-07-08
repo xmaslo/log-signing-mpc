@@ -17,12 +17,27 @@ jobs:
 
     - name: Build the Docker image
       run: docker compose build build-service
-    
-    # somehow run in a background
-#    - name: Run servers
-#      run: docker compose up la1 la2 la3
 
-    # TODO: add some integrations tests
+    - name: Run servers
+      run: docker compose up -d la1 la2 la3
+
+    - name: Wait for servers to start
+      run: |
+        retries=0
+        max_retries=10
+        while [[ $retries -lt $max_retries ]]; do
+          sleep 5
+          if curl --silent --head --fail http://la1:8000 && \
+             curl --silent --head --fail http://la2:8001 && \
+             curl --silent --head --fail http://la3:8002; then
+            break
+          fi
+          retries=$((retries+1))
+        done
+
+    - name: Run API tests
+      run: |
+        # Add your API testing commands here
 
     - name: Clean up
       run: docker compose down
