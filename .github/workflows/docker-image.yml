@@ -19,10 +19,20 @@ jobs:
       run: docker compose build build-service
 
   unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
     - name: Run unit tests
       run: docker compose run unit-tests
 
   integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
     # somehow run in a background
     - name: Run servers
       run: docker compose up la1 la2 la3
