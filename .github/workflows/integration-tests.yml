@@ -19,8 +19,8 @@ jobs:
       run: docker compose build build-service
     
     # somehow run in a background
-    - name: Run servers
-      run: docker compose up la1 la2 la3
+#    - name: Run servers
+#      run: docker compose up la1 la2 la3
 
     # TODO: add some integrations tests
 
