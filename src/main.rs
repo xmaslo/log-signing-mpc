@@ -117,7 +117,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<s
 async fn sign(
     db: &State<SharedDb>,
     server_id: &State<ServerIdState>,
-    signer: &State<RwLock<Signer>>,
+    signer: &State<Arc<RwLock<Signer>>>,
     data: String,
     room_id: u16
 ) -> Custom<Cors<status::Accepted<String>>> {
@@ -215,9 +215,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rocket_instance_protected = rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
     let rocket_instance_public = rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
 
-    let signer = Signer::new(server_id);
+    let signer = Arc::new(RwLock::new(Signer::new(server_id)));
 
-    let rocket_instance_public = rocket_instance_public.manage(signer);
+    let rocket_instance_protected = rocket_instance_protected.manage(signer.clone());
+    let rocket_instance_public = rocket_instance_public.manage(signer.clone());
 
     // Run the Rocket instances concurrently
     let server_future_protected = tokio::spawn(async { rocket_instance_protected.launch().await });
