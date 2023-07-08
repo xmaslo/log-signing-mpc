@@ -150,6 +150,14 @@ impl Signer {
         self.completed_offline_stage().contains_key(&index)
     }
 
+    pub fn is_offline_stage_complete(&self, participant: u16) -> bool {
+        let participant_value = self.completed_offline_stage.get(&participant);
+        return match participant_value {
+            Some(v) => !v.is_none(),
+            None => false
+        }
+    }
+
     fn get_local_share(&self) -> LocalKey<Secp256k1> {
         let file_name = format!("local-share{}.json", self.my_index);
         let file_content = read_file(Path::new(file_name.as_str()));
@@ -229,5 +237,19 @@ mod tests {
 
         assert_eq!(s.convert_my_real_index_to_arbitrary_one(1), 2);
         assert_eq!(s.convert_my_real_index_to_arbitrary_one(3), 1);
+    }
+
+    #[test]
+    fn offline_stage_complete_no() {
+        let mut s: Signer = Signer::new(1);
+        s.add_participant(2).unwrap();
+
+        assert!(!s.is_offline_stage_complete(2));
+    }
+
+    #[test]
+    fn offline_stage_complete_missing_participant() {
+        let s: Signer = Signer::new(1);
+        assert!(!s.is_offline_stage_complete(2));
     }
 }
