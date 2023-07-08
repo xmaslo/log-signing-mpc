@@ -122,13 +122,9 @@ async fn sign(
     room_id: u16
 ) -> Custom<Cors<status::Accepted<String>>> {
     let server_id: u16 = *server_id.server_id.lock().unwrap();
-
     let splitted_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
-
     let participant2: u16 = splitted_data[0].as_str().parse::<u16>().unwrap();
-
     let url = vec![splitted_data[1].clone()];
-
     let file_hash = splitted_data[2].clone();
 
     let parsed_unix_seconds = splitted_data[3].clone().parse::<u64>();
@@ -136,7 +132,6 @@ async fn sign(
         Ok(v) => v,
         Err(_) => return Custom(Status::BadRequest, Cors(status::Accepted(Some("TIMESTAMP IN BAD FORMAT".to_string())))),
     };
-
     if !verify_timestamp_10_minute_window(timestamp) {
         let too_old_timestamp: String = "TIMESTAMP IS OLDER THAN 10 MINUTES".to_string();
         println!("{}", too_old_timestamp.as_str());
@@ -152,24 +147,26 @@ async fn sign(
          Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
-    let participant_result = signer.write().await.add_participant(participant2);
-    match participant_result {
-        Ok(r) => r,
-        Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string()))))
-    };
-    let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
+    if !signer.read().await.is_offline_stage_complete(participant2) {
+        let participant_result = signer.write().await.add_participant(participant2);
+        match participant_result {
+            Ok(r) => r,
+            Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string()))))
+        };
+        let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
 
-    // No check if the id is not already in use
-    let (receiving_stream, outgoing_sink)
-        = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
+        // No check if the id is not already in use
+        let (receiving_stream, outgoing_sink)
+            = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
 
-    let receiving_stream = receiving_stream.fuse();
-    tokio::pin!(receiving_stream);
-    tokio::pin!(outgoing_sink);
+        let receiving_stream = receiving_stream.fuse();
+        tokio::pin!(receiving_stream);
+        tokio::pin!(outgoing_sink);
 
-    println!("Beginning offline stage");
+        println!("Beginning offline stage");
 
-    signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
+        signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
+    }
 
     let (receiving_stream, outgoing_sink)
         = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
