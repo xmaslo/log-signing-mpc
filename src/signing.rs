@@ -146,8 +146,16 @@ impl Signer {
         &self.completed_offline_stage
     }
 
-    fn is_participant_present(&self, index: u16) -> bool {
+    pub fn is_participant_present(&self, index: u16) -> bool {
         self.completed_offline_stage().contains_key(&index)
+    }
+
+    pub fn is_offline_stage_complete(&self, participant: u16) -> bool {
+        let participant_value = self.completed_offline_stage.get(&participant);
+        return match participant_value {
+            Some(v) => !v.is_none(),
+            None => false
+        }
     }
 
     fn get_local_share(&self) -> LocalKey<Secp256k1> {
@@ -176,6 +184,7 @@ mod tests {
     fn add_participant_valid() {
         let mut s: Signer = Signer::new(1);
         assert_eq!(s.add_participant(2), Ok(2));
+        assert!(s.is_participant_present(2));
     }
 
     #[test]
@@ -183,12 +192,14 @@ mod tests {
         let mut s: Signer = Signer::new(1);
         s.add_participant(2).unwrap();
         s.add_participant(2).expect_err("Expected error, Ok returned");
+        assert!(s.is_participant_present(2));
     }
 
     #[test]
     fn add_participant_same_as_current_instance() {
         let mut s: Signer = Signer::new(1);
         s.add_participant(1).expect_err("Expected error, Ok returned");
+        assert!(!s.is_participant_present(1));
     }
 
     #[test]
@@ -226,5 +237,19 @@ mod tests {
 
         assert_eq!(s.convert_my_real_index_to_arbitrary_one(1), 2);
         assert_eq!(s.convert_my_real_index_to_arbitrary_one(3), 1);
+    }
+
+    #[test]
+    fn offline_stage_complete_no() {
+        let mut s: Signer = Signer::new(1);
+        s.add_participant(2).unwrap();
+
+        assert!(!s.is_offline_stage_complete(2));
+    }
+
+    #[test]
+    fn offline_stage_complete_missing_participant() {
+        let s: Signer = Signer::new(1);
+        assert!(!s.is_offline_stage_complete(2));
     }
 }
