@@ -152,7 +152,6 @@ async fn sign(
          Data to sign: {}\n", server_id, participant2, url[0], hash
     );
 
-    // let mut signer = Signer::new(server_id);
     let participant_result = signer.write().await.add_participant(participant2);
     match participant_result {
         Ok(r) => r,

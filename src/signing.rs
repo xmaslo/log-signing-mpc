@@ -146,7 +146,7 @@ impl Signer {
         &self.completed_offline_stage
     }
 
-    fn is_participant_present(&self, index: u16) -> bool {
+    pub fn is_participant_present(&self, index: u16) -> bool {
         self.completed_offline_stage().contains_key(&index)
     }
 
@@ -176,6 +176,7 @@ mod tests {
     fn add_participant_valid() {
         let mut s: Signer = Signer::new(1);
         assert_eq!(s.add_participant(2), Ok(2));
+        assert!(s.is_participant_present(2));
     }
 
     #[test]
@@ -183,12 +184,14 @@ mod tests {
         let mut s: Signer = Signer::new(1);
         s.add_participant(2).unwrap();
         s.add_participant(2).expect_err("Expected error, Ok returned");
+        assert!(s.is_participant_present(2));
     }
 
     #[test]
     fn add_participant_same_as_current_instance() {
         let mut s: Signer = Signer::new(1);
         s.add_participant(1).expect_err("Expected error, Ok returned");
+        assert!(!s.is_participant_present(1));
     }
 
     #[test]
