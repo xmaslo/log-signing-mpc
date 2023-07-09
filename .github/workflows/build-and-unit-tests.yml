@@ -1,4 +1,4 @@
-name: Log Signing MPC
+name: Build and Unit Tests
 
 on: workflow_dispatch
 
@@ -9,9 +9,7 @@ on: workflow_dispatch
 #    branches: [ "main" ]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -19,17 +17,6 @@ jobs:
 
     - name: Build the Docker image
       run: docker compose build build-service
-
+      
     - name: Run unit tests
       run: docker compose run unit-tests
-
-    # somehow run in a background
-#    - name: Run servers
-#      run: docker compose up la1 la2 la3
-
-    # TODO: add some integrations tests
-
-    - name: Clean up
-      run: docker compose down
-
-
