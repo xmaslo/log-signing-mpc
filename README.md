@@ -108,6 +108,7 @@ Format is -d "signature_output;signed_data_with_timestamp".
 1. Run unit-tests inside docker: `docker compose run unit-tests`.
 2. Static analysis: `cargo clippy`
 3. Test project with command line output: `cargo test -- --nocapture`.
+4. Run image interactively with bash: `docker run -it --entrypoint bash log-signing-mpc-image`
 
 
 
