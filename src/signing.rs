@@ -34,7 +34,8 @@ impl Signer {
         }
 
         if self.completed_offline_stage.contains_key(&new_participant) {
-            return Err("Participant with that id is already present");
+            println!("Participant with that id is already present");
+            return Ok(0);
         }
 
         self.completed_offline_stage.insert(new_participant, None);
@@ -194,7 +195,7 @@ mod tests {
     fn add_participant_already_present() {
         let mut s: Signer = Signer::new(1);
         s.add_participant(2).unwrap();
-        s.add_participant(2).expect_err("Expected error, Ok returned");
+        assert_eq!(s.add_participant(2).unwrap(), 0);
         assert!(s.is_participant_present(2));
     }
 

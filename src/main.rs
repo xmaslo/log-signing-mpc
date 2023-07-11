@@ -156,8 +156,8 @@ async fn sign(
     if !signer.read().await.is_offline_stage_complete(participant2) {
         let participant_result = signer.write().await.add_participant(participant2);
         match participant_result {
-            Ok(r) => r,
-            Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string()))))
+            Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string())))),
+            _ => {}
         };
         let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
 
