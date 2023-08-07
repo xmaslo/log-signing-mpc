@@ -34,7 +34,8 @@ impl Signer {
         }
 
         if self.completed_offline_stage.contains_key(&new_participant) {
-            return Err("Participant with that id is already present");
+            println!("Participant with that id is already present");
+            return Ok(0);
         }
 
         self.completed_offline_stage.insert(new_participant, None);
@@ -46,17 +47,21 @@ impl Signer {
         receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<OfflineProtocolMessage>>>>>,
         outgoing_sink: Pin<&mut impl Sink<Msg<OfflineProtocolMessage>, Error=Error>>,
         other_party_index: u16
-    ) -> Result<(), anyhow::Error>
+    ) -> Result<(), Error>
     {
         if !self.is_participant_present(other_party_index) {
             return Err(anyhow!("Participant {} is not present", other_party_index));
         }
 
+        let local_share = self.get_local_share();
+        if local_share.is_none() {
+            return Err(anyhow!("local-share{}.json is missing. Generate it with the /keygen endpoint first.", self.my_index));
+        }
+        let local_share: LocalKey<Secp256k1> = local_share.unwrap();
+
         println!("Participants: {}:{}", self.my_index, other_party_index);
         println!("My real index: {}", self.my_index);
         println!("My other index: {}", self.convert_my_real_index_to_arbitrary_one(other_party_index));
-
-        let local_share: LocalKey<Secp256k1> = self.get_local_share();
 
         // wait for servers to synchronize
         // TODO: do this synchronization in a better way then sleeping
@@ -158,11 +163,10 @@ impl Signer {
         }
     }
 
-    fn get_local_share(&self) -> LocalKey<Secp256k1> {
+    fn get_local_share(&self) -> Option<LocalKey<Secp256k1>> {
         let file_name = format!("local-share{}.json", self.my_index);
-        let file_content = read_file(Path::new(file_name.as_str()));
-        file_to_local_key(&file_content)
-
+        let file_content = read_file(Path::new(file_name.as_str()))?;
+        Some(file_to_local_key(&file_content))
     }
 
     fn get_participants(&self, other_party_index: u16) -> Result<Vec<u16>,&'static str>  {
@@ -191,7 +195,7 @@ mod tests {
     fn add_participant_already_present() {
         let mut s: Signer = Signer::new(1);
         s.add_participant(2).unwrap();
-        s.add_participant(2).expect_err("Expected error, Ok returned");
+        assert_eq!(s.add_participant(2).unwrap(), 0);
         assert!(s.is_participant_present(2));
     }
 

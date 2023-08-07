@@ -60,12 +60,16 @@ Quickly setup servers by running docker compose.
 
 ## Build and Run Servers on Bare Metal
 
-### Build and Run
+### Build
 1. Build Debug: `cargo build` \
    Build Release: `cargo build --release`
-2. `.\log-signing-mpc.exe 1 8000 3000`
-3. `.\log-signing-mpc.exe 2 8001 3001`
-4. `.\log-signing-mpc.exe 3 8002 3002`
+
+### Run
+1. `.\log-signing-mpc.exe 1 8000 3000` 
+2. `.\log-signing-mpc.exe 2 8001 3001`
+3. `.\log-signing-mpc.exe 3 8002 3002`
+
+Alternatively, navigate to `.\log-signing-mpc\scripts` and run `.\run_servers_on_localhost.ps1 ..\target\release` where `..\target\release` is where the build resides.
 
 ## Key Generation
 
@@ -108,6 +112,7 @@ Format is -d "signature_output;signed_data_with_timestamp".
 1. Run unit-tests inside docker: `docker compose run unit-tests`.
 2. Static analysis: `cargo clippy`
 3. Test project with command line output: `cargo test -- --nocapture`.
+4. Run image interactively with bash: `docker run -it --entrypoint bash log-signing-mpc-image`
 
 
 

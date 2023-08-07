@@ -106,6 +106,12 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<s
     let server_id = *server_id.server_id.lock().unwrap();
     let local_share_file_name = format!("local-share{}.json", server_id);
     let file_contents = read_file(Path::new(&local_share_file_name));
+    match file_contents {
+        None => return Custom(Status::BadRequest, Cors(status::Accepted(Some("local-share.json is missing. Generate it first with the /keygen endpoint".to_string())))),
+        _ => {}
+    }
+    let file_contents = file_contents.unwrap();
+
     let public_key = get_public_key(file_contents.as_str());
 
     let response = status::Accepted(Some(check_sig(&r, &s, &msg, &public_key).to_string()));
@@ -150,8 +156,8 @@ async fn sign(
     if !signer.read().await.is_offline_stage_complete(participant2) {
         let participant_result = signer.write().await.add_participant(participant2);
         match participant_result {
-            Ok(r) => r,
-            Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string()))))
+            Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string())))),
+            _ => {}
         };
         let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
 
@@ -165,7 +171,14 @@ async fn sign(
 
         println!("Beginning offline stage");
 
-        signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2).await.unwrap();
+        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2).await;
+        match offline_stage_result {
+            Err(e) => {
+                println!("{}", e.to_string());
+                return Custom(Status::BadRequest, Cors(status::Accepted(Some(e.to_string()))));
+            },
+            _ => {}
+        }
     }
 
     let (receiving_stream, outgoing_sink)
