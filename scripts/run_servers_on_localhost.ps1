@@ -1,6 +1,12 @@
 # Get current working directory
 $currentDirectory = $PWD.Path
 
+# Check if any command-line argument was provided
+if ($args.Length -eq 0) {
+    Write-Host "Usage: .\run_servers_on_localhost.ps1 path\to\the\app\binary"
+    return
+}
+
 # Get the relative path from the command-line argument
 $relativePath = $args[0]
 
