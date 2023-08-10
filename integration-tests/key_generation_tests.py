@@ -2,10 +2,19 @@ import asyncio
 import aiohttp
 
 
+IS_DOCKER = False
 BASE_URL = "http://localhost"
 SERVER_PORT1 = "8000"
 SERVER_PORT2 = "8001"
 SERVER_PORT3 = "8002"
+if IS_DOCKER:
+    URL0 = "la1:3000"
+    URL1 = "la2:3001"
+    URL2 = "la3:3002"
+else:
+    URL0 = "127.0.0.1:3000"
+    URL1 = "127.0.0.1:3001"
+    URL2 = "127.0.0.1:3002"
 
 
 async def send_post_request(session, url, payload):
@@ -14,9 +23,9 @@ async def send_post_request(session, url, payload):
 
 
 async def main():
-    payload1 = "127.0.0.1:3001,127.0.0.1:3002"
-    payload2 = "127.0.0.1:3002,127.0.0.1:3000"
-    payload3 = "127.0.0.1:3001,127.0.0.1:3000"
+    payload1 = URL1 + "," + URL2
+    payload2 = URL2 + "," + URL0
+    payload3 = URL1 + "," + URL0
 
     # Create a session for making asynchronous requests
     async with aiohttp.ClientSession() as session:
