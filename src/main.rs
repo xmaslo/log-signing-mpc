@@ -65,7 +65,7 @@ async fn key_gen(
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16,
-) -> Custom<Cors<status::Accepted<String>>> {
+) -> Status {
 
     let urls = data.split(',').map(|s| s.to_string()).collect();
     let server_id = *server_id.server_id.lock().unwrap();
@@ -86,10 +86,10 @@ async fn key_gen(
 
     return if status == "Ok" {
         println!("Keys were successfully generated");
-        Custom(Status::Accepted, Cors(status::Accepted(Some(status))))
+        Status::Ok
     } else {
         println!("Keys could NOT be generated");
-        Custom(Status::Accepted, Cors(status::Accepted(Some(status))))
+        Status::Forbidden
     }
 }
 

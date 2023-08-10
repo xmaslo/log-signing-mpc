@@ -32,14 +32,9 @@ async def main():
         # Now you can access the responses as needed
         server1_res, server2_res, server3_res = responses
 
-        # TODO:
-        # Use HTTP status code 200 for successful requests that retrieve or update a resource.
-        # Use HTTP status code 201 for successful requests that create a new resource on the server.
-        # Use HTTP status code 202 for requests that have been accepted for processing but the
-        # processing has not yet been completed.
-        print("Server 1 response:", server1_res)
-        print("Server 2 response:", server2_res)
-        print("Server 3 response:", server3_res)
+        assert server1_res == 200
+        assert server2_res == 200
+        assert server3_res == 200
 
 
 if __name__ == "__main__":
