@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 
 
-IS_DOCKER = False
+IS_DOCKER = True
 BASE_URL = "http://localhost"
 SERVER_PORT1 = "8000"
 SERVER_PORT2 = "8001"
