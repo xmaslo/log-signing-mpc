@@ -24,17 +24,17 @@ async def trigger_keygen_endpoint(keys_already_generated):
 
         responses = await asyncio.gather(*tasks)
 
-        # Now you can access the responses as needed
-        server1_res, server2_res, server3_res = responses
+    # Now you can access the responses as needed
+    server1_res, server2_res, server3_res = responses
 
-        if not keys_already_generated:
-            assert server1_res == 200
-            assert server2_res == 200
-            assert server3_res == 200
-        else:
-            assert server1_res == 403
-            assert server2_res == 403
-            assert server3_res == 403
+    if not keys_already_generated:
+        assert server1_res == 200
+        assert server2_res == 200
+        assert server3_res == 200
+    else:
+        assert server1_res == 403
+        assert server2_res == 403
+        assert server3_res == 403
 
 
 def test_keygen_no_keys():
