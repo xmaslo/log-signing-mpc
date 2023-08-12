@@ -1,20 +1,6 @@
 import asyncio
 import aiohttp
-
-
-IS_DOCKER = True
-BASE_URL = "http://localhost"
-SERVER_PORT1 = "8000"
-SERVER_PORT2 = "8001"
-SERVER_PORT3 = "8002"
-if IS_DOCKER:
-    URL0 = "la1:3000"
-    URL1 = "la2:3001"
-    URL2 = "la3:3002"
-else:
-    URL0 = "127.0.0.1:3000"
-    URL1 = "127.0.0.1:3001"
-    URL2 = "127.0.0.1:3002"
+from setup_for_tests import *
 
 
 async def send_post_request(session, url, payload):
@@ -22,7 +8,7 @@ async def send_post_request(session, url, payload):
         return response.status
 
 
-async def main():
+async def trigger_keygen_endpoint(keys_already_generated):
     payload1 = URL1 + "," + URL2
     payload2 = URL2 + "," + URL0
     payload3 = URL1 + "," + URL0
@@ -41,10 +27,19 @@ async def main():
         # Now you can access the responses as needed
         server1_res, server2_res, server3_res = responses
 
-        assert server1_res == 200
-        assert server2_res == 200
-        assert server3_res == 200
+        if not keys_already_generated:
+            assert server1_res == 200
+            assert server2_res == 200
+            assert server3_res == 200
+        else:
+            assert server1_res == 403
+            assert server2_res == 403
+            assert server3_res == 403
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+def test_keygen_no_keys():
+    asyncio.run(trigger_keygen_endpoint(False))
+
+
+def test_keygen_keys_already_present():
+    asyncio.run(trigger_keygen_endpoint(True))

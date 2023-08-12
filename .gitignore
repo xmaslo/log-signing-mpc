@@ -18,5 +18,8 @@ Cargo.lock
 # Json files
 *.json
 
+## Python files
+**/__pycache__
+
 examples/certs
 certs
