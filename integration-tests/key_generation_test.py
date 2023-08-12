@@ -9,19 +9,14 @@ async def trigger_keygen_endpoint(keys_already_generated):
     payload2 = URL2 + "," + URL0
     payload3 = URL1 + "," + URL0
 
-    # Create a session for making asynchronous requests
     async with aiohttp.ClientSession() as session:
-        # Use asyncio.gather to concurrently execute the requests
         tasks = [
             send_post_request(session, f"{BASE_URL}:{SERVER_PORT1}/key_gen/1", payload1),
             send_post_request(session, f"{BASE_URL}:{SERVER_PORT2}/key_gen/1", payload2),
             send_post_request(session, f"{BASE_URL}:{SERVER_PORT3}/key_gen/1", payload3),
         ]
 
-        responses = await asyncio.gather(*tasks)
-
-    # Now you can access the responses as needed
-    server1_res, server2_res, server3_res = responses
+        server1_res, server2_res, server3_res = await asyncio.gather(*tasks)
 
     if not keys_already_generated:
         assert server1_res == 200
