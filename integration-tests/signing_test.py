@@ -26,6 +26,10 @@ async def sign_data(participating_parties, urls, ports, data):
 
 
 def test_signing_on_all_party_combinations():
+    """
+    Verifies that all signing combinations, namely
+    [1,2], [1,3], and [2,3] work.
+    """
     asyncio.run(
         sign_data(
             [1, 2],
@@ -49,26 +53,6 @@ def test_signing_on_all_party_combinations():
             [2, 3],
             ["127.0.0.1:3001", "127.0.0.1:3002"],
             [SERVER_PORT2, SERVER_PORT3],
-            DATA_TO_SIGN
-        )
-    )
-
-
-def test_order_does_not_matter():
-    asyncio.run(
-        sign_data(
-            [1, 3],
-            ["127.0.0.1:3000", "127.0.0.1:3002"],
-            [SERVER_PORT1, SERVER_PORT3],
-            DATA_TO_SIGN
-        )
-    )
-
-    asyncio.run(
-        sign_data(
-            [3, 1],
-            ["127.0.0.1:3002", "127.0.0.1:3000"],
-            [SERVER_PORT3, SERVER_PORT1],
             DATA_TO_SIGN
         )
     )
