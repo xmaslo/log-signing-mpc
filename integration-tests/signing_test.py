@@ -1,17 +1,15 @@
 import asyncio
 import aiohttp
-import time
 from setup_for_tests import *
-from common import send_post_request
+from common import send_post_request, get_current_timestamp
 
 
 DATA_TO_SIGN = "0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2"
 
 
-async def sign_data(participating_parties, urls, ports, data):
-    current_time = str(int(time.time()))
-    payload1 = f"{str(participating_parties[1])}," + f"{urls[1]}," + data + "," + current_time
-    payload2 = f"{str(participating_parties[0])}," + f"{urls[0]}," + data + "," + current_time
+async def sign_data(participating_parties, urls, ports, timestamp, data):
+    payload1 = f"{str(participating_parties[1])}," + f"{urls[1]}," + data + "," + timestamp
+    payload2 = f"{str(participating_parties[0])}," + f"{urls[0]}," + data + "," + timestamp
 
     async with aiohttp.ClientSession() as session:
         tasks = [
@@ -30,11 +28,14 @@ def test_signing_on_all_party_combinations():
     Verifies that all signing combinations, namely
     [1,2], [1,3], and [2,3] work.
     """
+    timestamp = get_current_timestamp()
+
     asyncio.run(
         sign_data(
             [1, 2],
             [URL0, URL1],
             [SERVER_PORT0, SERVER_PORT1],
+            timestamp,
             DATA_TO_SIGN
         )
     )
@@ -44,6 +45,7 @@ def test_signing_on_all_party_combinations():
             [1, 3],
             [URL0, URL2],
             [SERVER_PORT0, SERVER_PORT2],
+            timestamp,
             DATA_TO_SIGN
         )
     )
@@ -53,6 +55,7 @@ def test_signing_on_all_party_combinations():
             [2, 3],
             [URL1, URL2],
             [SERVER_PORT1, SERVER_PORT2],
+            timestamp,
             DATA_TO_SIGN
         )
     )
