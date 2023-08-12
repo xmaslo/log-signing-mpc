@@ -65,7 +65,7 @@ async fn key_gen(
     server_id: &State<ServerIdState>,
     data: String,
     room_id: u16,
-) -> Status {
+) -> Result<&'static str, status::Forbidden<&'static str>> {
 
     let urls = data.split(',').map(|s| s.to_string()).collect();
     let server_id = *server_id.server_id.lock().unwrap();
@@ -86,10 +86,10 @@ async fn key_gen(
 
     return if status == "Ok" {
         println!("Keys were successfully generated");
-        Status::Ok
+        Ok("Keys were successfully generated")
     } else {
         println!("Keys could NOT be generated");
-        Status::Forbidden
+        Err(status::Forbidden(Some("Keys could NOT be generated")))
     }
 }
 
