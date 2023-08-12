@@ -1,11 +1,7 @@
 import asyncio
 import aiohttp
 from setup_for_tests import *
-
-
-async def send_post_request(session, url, payload):
-    async with session.post(url=url, data=payload) as response:
-        return response.status
+from common import send_post_request
 
 
 async def trigger_keygen_endpoint(keys_already_generated):
