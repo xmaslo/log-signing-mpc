@@ -25,10 +25,8 @@ use anyhow::Result;
 
 use rocket::{
     data::{ByteUnit, Limits},
-    http::Header,
     State,
-    response::{self, Responder, status},
-    Request
+    response::status,
 };
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
@@ -47,17 +45,6 @@ use crate::{
     rocket_instances::{rocket_with_client_auth, rocket_without_client_auth, ServerIdState, SharedDb},
     signing::{Signer},
 };
-
-struct Cors<R>(R);
-
-impl<'r, R: Responder<'r, 'static>> Responder<'r, 'static> for Cors<R> {
-    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
-        let mut response = self.0.respond_to(req)?;
-        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
-        Ok(response)
-    }
-}
-
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 async fn key_gen(
