@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 
 
-IS_DOCKER = True
+IS_DOCKER = False
 BASE_URL = "http://localhost"
 SERVER_PORT1 = "8000"
 SERVER_PORT2 = "8001"
@@ -46,5 +46,5 @@ async def main():
         assert server3_res == 200
 
 
-if __name__ == "__main__":
+def test_keygen():
     asyncio.run(main())
