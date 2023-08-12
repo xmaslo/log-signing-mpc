@@ -34,7 +34,7 @@ def test_signing_on_all_party_combinations():
         sign_data(
             [1, 2],
             [URL0, URL1],
-            [SERVER_PORT1, SERVER_PORT2],
+            [SERVER_PORT0, SERVER_PORT1],
             DATA_TO_SIGN
         )
     )
@@ -43,7 +43,7 @@ def test_signing_on_all_party_combinations():
         sign_data(
             [1, 3],
             [URL0, URL2],
-            [SERVER_PORT1, SERVER_PORT3],
+            [SERVER_PORT0, SERVER_PORT2],
             DATA_TO_SIGN
         )
     )
@@ -52,7 +52,7 @@ def test_signing_on_all_party_combinations():
         sign_data(
             [2, 3],
             [URL1, URL2],
-            [SERVER_PORT2, SERVER_PORT3],
+            [SERVER_PORT1, SERVER_PORT2],
             DATA_TO_SIGN
         )
     )

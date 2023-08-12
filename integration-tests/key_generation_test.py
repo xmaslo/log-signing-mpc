@@ -11,9 +11,9 @@ async def trigger_keygen_endpoint(keys_already_generated):
 
     async with aiohttp.ClientSession() as session:
         tasks = [
-            send_post_request(session, f"{BASE_URL}:{SERVER_PORT1}/key_gen/1", payload1),
-            send_post_request(session, f"{BASE_URL}:{SERVER_PORT2}/key_gen/1", payload2),
-            send_post_request(session, f"{BASE_URL}:{SERVER_PORT3}/key_gen/1", payload3),
+            send_post_request(session, f"{BASE_URL}:{SERVER_PORT0}/key_gen/1", payload1),
+            send_post_request(session, f"{BASE_URL}:{SERVER_PORT1}/key_gen/1", payload2),
+            send_post_request(session, f"{BASE_URL}:{SERVER_PORT2}/key_gen/1", payload3),
         ]
 
         server1_res, server2_res, server3_res = await asyncio.gather(*tasks)
