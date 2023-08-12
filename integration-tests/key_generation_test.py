@@ -38,8 +38,16 @@ async def trigger_keygen_endpoint(keys_already_generated):
 
 
 def test_keygen_no_keys():
+    """
+    Tests that keys are correctly generated on a newly set up machines.
+    """
     asyncio.run(trigger_keygen_endpoint(False))
 
 
 def test_keygen_keys_already_present():
+    """
+    Tests that once the keys were generated on the machines, it is not
+    possible to regenerate new (and overwrite old ones) using the key
+    generation endpoint.
+    """
     asyncio.run(trigger_keygen_endpoint(True))
