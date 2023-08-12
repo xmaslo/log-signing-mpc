@@ -103,7 +103,7 @@ NOTE: Sometimes, the servers just get stuck. In that case, re-run the curls.
 
 ## Log Signature Verification
 (TODO)
-1. `curl.exe -X POST localhost:8000/verify -d '{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[175,82,15,51,82,255,217,105,231,6,105,23,219,149,232,160,124,193,203,209,247,19,67,187,26,191,200,126,133,46,17,141]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[55,211,225,244,240,92,231,193,163,132,214,35,9,17,228,39,57,171,8,196,5,254,175,46,206,148,252,86,249,105,212,236]},\"recid\":0};0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2;1681653339'`
+1. `curl.exe -X POST localhost:8000/verify -d '{\"r\":{\"curve\":\"secp256k1\",\"scalar\":[152,223,68,145,62,89,184,151,62,184,84,205,111,128,50,23,106,48,251,127,49,166,218,247,162,39,211,40,216,224,41,171]},\"s\":{\"curve\":\"secp256k1\",\"scalar\":[97,134,97,185,238,34,43,120,46,5,38,137,32,131,31,124,162,84,113,243,140,221,208,162,62,113,46,51,248,160,227,244]},\"recid\":0};0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2;16816533390'`
    Note that escaping quotes is only necessary on Windows.
 
 Format is -d "signature_output;signed_data_with_timestamp".

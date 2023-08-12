@@ -25,9 +25,9 @@ use anyhow::Result;
 
 use rocket::{
     data::{ByteUnit, Limits},
-    http::{Status, Header},
+    http::Header,
     State,
-    response::{self, Responder, status, status::Custom},
+    response::{self, Responder, status},
     Request
 };
 
@@ -94,7 +94,7 @@ async fn key_gen(
 }
 
 #[rocket::post("/verify", data = "<data>")]
-async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<status::Accepted<String>>> {
+async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
     let splitted_data = data.split(';').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature = splitted_data[0].clone();
     let signed_data = digest(splitted_data[1].clone() + &splitted_data[2]);
@@ -107,16 +107,18 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Custom<Cors<s
     let local_share_file_name = format!("local-share{}.json", server_id);
     let file_contents = read_file(Path::new(&local_share_file_name));
     match file_contents {
-        None => return Custom(Status::BadRequest, Cors(status::Accepted(Some("local-share.json is missing. Generate it first with the /keygen endpoint".to_string())))),
+        None => return Err(status::BadRequest(Some("local-share.json is missing. Generate it first with the /keygen endpoint"))),
         _ => {}
     }
     let file_contents = file_contents.unwrap();
 
     let public_key = get_public_key(file_contents.as_str());
 
-    let response = status::Accepted(Some(check_sig(&r, &s, &msg, &public_key).to_string()));
-
-    Custom(Status::Accepted, Cors(response))
+    return if check_sig(&r, &s, &msg, &public_key) {
+        Ok("Valid signature")
+    } else {
+        Err(status::BadRequest(Some("Invalid signature")))
+    }
 }
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
