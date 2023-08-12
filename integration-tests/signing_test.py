@@ -34,3 +34,21 @@ def test_signing_on_all_party_combinations():
             DATA_TO_SIGN
         )
     )
+
+    asyncio.run(
+        sign_data(
+            [1, 3],
+            ["127.0.0.1:3000", "127.0.0.1:3002"],
+            [SERVER_PORT1, SERVER_PORT3],
+            DATA_TO_SIGN
+        )
+    )
+
+    asyncio.run(
+        sign_data(
+            [2, 3],
+            ["127.0.0.1:3001", "127.0.0.1:3002"],
+            [SERVER_PORT2, SERVER_PORT3],
+            DATA_TO_SIGN
+        )
+    )
