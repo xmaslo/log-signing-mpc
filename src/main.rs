@@ -126,7 +126,7 @@ async fn sign(
     signer: &State<Arc<RwLock<Signer>>>,
     data: String,
     room_id: u16
-) -> Custom<Cors<status::Accepted<String>>> {
+) -> Result<String, status::BadRequest<&'static str>> {
     let server_id: u16 = *server_id.server_id.lock().unwrap();
     let splitted_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let participant2: u16 = splitted_data[0].as_str().parse::<u16>().unwrap();
@@ -136,12 +136,12 @@ async fn sign(
     let parsed_unix_seconds = splitted_data[3].clone().parse::<u64>();
     let timestamp = match parsed_unix_seconds {
         Ok(v) => v,
-        Err(_) => return Custom(Status::BadRequest, Cors(status::Accepted(Some("TIMESTAMP IN BAD FORMAT".to_string())))),
+        Err(_) => return Err(status::BadRequest(Some("TIMESTAMP IN BAD FORMAT")))
     };
     if !verify_timestamp_10_minute_window(timestamp) {
-        let too_old_timestamp: String = "TIMESTAMP IS OLDER THAN 10 MINUTES".to_string();
-        println!("{}", too_old_timestamp.as_str());
-        return Custom(Status::BadRequest, Cors(status::Accepted(Some(too_old_timestamp))));
+        let too_old_timestamp: &str = "TIMESTAMP IS OLDER THAN 10 MINUTES";
+        println!("{}", too_old_timestamp);
+        return Err(status::BadRequest(Some(too_old_timestamp)));
     }
 
     let hash = digest(file_hash + &splitted_data[3]);
@@ -156,7 +156,7 @@ async fn sign(
     if !signer.read().await.is_offline_stage_complete(participant2) {
         let participant_result = signer.write().await.add_participant(participant2);
         match participant_result {
-            Err(msg) => return Custom(Status::BadRequest, Cors(status::Accepted(Some(msg.to_string())))),
+            Err(msg) => return Err(status::BadRequest(Some(msg))),
             _ => {}
         };
         let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
@@ -175,7 +175,7 @@ async fn sign(
         match offline_stage_result {
             Err(e) => {
                 println!("{}", e.to_string());
-                return Custom(Status::BadRequest, Cors(status::Accepted(Some(e.to_string()))));
+                return Err(status::BadRequest(Some("Offline stage failed")));
             },
             _ => {}
         }
@@ -195,9 +195,7 @@ async fn sign(
         .await
         .expect("Message could not be signed");
 
-    let response = status::Accepted(Some(signature));
-
-    Custom(Status::Accepted, Cors(response))
+    Ok(signature)
 }
 
 #[tokio::main]
