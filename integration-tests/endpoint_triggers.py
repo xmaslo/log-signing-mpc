@@ -30,3 +30,9 @@ async def trigger_sign_endpoint(participating_parties, urls, ports, timestamp, d
         ]
 
         return await asyncio.gather(*tasks)
+
+
+async def trigger_verify_endpoint(url, data_to_sign, signature, timestamp):
+    payload = f"{signature.hex()},{data_to_sign},{timestamp}"
+    async with aiohttp.ClientSession() as session:
+        return await send_post_request(session, f"{url}/verify", payload)

@@ -82,10 +82,12 @@ async fn key_gen(
 
 #[rocket::post("/verify", data = "<data>")]
 async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
-    let splitted_data = data.split(';').map(|s| s.to_string()).collect::<Vec<String>>();
-    let signature = splitted_data[0].clone();
-    let signed_data = digest(splitted_data[1].clone() + &splitted_data[2]);
-    println!("{}", signed_data);
+    let split_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
+    let signature_hex = split_data[0].clone();
+
+    let signature = hex::decode(signature_hex).expect("Decoding failed");
+    let signature = String::from_utf8(signature).expect("Found invalid UTF-8");
+    let signed_data = digest(split_data[1].clone() + &split_data[2]);
 
     let (r,s) = extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
@@ -117,12 +119,12 @@ async fn sign(
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
     let server_id: u16 = *server_id.server_id.lock().unwrap();
-    let splitted_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
-    let participant2: u16 = splitted_data[0].as_str().parse::<u16>().unwrap();
-    let url = vec![splitted_data[1].clone()];
-    let file_hash = splitted_data[2].clone();
+    let split_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
+    let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
+    let url = vec![split_data[1].clone()];
+    let file_hash = split_data[2].clone();
 
-    let parsed_unix_seconds = splitted_data[3].clone().parse::<u64>();
+    let parsed_unix_seconds = split_data[3].clone().parse::<u64>();
     let timestamp = match parsed_unix_seconds {
         Ok(v) => v,
         Err(_) => return Err(status::BadRequest(Some("TIMESTAMP IN BAD FORMAT")))
@@ -133,7 +135,7 @@ async fn sign(
         return Err(status::BadRequest(Some(too_old_timestamp)));
     }
 
-    let hash = digest(file_hash + &splitted_data[3]);
+    let hash = digest(file_hash + &split_data[3]);
 
     println!(
         "My ID: {}\n\
