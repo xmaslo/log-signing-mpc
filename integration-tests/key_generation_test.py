@@ -8,9 +8,9 @@ def test_keygen_no_keys():
     """
     server1_res, server2_res, server3_res = asyncio.run(trigger_keygen_endpoint())
 
-    assert server1_res == 200
-    assert server2_res == 200
-    assert server3_res == 200
+    assert server1_res[0] == 200
+    assert server2_res[0] == 200
+    assert server3_res[0] == 200
 
 
 def test_keygen_keys_already_present():
@@ -21,6 +21,6 @@ def test_keygen_keys_already_present():
     """
     server1_res, server2_res, server3_res = asyncio.run(trigger_keygen_endpoint())
 
-    assert server1_res == 403
-    assert server2_res == 403
-    assert server3_res == 403
+    assert server1_res[0] == 403
+    assert server2_res[0] == 403
+    assert server3_res[0] == 403

@@ -23,8 +23,8 @@ def test_signing_on_all_party_combinations():
             DATA_TO_SIGN
         )
     )
-    assert server1_res == 200
-    assert server2_res == 200
+    assert server1_res[0] == 200
+    assert server2_res[0] == 200
 
     server1_res, server2_res = asyncio.run(
         trigger_sign_endpoint(
@@ -35,8 +35,8 @@ def test_signing_on_all_party_combinations():
             DATA_TO_SIGN
         )
     )
-    assert server1_res == 200
-    assert server2_res == 200
+    assert server1_res[0] == 200
+    assert server2_res[0] == 200
 
     server1_res, server2_res = asyncio.run(
         trigger_sign_endpoint(
@@ -47,5 +47,5 @@ def test_signing_on_all_party_combinations():
             DATA_TO_SIGN
         )
     )
-    assert server1_res == 200
-    assert server2_res == 200
+    assert server1_res[0] == 200
+    assert server2_res[0] == 200
