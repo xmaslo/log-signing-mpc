@@ -8,6 +8,7 @@ mod check_timestamp;
 mod check_signature;
 mod common;
 mod rocket_instances;
+mod utils;
 
 use sha256::digest;
 use std::{
@@ -85,8 +86,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'stat
     let split_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature_hex = split_data[0].clone();
 
-    let signature = hex::decode(signature_hex).expect("Decoding failed");
-    let signature = String::from_utf8(signature).expect("Found invalid UTF-8");
+    let signature = utils::hex_to_string(signature_hex);
     let signed_data = digest(split_data[1].clone() + &split_data[2]);
 
     let (r,s) = extract_rs(signature.as_str());
@@ -122,7 +122,7 @@ async fn sign(
     let split_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
     let url = vec![split_data[1].clone()];
-    let file_hash = split_data[2].clone();
+    let data_to_sign_hex = split_data[2].clone();
 
     let parsed_unix_seconds = split_data[3].clone().parse::<u64>();
     let timestamp = match parsed_unix_seconds {
@@ -135,7 +135,7 @@ async fn sign(
         return Err(status::BadRequest(Some(too_old_timestamp)));
     }
 
-    let hash = digest(file_hash + &split_data[3]);
+    let hash = digest(data_to_sign_hex + &split_data[3]);
 
     println!(
         "My ID: {}\n\
