@@ -10,7 +10,7 @@ mod common;
 mod rocket_instances;
 mod utils;
 
-use sha256::digest;
+use sha256;
 use std::{
     path::Path,
     sync::{Arc},
@@ -87,7 +87,9 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'stat
     let signature_hex = split_data[0].clone();
 
     let signature = utils::hex_to_string(signature_hex);
-    let signed_data = digest(split_data[1].clone() + &split_data[2]);
+    let data = utils::hex_to_string(split_data[1].clone());
+    let timestamp = &split_data[2];
+    let signed_data = sha256::digest(data + timestamp);
 
     let (r,s) = extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
@@ -123,6 +125,7 @@ async fn sign(
     let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
     let url = vec![split_data[1].clone()];
     let data_to_sign_hex = split_data[2].clone();
+    let data_to_sign = utils::hex_to_string(data_to_sign_hex);
 
     let parsed_unix_seconds = split_data[3].clone().parse::<u64>();
     let timestamp = match parsed_unix_seconds {
@@ -135,7 +138,7 @@ async fn sign(
         return Err(status::BadRequest(Some(too_old_timestamp)));
     }
 
-    let hash = digest(data_to_sign_hex + &split_data[3]);
+    let hash = sha256::digest(data_to_sign + &split_data[3]);
 
     println!(
         "My ID: {}\n\

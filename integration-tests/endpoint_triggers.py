@@ -20,6 +20,7 @@ async def trigger_keygen_endpoint():
 
 
 async def trigger_sign_endpoint(participating_parties, urls, ports, timestamp, data):
+    data = data.encode().hex()
     payload1 = f"{str(participating_parties[1])}," + f"{urls[1]}," + data + "," + timestamp
     payload2 = f"{str(participating_parties[0])}," + f"{urls[0]}," + data + "," + timestamp
 
@@ -33,6 +34,7 @@ async def trigger_sign_endpoint(participating_parties, urls, ports, timestamp, d
 
 
 async def trigger_verify_endpoint(url, data_to_sign, signature, timestamp):
+    data_to_sign = data_to_sign.encode().hex()
     payload = f"{signature.hex()},{data_to_sign},{timestamp}"
     async with aiohttp.ClientSession() as session:
         return await send_post_request(session, f"{url}/verify", payload)

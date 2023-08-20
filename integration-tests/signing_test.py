@@ -4,7 +4,7 @@ from common import get_current_timestamp
 from endpoint_triggers import trigger_sign_endpoint
 
 
-DATA_TO_SIGN = "0ab6fd240a2d8673464e57c36dac68c89f1313b5280590ab512d2fcfa7fbe1c2"
+DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
 
 
 def test_signing_on_all_party_combinations():
