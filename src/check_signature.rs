@@ -97,13 +97,9 @@ mod tests {
             }
             "#;
         let (r,s) = extract_rs(signature);
-
         let str_num = String::from("sign_this_data1681402350");
-
         let msg = BigInt::from_bytes(str_num.as_bytes());
-
         let public_key: Point<Secp256k1> = Point::from_bytes(&PUBLIC_KEY_COMPRESSED).unwrap();
-
         assert!(check_sig(&r, &s, &msg, &public_key));
     }
 
@@ -123,13 +119,9 @@ mod tests {
             }
             "#;
         let (r,s) = extract_rs(signature);
-
         let str_num = String::from("sign_this_data1681402350");
-
         let msg = BigInt::from_bytes(str_num.as_bytes());
-
         let public_key: Point<Secp256k1> = Point::from_bytes(&PUBLIC_KEY_COMPRESSED).unwrap();
-
         assert!(!check_sig(&r, &s, &msg, &public_key));
     }
 
