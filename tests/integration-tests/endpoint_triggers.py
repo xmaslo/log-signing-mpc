@@ -1,7 +1,7 @@
 import asyncio
 import aiohttp
 from setup_for_tests import *
-from common import send_post_request
+from tests.common import send_post_request
 
 
 async def trigger_keygen_endpoint():

@@ -1,6 +1,6 @@
 import asyncio
 from setup_for_tests import *
-from common import get_current_timestamp
+from tests.common import get_current_timestamp
 from endpoint_triggers import trigger_sign_endpoint
 
 
