@@ -41,7 +41,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r integration-tests/requirements.txt
+        pip install -r tests/requirements.txt
 
     - name: Run API tests
       run: |
