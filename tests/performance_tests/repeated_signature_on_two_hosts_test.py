@@ -6,13 +6,13 @@ import aiohttp
 import fileinput
 
 
-LOG_FILE_NAME = 'performance_tests/nginx_json_logs.txt'
+LOG_FILE_NAME = 'tests/performance_tests/nginx_json_logs.txt'
 
 
-async def send_n_logs_for_signature(number_of_logs):
+async def send_n_logs_for_signature(number_of_logs, file_with_logs):
     async with aiohttp.ClientSession() as session:
         counter = 1
-        for line in fileinput.input([LOG_FILE_NAME]):
+        for line in fileinput.input([file_with_logs]):
             if counter == number_of_logs:
                 break
             counter += 1
@@ -30,5 +30,5 @@ async def send_n_logs_for_signature(number_of_logs):
             assert server2_res[0] == 200
 
 
-def test_sending_10_logs():
-    asyncio.run(send_n_logs_for_signature(10))
+def test_signing_10_logs():
+    asyncio.run(send_n_logs_for_signature(10, LOG_FILE_NAME))
