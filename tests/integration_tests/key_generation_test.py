@@ -1,5 +1,5 @@
 import asyncio
-from endpoint_triggers import trigger_keygen_endpoint
+from tests.endpoint_triggers import trigger_keygen_endpoint
 
 
 def test_keygen_no_keys():

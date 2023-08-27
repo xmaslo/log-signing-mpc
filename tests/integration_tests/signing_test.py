@@ -1,7 +1,7 @@
 import asyncio
 from setup_for_tests import *
 from tests.common import get_current_timestamp
-from endpoint_triggers import trigger_sign_endpoint
+from tests.endpoint_triggers import trigger_sign_endpoint
 
 
 DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
