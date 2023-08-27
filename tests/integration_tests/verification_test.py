@@ -1,5 +1,5 @@
 import asyncio
-from integration_tests.setup_for_tests import *
+from common.setup_for_tests import *
 from integration_tests.signing_test import sign_data
 from common.common import get_current_timestamp
 from common.endpoint_triggers import trigger_verify_endpoint

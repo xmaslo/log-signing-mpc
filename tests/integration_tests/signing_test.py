@@ -1,6 +1,6 @@
 import asyncio
 import aiohttp
-from integration_tests.setup_for_tests import *
+from common.setup_for_tests import *
 from common.common import get_current_timestamp
 from common.endpoint_triggers import trigger_sign_endpoint
 

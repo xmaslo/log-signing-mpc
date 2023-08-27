@@ -1,6 +1,6 @@
 import asyncio
 import aiohttp
-from integration_tests.setup_for_tests import *
+from common.setup_for_tests import *
 from common.common import send_post_request
 
 
