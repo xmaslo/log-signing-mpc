@@ -4,12 +4,15 @@ from common.endpoint_triggers import trigger_sign_endpoint
 import asyncio
 import aiohttp
 import fileinput
+import time
 
 
 LOG_FILE_NAME = 'tests/performance_tests/nginx_json_logs.txt'
 
 
 async def send_n_logs_for_signature(number_of_logs, file_with_logs):
+    start_time = time.time()
+
     async with aiohttp.ClientSession() as session:
         counter = 1
         for line in fileinput.input([file_with_logs]):
@@ -28,6 +31,11 @@ async def send_n_logs_for_signature(number_of_logs, file_with_logs):
 
             assert server1_res[0] == 200
             assert server2_res[0] == 200
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"\nExecution time: {execution_time:.2f} seconds")
+        print(f"Execution time per log: {execution_time/number_of_logs:.2f} log/sec")
 
 
 def test_signing_10_logs():
