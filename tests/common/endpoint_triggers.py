@@ -19,18 +19,17 @@ async def trigger_keygen_endpoint():
         return await asyncio.gather(*tasks)
 
 
-async def trigger_sign_endpoint(participating_parties, urls, ports, timestamp, data):
+async def trigger_sign_endpoint(session, participating_parties, urls, ports, timestamp, data):
     data = data.encode().hex()
     payload1 = f"{str(participating_parties[1])}," + f"{urls[1]}," + data + "," + timestamp
     payload2 = f"{str(participating_parties[0])}," + f"{urls[0]}," + data + "," + timestamp
 
-    async with aiohttp.ClientSession() as session:
-        tasks = [
-            send_post_request(session, f"{BASE_URL}:{ports[0]}/sign/2", payload1),
-            send_post_request(session, f"{BASE_URL}:{ports[1]}/sign/2", payload2),
-        ]
+    tasks = [
+        send_post_request(session, f"{BASE_URL}:{ports[0]}/sign/2", payload1),
+        send_post_request(session, f"{BASE_URL}:{ports[1]}/sign/2", payload2),
+    ]
 
-        return await asyncio.gather(*tasks)
+    return await asyncio.gather(*tasks)
 
 
 async def trigger_verify_endpoint(url, data_to_sign, signature, timestamp):

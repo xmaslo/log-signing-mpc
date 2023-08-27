@@ -1,7 +1,8 @@
 import asyncio
 from integration_tests.setup_for_tests import *
+from integration_tests.signing_test import sign_data
 from common.common import get_current_timestamp
-from common.endpoint_triggers import trigger_sign_endpoint, trigger_verify_endpoint
+from common.endpoint_triggers import trigger_verify_endpoint
 
 
 DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
@@ -9,7 +10,7 @@ DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
 
 async def get_signature(timestamp):
     server1_res, _ = await \
-        trigger_sign_endpoint(
+        sign_data(
             [1, 2],
             [URL0, URL1],
             [SERVER_PORT0, SERVER_PORT1],
