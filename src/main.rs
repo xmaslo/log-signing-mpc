@@ -176,7 +176,7 @@ async fn sign(
     }
 
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<PartialSignature>(server_id, room_id + 1, url).await;
+        = db.create_room::<PartialSignature>(server_id, room_id, url).await;
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
