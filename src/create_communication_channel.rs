@@ -26,7 +26,6 @@ use serde::{de::DeserializeOwned, Serialize};
 use tokio::spawn;
 use crate::rocket_instances::SharedDb;
 
-
 // This function creates the communication channels between the servers
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
 // And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
@@ -75,9 +74,7 @@ pub fn create_tls_config(server_id: u16) -> Client {
         .unwrap();
 
     let identity = Identity::from_pem(&buf).unwrap();
-
     client = client.identity(identity);
-
     client.build().unwrap()
 
 }
@@ -97,7 +94,6 @@ pub struct Room {
 
 impl Db {
     pub fn empty(server_id: u16) -> Self {
-
         Self {
             rooms: RwLock::new(HashMap::new()),
             client: create_tls_config(server_id),
@@ -138,8 +134,6 @@ impl Db {
             Ok(sink)
         });
 
-
-
         let room = Arc::new(room);
         self.rooms.write().await.insert(room_id.to_string(), Arc::clone(&room));
 
@@ -159,7 +153,6 @@ impl Db {
     pub async fn delete_room(&self, room_id: u16) {
         self.rooms.write().await.remove(&room_id.to_string());
     }
-
 }
 
 impl Room {
@@ -204,7 +197,6 @@ impl Room {
             }
         }
     }
-
 
     pub async fn receive(&self, message: String) {
         let msg_value: serde_json::Value = serde_json::from_str(&message).unwrap();
