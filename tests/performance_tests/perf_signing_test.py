@@ -10,7 +10,7 @@ import time
 LOG_FILE_NAME = 'tests/performance_tests/nginx_json_logs.txt'
 
 
-async def send_n_logs_for_signature(number_of_logs, file_with_logs):
+async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
     start_time = time.time()
 
     async with aiohttp.ClientSession() as session:
@@ -39,5 +39,5 @@ async def send_n_logs_for_signature(number_of_logs, file_with_logs):
         print(f"Execution time per log: {execution_time/number_of_logs:.2f} log/sec")
 
 
-def test_signing_10_logs():
-    asyncio.run(send_n_logs_for_signature(10, LOG_FILE_NAME))
+def test_signing_10_logs_in_order():
+    asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
