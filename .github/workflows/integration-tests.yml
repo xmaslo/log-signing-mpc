@@ -45,7 +45,7 @@ jobs:
 
     - name: Run API tests
       run: |
-        pytest ./tests/integration-tests.yml
+        pytest ./tests/integration-tests
 
     - name: Clean up
       run: docker compose down
