@@ -26,7 +26,8 @@ async def send_n_logs_for_signature(number_of_logs, file_with_logs):
                                                                    [URL0, URL1],
                                                                    [SERVER_PORT0, SERVER_PORT1],
                                                                    timestamp,
-                                                                   line
+                                                                   line,
+                                                                   1
                                                                    )
 
             assert server1_res[0] == 200

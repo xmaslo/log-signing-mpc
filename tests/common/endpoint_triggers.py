@@ -19,14 +19,14 @@ async def trigger_keygen_endpoint():
         return await asyncio.gather(*tasks)
 
 
-async def trigger_sign_endpoint(session, participating_parties, urls, ports, timestamp, data):
+async def trigger_sign_endpoint(session, participating_parties, urls, ports, timestamp, data, room):
     data = data.encode().hex()
     payload1 = f"{str(participating_parties[1])}," + f"{urls[1]}," + data + "," + timestamp
     payload2 = f"{str(participating_parties[0])}," + f"{urls[0]}," + data + "," + timestamp
 
     tasks = [
-        send_post_request(session, f"{BASE_URL}:{ports[0]}/sign/1", payload1),
-        send_post_request(session, f"{BASE_URL}:{ports[1]}/sign/1", payload2),
+        send_post_request(session, f"{BASE_URL}:{ports[0]}/sign/{room}", payload1),
+        send_post_request(session, f"{BASE_URL}:{ports[1]}/sign/{room}", payload2),
     ]
 
     return await asyncio.gather(*tasks)

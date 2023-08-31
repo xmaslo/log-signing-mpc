@@ -8,14 +8,15 @@ from common.endpoint_triggers import trigger_sign_endpoint
 DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
 
 
-async def sign_data(participating_parties, urls, ports, timestamp, data):
+async def sign_data(participating_parties, urls, ports, timestamp, data, room):
     async with aiohttp.ClientSession() as session:
         server1_res, server2_res = await trigger_sign_endpoint(session,
                                                                participating_parties,
                                                                urls,
                                                                ports,
                                                                timestamp,
-                                                               data
+                                                               data,
+                                                               room
                                                                )
 
         return server1_res, server2_res
@@ -34,7 +35,8 @@ def test_signing_on_all_party_combinations():
             [URL0, URL1],
             [SERVER_PORT0, SERVER_PORT1],
             timestamp,
-            DATA_TO_SIGN
+            DATA_TO_SIGN,
+            1
         )
     )
     assert server1_res[0] == 200
@@ -46,7 +48,8 @@ def test_signing_on_all_party_combinations():
             [URL0, URL2],
             [SERVER_PORT0, SERVER_PORT2],
             timestamp,
-            DATA_TO_SIGN
+            DATA_TO_SIGN,
+            1
         )
     )
     assert server1_res[0] == 200
@@ -58,7 +61,8 @@ def test_signing_on_all_party_combinations():
             [URL1, URL2],
             [SERVER_PORT1, SERVER_PORT2],
             timestamp,
-            DATA_TO_SIGN
+            DATA_TO_SIGN,
+            1
         )
     )
     assert server1_res[0] == 200

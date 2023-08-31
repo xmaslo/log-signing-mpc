@@ -15,7 +15,8 @@ async def get_signature(timestamp):
             [URL0, URL1],
             [SERVER_PORT0, SERVER_PORT1],
             timestamp,
-            DATA_TO_SIGN
+            DATA_TO_SIGN,
+            1
         )
 
     if server1_res[0] == 200:
