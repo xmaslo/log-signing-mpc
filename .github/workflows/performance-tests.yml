@@ -1,0 +1,51 @@
+name: Integration Tests
+
+on: workflow_dispatch
+
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Build the Docker image
+        run: docker compose build build-service
+
+      - name: Run servers
+        run: docker compose up -d la1 la2 la3
+
+      - name: Wait for servers to start
+        run: |
+          retries=0
+          max_retries=10
+          while [[ $retries -lt $max_retries ]]; do
+            sleep 5
+            if curl --silent --head --fail http://la1:8000 && \
+               curl --silent --head --fail http://la2:8001 && \
+               curl --silent --head --fail http://la3:8002; then
+              break
+            fi
+            retries=$((retries+1))
+          done
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: Run API tests
+        run: |
+          pytest ./tests/performance_tests
+
+      - name: Clean up
+        run: docker compose down
