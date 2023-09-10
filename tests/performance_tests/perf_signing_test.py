@@ -1,6 +1,7 @@
 from common.common import get_current_timestamp
 from common.setup_for_tests import *
 from common.endpoint_triggers import trigger_sign_endpoint
+from common.signatures import run_parallel_signatures
 import asyncio
 import aiohttp
 import fileinput
@@ -14,7 +15,7 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
     start_time = time.time()
 
     async with aiohttp.ClientSession() as session:
-        counter = 1
+        counter = 0
         for line in fileinput.input([file_with_logs]):
             if counter == number_of_logs:
                 break
@@ -44,8 +45,23 @@ def test_signing_10_logs_in_order():
 
 
 def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
-    pass
+    start_time = time.time()
+
+    counter = 0
+    logs = []
+    for line in fileinput.input([file_with_logs]):
+        if counter == number_of_logs:
+            break
+        counter += 1
+        logs.append(line)
+
+    run_parallel_signatures(number_of_logs, logs)
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"\nExecution time: {execution_time:.2f} seconds")
+    print(f"Execution time per log: {number_of_logs/execution_time:.2f} log/sec")
 
 
 def test_signing_10_logs_in_parallel():
-    pass
+    send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME)
