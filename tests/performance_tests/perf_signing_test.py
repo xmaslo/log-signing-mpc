@@ -7,7 +7,7 @@ import fileinput
 import time
 
 
-LOG_FILE_NAME = 'tests/performance_tests/nginx_json_logs.txt'
+LOG_FILE_NAME = 'tests/log_files/nginx_json_logs.txt'
 
 
 async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
@@ -36,8 +36,16 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"\nExecution time: {execution_time:.2f} seconds")
-        print(f"Execution time per log: {execution_time/number_of_logs:.2f} log/sec")
+        print(f"Execution time per log: {number_of_logs/execution_time:.2f} log/sec")
 
 
 def test_signing_10_logs_in_order():
     asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
+
+
+def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
+    pass
+
+
+def test_signing_10_logs_in_parallel():
+    pass
