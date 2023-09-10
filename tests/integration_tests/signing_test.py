@@ -57,7 +57,8 @@ def test_signing_on_all_party_combinations():
 def test_parallel_signatures():
     number_of_parallel_signatures = 2
 
-    responses = run_parallel_signatures(number_of_parallel_signatures, DATA_TO_SIGN)
+    responses = run_parallel_signatures(number_of_parallel_signatures,
+                                        [DATA_TO_SIGN for _ in range(number_of_parallel_signatures)])
 
     for i in range(0, number_of_parallel_signatures, 2):
         assert responses[i][0][0] == 200
