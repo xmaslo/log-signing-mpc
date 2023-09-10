@@ -39,6 +39,8 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
         print(f"\nExecution time: {execution_time:.2f} seconds")
         print(f"Execution time per log: {number_of_logs/execution_time:.2f} log/sec")
 
+    fileinput.close()
+
 
 def test_signing_10_logs_in_order():
     asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
@@ -61,6 +63,8 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
     execution_time = end_time - start_time
     print(f"\nExecution time: {execution_time:.2f} seconds")
     print(f"Execution time per log: {number_of_logs/execution_time:.2f} log/sec")
+
+    fileinput.close()
 
 
 def test_signing_10_logs_in_parallel():
