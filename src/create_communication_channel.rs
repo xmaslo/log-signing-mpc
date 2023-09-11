@@ -181,7 +181,7 @@ impl Room {
                     counter += 1;
                     println!("Sending: {}  in round {}\n", message, counter);
                     for url in server_urls {
-                        let endpoint = format!("https://{}/receive_broadcast/{}", url, self.room_id); // Include room_id in the URL
+                        let endpoint = format!("https://{}/receive_broadcast/{}", url, self.room_id);
                         match self.client.post(&endpoint).body(message.clone()).send().await {
                             Ok(_response) => {
                                 println!("Successfully sent message to {}", url);
