@@ -57,7 +57,10 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
         counter += 1
         logs.append(line)
 
-    run_parallel_signatures(number_of_logs, logs)
+    responses = run_parallel_signatures(number_of_logs, logs)
+    for server1_res, server2_res in responses:
+        assert server1_res[0] and server1_res[1]
+        assert server2_res[0] and server2_res[1]
 
     end_time = time.time()
     execution_time = end_time - start_time
@@ -69,3 +72,7 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
 
 def test_signing_10_logs_in_parallel():
     send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME)
+
+
+def test_signing_100_logs_in_parallel():
+    send_n_logs_for_signature_in_parallel(100, LOG_FILE_NAME)
