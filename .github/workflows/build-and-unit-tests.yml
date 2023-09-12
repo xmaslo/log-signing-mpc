@@ -23,6 +23,9 @@ jobs:
         cache-to: type=gha,mode=max
         tags: log-signing-mpc-image
 
+    - name: List Images
+      run: docker images
+
 #    - name: Build the Docker image
 #      run: docker compose build build-service
       
