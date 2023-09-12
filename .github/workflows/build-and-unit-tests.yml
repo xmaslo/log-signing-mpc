@@ -22,6 +22,7 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         tags: log-signing-mpc-image
+        load: true
 
     - name: List Images
       run: docker images
