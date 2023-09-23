@@ -2,13 +2,12 @@ extern crate core;
 extern crate hex;
 
 mod create_communication_channel;
-mod key_generation;
-mod signing;
 mod check_timestamp;
-mod check_signature;
+
 mod common;
 mod rocket_instances;
 mod utils;
+mod mpc_operations;
 
 use sha256;
 use std::{
@@ -36,15 +35,12 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
 };
 use tokio::sync::RwLock;
 
-use crate::key_generation::generate_keys;
 use crate::check_timestamp::verify_timestamp_10_minute_window;
-use crate::check_signature::{check_sig, extract_rs, get_public_key};
 use crate::common::read_file;
 
 use crate::{
     create_communication_channel::{Db},
     rocket_instances::{rocket_with_client_auth, rocket_without_client_auth, ServerIdState, SharedDb},
-    signing::{Signer},
 };
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
@@ -65,7 +61,7 @@ async fn key_gen(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let generation_result = generate_keys(server_id, receiving_stream, outgoing_sink).await;
+    let generation_result = mpc_operations::generate_keys(server_id, receiving_stream, outgoing_sink).await;
 
     let status = match generation_result {
         Ok(_) => "Ok".to_string(),
@@ -91,7 +87,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'stat
     let timestamp = &split_data[2];
     let signed_data = sha256::digest(data + timestamp);
 
-    let (r,s) = extract_rs(signature.as_str());
+    let (r,s) = mpc_operations::extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
     let server_id = *server_id.server_id.lock().unwrap();
@@ -103,9 +99,9 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'stat
     }
     let file_contents = file_contents.unwrap();
 
-    let public_key = get_public_key(file_contents.as_str());
+    let public_key = mpc_operations::get_public_key(file_contents.as_str());
 
-    return if check_sig(&r, &s, &msg, &public_key) {
+    return if mpc_operations::check_sig(&r, &s, &msg, &public_key) {
         Ok("Valid signature")
     } else {
         Err(status::BadRequest(Some("Invalid signature")))
@@ -116,7 +112,7 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'stat
 async fn sign(
     db: &State<SharedDb>,
     server_id: &State<ServerIdState>,
-    signer: &State<Arc<RwLock<Signer>>>,
+    signer: &State<Arc<RwLock<mpc_operations::Signer>>>,
     data: String,
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
@@ -216,7 +212,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rocket_instance_protected = rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
     let rocket_instance_public = rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
 
-    let signer = Arc::new(RwLock::new(Signer::new(server_id)));
+    let signer = Arc::new(RwLock::new(mpc_operations::Signer::new(server_id)));
 
     let rocket_instance_protected = rocket_instance_protected.manage(signer.clone());
     let rocket_instance_public = rocket_instance_public.manage(signer.clone());

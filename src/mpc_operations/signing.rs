@@ -182,7 +182,7 @@ impl Signer {
 
 #[cfg(test)]
 mod tests {
-    use crate::signing::Signer;
+    use crate::mpc_operations::signing::Signer;
 
     #[test]
     fn add_participant_valid() {
