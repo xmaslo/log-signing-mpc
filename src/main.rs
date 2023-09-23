@@ -4,6 +4,8 @@ extern crate hex;
 mod endpoints;
 mod mpc;
 mod communication;
+mod pub_endpoints;
+mod rocket_instances;
 
 use std::{
     sync::{Arc},
