@@ -2,12 +2,12 @@
 use std::sync::{Arc, Mutex};
 use rocket::Build;
 use rocket::config::{TlsConfig, MutualTls};
-use crate::{
-    endpoints::create_communication_channel::Db,
-    endpoints::create_communication_channel::receive_broadcast,
-    key_gen,
-    sign,
-    verify
+use crate::endpoints::{
+    create_communication_channel::Db,
+    create_communication_channel::receive_broadcast,
+    pub_endpoints::key_gen,
+    pub_endpoints::sign,
+    pub_endpoints::verify
 };
 
 
@@ -63,7 +63,8 @@ pub fn rocket_without_client_auth(
     let figment = figment.merge(("port", port));
 
     rocket::custom(figment)
-        .mount("/", rocket::routes![key_gen, sign, verify])
+        .mount("/",
+               rocket::routes![key_gen, sign, verify])
         .manage(ServerIdState{server_id: Mutex::new(server_id)})
         .manage(db)
 }
