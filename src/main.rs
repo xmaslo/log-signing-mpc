@@ -5,6 +5,7 @@ mod mpc;
 use mpc::operations;
 
 mod communication;
+use communication::create_communication_channel;
 mod pub_endpoints;
 mod rocket_instances;
 
@@ -38,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
 
-    let shared_db = rocket_instances::SharedDb(Arc::new(communication::Db::empty(server_id)));
+    let shared_db = rocket_instances::SharedDb(Arc::new(create_communication_channel::Db::empty(server_id)));
 
     // Create two Rocket instances with different ports and TLS settings
     let rocket_instance_protected = rocket_instances::rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);

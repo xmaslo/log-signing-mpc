@@ -4,14 +4,14 @@ use rocket::Build;
 use rocket::config::{TlsConfig, MutualTls};
 use crate::pub_endpoints::{key_gen, sign, verify};
 
-use crate::communication::{Db};
+use crate::communication::create_communication_channel;
 use crate::pub_endpoints::receive_broadcast;
 
 pub struct ServerIdState{
     pub server_id: Mutex<u16>,
 }
 
-pub struct SharedDb(pub Arc<Db>);
+pub struct SharedDb(pub Arc<create_communication_channel::Db>);
 
 impl Clone for SharedDb {
     fn clone(&self) -> Self {
@@ -20,7 +20,7 @@ impl Clone for SharedDb {
 }
 
 impl std::ops::Deref for SharedDb {
-    type Target = Db;
+    type Target = create_communication_channel::Db;
 
     fn deref(&self) -> &Self::Target {
         &self.0
