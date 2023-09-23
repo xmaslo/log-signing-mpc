@@ -2,9 +2,7 @@ extern crate core;
 extern crate hex;
 
 mod create_communication_channel;
-mod check_timestamp;
 
-mod local_share_utils;
 mod rocket_instances;
 mod utils;
 mod mpc_operations;
@@ -35,8 +33,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
 };
 use tokio::sync::RwLock;
 
-use crate::check_timestamp::verify_timestamp_10_minute_window;
-use crate::local_share_utils::read_file;
+use crate::utils::check_timestamp::verify_timestamp_10_minute_window;
+use crate::utils::local_share_utils::read_file;
 
 use crate::{
     create_communication_channel::{Db},
