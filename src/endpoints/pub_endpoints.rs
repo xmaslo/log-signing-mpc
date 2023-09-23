@@ -2,7 +2,7 @@ extern crate core;
 extern crate hex;
 
 use crate::utils;
-use crate::mpc_operations;
+use crate::operations;
 use crate::endpoints;
 
 use sha256;
@@ -51,7 +51,7 @@ pub async fn key_gen(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let generation_result = mpc_operations::generate_keys(server_id, receiving_stream, outgoing_sink).await;
+    let generation_result = operations::generate_keys(server_id, receiving_stream, outgoing_sink).await;
 
     let status = match generation_result {
         Ok(_) => "Ok".to_string(),
@@ -77,7 +77,7 @@ pub async fn verify(server_id: &State<endpoints::ServerIdState>, data: String) -
     let timestamp = &split_data[2];
     let signed_data = sha256::digest(data + timestamp);
 
-    let (r,s) = mpc_operations::extract_rs(signature.as_str());
+    let (r,s) = operations::extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
     let server_id = *server_id.server_id.lock().unwrap();
@@ -89,9 +89,9 @@ pub async fn verify(server_id: &State<endpoints::ServerIdState>, data: String) -
     }
     let file_contents = file_contents.unwrap();
 
-    let public_key = mpc_operations::get_public_key(file_contents.as_str());
+    let public_key = operations::get_public_key(file_contents.as_str());
 
-    return if mpc_operations::check_sig(&r, &s, &msg, &public_key) {
+    return if operations::check_sig(&r, &s, &msg, &public_key) {
         Ok("Valid signature")
     } else {
         Err(status::BadRequest(Some("Invalid signature")))
@@ -102,7 +102,7 @@ pub async fn verify(server_id: &State<endpoints::ServerIdState>, data: String) -
 pub async fn sign(
     db: &State<endpoints::SharedDb>,
     server_id: &State<endpoints::ServerIdState>,
-    signer: &State<Arc<RwLock<mpc_operations::Signer>>>,
+    signer: &State<Arc<RwLock<operations::Signer>>>,
     data: String,
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
