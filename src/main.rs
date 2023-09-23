@@ -1,7 +1,6 @@
 extern crate core;
 extern crate hex;
 
-mod endpoints;
 mod mpc;
 mod communication;
 mod pub_endpoints;
@@ -37,13 +36,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
 
-    let shared_db = endpoints::SharedDb(Arc::new(endpoints::Db::empty(server_id)));
+    let shared_db = rocket_instances::SharedDb(Arc::new(communication::Db::empty(server_id)));
 
     // Create two Rocket instances with different ports and TLS settings
-    let rocket_instance_protected = endpoints::rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
-    let rocket_instance_public = endpoints::rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
+    let rocket_instance_protected = rocket_instances::rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
+    let rocket_instance_public = rocket_instances::rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
 
-    let signer = Arc::new(RwLock::new(operations::Signer::new(server_id)));
+    let signer = Arc::new(RwLock::new(mpc::Signer::new(server_id)));
 
     let rocket_instance_protected = rocket_instance_protected.manage(signer.clone());
     let rocket_instance_public = rocket_instance_public.manage(signer.clone());

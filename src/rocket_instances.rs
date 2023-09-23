@@ -2,13 +2,10 @@
 use std::sync::{Arc, Mutex};
 use rocket::Build;
 use rocket::config::{TlsConfig, MutualTls};
-use crate::endpoints::{
-    pub_endpoints::key_gen,
-    pub_endpoints::sign,
-    pub_endpoints::verify
-};
+use crate::pub_endpoints::{key_gen, sign, verify};
 
-use crate::communication::{Db, receive_broadcast};
+use crate::communication::{Db};
+use crate::pub_endpoints::receive_broadcast;
 
 pub struct ServerIdState{
     pub server_id: Mutex<u16>,

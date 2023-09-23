@@ -1,9 +1,7 @@
 extern crate core;
 extern crate hex;
 
-use crate::utils;
-use crate::operations;
-use crate::endpoints;
+use crate::{mpc, rocket_instances};
 
 use sha256;
 use std::{
@@ -22,6 +20,9 @@ use anyhow::Result;
 use rocket::{
     State,
     response::status,
+    http::Status,
+    data::ToByteUnit,
+    Data,
 };
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
@@ -29,14 +30,14 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
     sign::{OfflineProtocolMessage, PartialSignature},
 };
 use tokio::sync::RwLock;
+use tokio::io::AsyncReadExt;
 
-use crate::utils::check_timestamp::verify_timestamp_10_minute_window;
-use crate::utils::local_share_utils::read_file;
+use crate::rocket_instances::SharedDb;
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 pub async fn key_gen(
-    db: &State<endpoints::SharedDb>,
-    server_id: &State<endpoints::ServerIdState>,
+    db: &State<rocket_instances::SharedDb>,
+    server_id: &State<rocket_instances::ServerIdState>,
     data: String,
     room_id: u16,
 ) -> Result<&'static str, status::Forbidden<&'static str>> {
@@ -51,7 +52,7 @@ pub async fn key_gen(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let generation_result = operations::generate_keys(server_id, receiving_stream, outgoing_sink).await;
+    let generation_result = mpc::generate_keys(server_id, receiving_stream, outgoing_sink).await;
 
     let status = match generation_result {
         Ok(_) => "Ok".to_string(),
@@ -68,30 +69,30 @@ pub async fn key_gen(
 }
 
 #[rocket::post("/verify", data = "<data>")]
-pub async fn verify(server_id: &State<endpoints::ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
+pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
     let split_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature_hex = split_data[0].clone();
 
-    let signature = utils::hex_to_string(signature_hex);
-    let data = utils::hex_to_string(split_data[1].clone());
+    let signature = mpc::hex_to_string(signature_hex);
+    let data = mpc::hex_to_string(split_data[1].clone());
     let timestamp = &split_data[2];
     let signed_data = sha256::digest(data + timestamp);
 
-    let (r,s) = operations::extract_rs(signature.as_str());
+    let (r,s) = mpc::extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
     let server_id = *server_id.server_id.lock().unwrap();
     let local_share_file_name = format!("local-share{}.json", server_id);
-    let file_contents = read_file(Path::new(&local_share_file_name));
+    let file_contents = mpc::read_file(Path::new(&local_share_file_name));
     match file_contents {
         None => return Err(status::BadRequest(Some("local-share.json is missing. Generate it first with the /keygen endpoint"))),
         _ => {}
     }
     let file_contents = file_contents.unwrap();
 
-    let public_key = operations::get_public_key(file_contents.as_str());
+    let public_key = mpc::get_public_key(file_contents.as_str());
 
-    return if operations::check_sig(&r, &s, &msg, &public_key) {
+    return if mpc::check_sig(&r, &s, &msg, &public_key) {
         Ok("Valid signature")
     } else {
         Err(status::BadRequest(Some("Invalid signature")))
@@ -100,9 +101,9 @@ pub async fn verify(server_id: &State<endpoints::ServerIdState>, data: String) -
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 pub async fn sign(
-    db: &State<endpoints::SharedDb>,
-    server_id: &State<endpoints::ServerIdState>,
-    signer: &State<Arc<RwLock<operations::Signer>>>,
+    db: &State<rocket_instances::SharedDb>,
+    server_id: &State<rocket_instances::ServerIdState>,
+    signer: &State<Arc<RwLock<mpc::Signer>>>,
     data: String,
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
@@ -111,14 +112,14 @@ pub async fn sign(
     let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
     let url = vec![split_data[1].clone()];
     let data_to_sign_hex = split_data[2].clone();
-    let data_to_sign = utils::hex_to_string(data_to_sign_hex);
+    let data_to_sign = mpc::hex_to_string(data_to_sign_hex);
 
     let parsed_unix_seconds = split_data[3].clone().parse::<u64>();
     let timestamp = match parsed_unix_seconds {
         Ok(v) => v,
         Err(_) => return Err(status::BadRequest(Some("TIMESTAMP IN BAD FORMAT")))
     };
-    if !verify_timestamp_10_minute_window(timestamp) {
+    if !mpc::verify_timestamp_10_minute_window(timestamp) {
         let too_old_timestamp: &str = "TIMESTAMP IS OLDER THAN 10 MINUTES";
         println!("{}", too_old_timestamp);
         return Err(status::BadRequest(Some(too_old_timestamp)));
@@ -176,4 +177,25 @@ pub async fn sign(
         .expect("Message could not be signed");
 
     Ok(signature)
+}
+
+// This function creates the communication channels between the servers
+// The messages sent to the outgoing sink will be received by other servers in their receiving_stream
+// And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
+#[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
+pub async fn receive_broadcast(db: &State<SharedDb>,
+                               room_id: u16,
+                               data: Data<'_>) -> Result<Status, std::io::Error> {
+    let mut buffer = Vec::new();
+    let data_length = data.open(1.mebibytes()).read_to_end(&mut buffer).await?;
+
+    println!("Received data length: {} bytes", data_length);
+
+    let message = String::from_utf8(buffer).unwrap_or_else(|_| String::from("Invalid UTF-8"));
+
+    if let Some(room) = db.get_room(room_id).await {
+        room.receive(message).await;
+    }
+
+    Ok(Status::Ok)
 }
