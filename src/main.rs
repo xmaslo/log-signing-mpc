@@ -2,6 +2,8 @@ extern crate core;
 extern crate hex;
 
 mod mpc;
+use mpc::operations;
+
 mod communication;
 mod pub_endpoints;
 mod rocket_instances;
@@ -42,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rocket_instance_protected = rocket_instances::rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
     let rocket_instance_public = rocket_instances::rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
 
-    let signer = Arc::new(RwLock::new(mpc::Signer::new(server_id)));
+    let signer = Arc::new(RwLock::new(operations::signing::Signer::new(server_id)));
 
     let rocket_instance_protected = rocket_instance_protected.manage(signer.clone());
     let rocket_instance_public = rocket_instance_public.manage(signer.clone());

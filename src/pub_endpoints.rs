@@ -1,7 +1,19 @@
 extern crate core;
 extern crate hex;
 
-use crate::{mpc, rocket_instances};
+use crate::rocket_instances;
+
+use crate::mpc::operations::{
+    check_signature,
+    signing,
+    key_generation,
+};
+
+use crate::mpc::utils::{
+    hex2string,
+    local_share_utils,
+    check_timestamp
+};
 
 use sha256;
 use std::{
@@ -52,7 +64,7 @@ pub async fn key_gen(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let generation_result = mpc::generate_keys(server_id, receiving_stream, outgoing_sink).await;
+    let generation_result = key_generation::generate_keys(server_id, receiving_stream, outgoing_sink).await;
 
     let status = match generation_result {
         Ok(_) => "Ok".to_string(),
@@ -73,26 +85,26 @@ pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: St
     let split_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature_hex = split_data[0].clone();
 
-    let signature = mpc::hex_to_string(signature_hex);
-    let data = mpc::hex_to_string(split_data[1].clone());
+    let signature = hex2string::hex_to_string(signature_hex);
+    let data = hex2string::hex_to_string(split_data[1].clone());
     let timestamp = &split_data[2];
     let signed_data = sha256::digest(data + timestamp);
 
-    let (r,s) = mpc::extract_rs(signature.as_str());
+    let (r,s) = check_signature::extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
     let server_id = *server_id.server_id.lock().unwrap();
     let local_share_file_name = format!("local-share{}.json", server_id);
-    let file_contents = mpc::read_file(Path::new(&local_share_file_name));
+    let file_contents = local_share_utils::read_file(Path::new(&local_share_file_name));
     match file_contents {
         None => return Err(status::BadRequest(Some("local-share.json is missing. Generate it first with the /keygen endpoint"))),
         _ => {}
     }
     let file_contents = file_contents.unwrap();
 
-    let public_key = mpc::get_public_key(file_contents.as_str());
+    let public_key = check_signature::get_public_key(file_contents.as_str());
 
-    return if mpc::check_sig(&r, &s, &msg, &public_key) {
+    return if check_signature::check_sig(&r, &s, &msg, &public_key) {
         Ok("Valid signature")
     } else {
         Err(status::BadRequest(Some("Invalid signature")))
@@ -103,7 +115,7 @@ pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: St
 pub async fn sign(
     db: &State<rocket_instances::SharedDb>,
     server_id: &State<rocket_instances::ServerIdState>,
-    signer: &State<Arc<RwLock<mpc::Signer>>>,
+    signer: &State<Arc<RwLock<signing::Signer>>>,
     data: String,
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
@@ -112,14 +124,14 @@ pub async fn sign(
     let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
     let url = vec![split_data[1].clone()];
     let data_to_sign_hex = split_data[2].clone();
-    let data_to_sign = mpc::hex_to_string(data_to_sign_hex);
+    let data_to_sign = hex2string::hex_to_string(data_to_sign_hex);
 
     let parsed_unix_seconds = split_data[3].clone().parse::<u64>();
     let timestamp = match parsed_unix_seconds {
         Ok(v) => v,
         Err(_) => return Err(status::BadRequest(Some("TIMESTAMP IN BAD FORMAT")))
     };
-    if !mpc::verify_timestamp_10_minute_window(timestamp) {
+    if !check_timestamp::verify_timestamp_10_minute_window(timestamp) {
         let too_old_timestamp: &str = "TIMESTAMP IS OLDER THAN 10 MINUTES";
         println!("{}", too_old_timestamp);
         return Err(status::BadRequest(Some(too_old_timestamp)));
