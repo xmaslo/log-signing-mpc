@@ -24,7 +24,7 @@ use round_based::Msg;
 use anyhow::{Context, Result};
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::spawn;
-use crate::rocket_instances::SharedDb;
+use crate::endpoints::rocket_instances::SharedDb;
 
 // This function creates the communication channels between the servers
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream

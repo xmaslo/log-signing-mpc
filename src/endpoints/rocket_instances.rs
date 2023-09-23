@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 use rocket::Build;
 use rocket::config::{TlsConfig, MutualTls};
 use crate::{
-    create_communication_channel::Db,
-    create_communication_channel::receive_broadcast,
+    endpoints::create_communication_channel::Db,
+    endpoints::create_communication_channel::receive_broadcast,
     key_gen,
     sign,
     verify

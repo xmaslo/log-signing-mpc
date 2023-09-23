@@ -1,11 +1,9 @@
 extern crate core;
 extern crate hex;
 
-mod create_communication_channel;
-
-mod rocket_instances;
 mod utils;
 mod mpc_operations;
+mod endpoints;
 
 use sha256;
 use std::{
@@ -36,15 +34,10 @@ use tokio::sync::RwLock;
 use crate::utils::check_timestamp::verify_timestamp_10_minute_window;
 use crate::utils::local_share_utils::read_file;
 
-use crate::{
-    create_communication_channel::{Db},
-    rocket_instances::{rocket_with_client_auth, rocket_without_client_auth, ServerIdState, SharedDb},
-};
-
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 async fn key_gen(
-    db: &State<SharedDb>,
-    server_id: &State<ServerIdState>,
+    db: &State<endpoints::SharedDb>,
+    server_id: &State<endpoints::ServerIdState>,
     data: String,
     room_id: u16,
 ) -> Result<&'static str, status::Forbidden<&'static str>> {
@@ -76,7 +69,7 @@ async fn key_gen(
 }
 
 #[rocket::post("/verify", data = "<data>")]
-async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
+async fn verify(server_id: &State<endpoints::ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
     let split_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature_hex = split_data[0].clone();
 
@@ -108,8 +101,8 @@ async fn verify(server_id: &State<ServerIdState>, data: String) -> Result<&'stat
 
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 async fn sign(
-    db: &State<SharedDb>,
-    server_id: &State<ServerIdState>,
+    db: &State<endpoints::SharedDb>,
+    server_id: &State<endpoints::ServerIdState>,
     signer: &State<Arc<RwLock<mpc_operations::Signer>>>,
     data: String,
     room_id: u16
@@ -204,11 +197,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
 
-    let shared_db = SharedDb(Arc::new(Db::empty(server_id)));
+    let shared_db = endpoints::SharedDb(Arc::new(endpoints::Db::empty(server_id)));
 
     // Create two Rocket instances with different ports and TLS settings
-    let rocket_instance_protected = rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
-    let rocket_instance_public = rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
+    let rocket_instance_protected = endpoints::rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
+    let rocket_instance_public = endpoints::rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
 
     let signer = Arc::new(RwLock::new(mpc_operations::Signer::new(server_id)));
 
