@@ -15,7 +15,7 @@ pub fn verify_timestamp_10_minute_window(timestamp: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
-    use crate::check_timestamp::verify_timestamp_10_minute_window;
+    use crate::mpc::utils::check_timestamp::verify_timestamp_10_minute_window;
 
     #[test]
     fn check_that_now_is_true() {

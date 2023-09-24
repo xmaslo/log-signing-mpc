@@ -2,20 +2,16 @@
 use std::sync::{Arc, Mutex};
 use rocket::Build;
 use rocket::config::{TlsConfig, MutualTls};
-use crate::{
-    create_communication_channel::Db,
-    create_communication_channel::receive_broadcast,
-    key_gen,
-    sign,
-    verify
-};
+use crate::pub_endpoints::{key_gen, sign, verify};
 
+use crate::communication::create_communication_channel;
+use crate::pub_endpoints::receive_broadcast;
 
 pub struct ServerIdState{
     pub server_id: Mutex<u16>,
 }
 
-pub struct SharedDb(pub Arc<Db>);
+pub struct SharedDb(pub Arc<create_communication_channel::Db>);
 
 impl Clone for SharedDb {
     fn clone(&self) -> Self {
@@ -24,7 +20,7 @@ impl Clone for SharedDb {
 }
 
 impl std::ops::Deref for SharedDb {
-    type Target = Db;
+    type Target = create_communication_channel::Db;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -63,7 +59,8 @@ pub fn rocket_without_client_auth(
     let figment = figment.merge(("port", port));
 
     rocket::custom(figment)
-        .mount("/", rocket::routes![key_gen, sign, verify])
+        .mount("/",
+               rocket::routes![key_gen, sign, verify])
         .manage(ServerIdState{server_id: Mutex::new(server_id)})
         .manage(db)
 }

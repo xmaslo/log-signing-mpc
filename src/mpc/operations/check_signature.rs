@@ -77,7 +77,7 @@ mod tests {
     use curv::arithmetic::Converter;
     use curv::BigInt;
     use curv::elliptic::curves::{Point, Secp256k1};
-    use crate::check_signature::{check_sig, extract_rs, get_public_key};
+    use crate::mpc::operations::check_signature::{check_sig, extract_rs, get_public_key};
 
     const PUBLIC_KEY_COMPRESSED: [u8; 33] = [3, 183, 191, 143, 211, 92, 155, 44, 130, 59, 29, 152, 124, 146, 233, 81, 9, 70, 219, 20, 100, 4, 243, 31, 227, 146, 20, 116, 205, 145, 227, 57, 0];
 

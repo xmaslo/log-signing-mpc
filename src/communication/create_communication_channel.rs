@@ -10,12 +10,6 @@ use futures::{
     Sink, SinkExt, Stream, StreamExt,
 };
 use tokio::sync::RwLock;
-use rocket::{
-    Data, State,
-    http::Status,
-    tokio::io::AsyncReadExt,
-    data::ToByteUnit,
-};
 use reqwest::{Client, Certificate, Identity};
 
 use rustls_pemfile::{certs};
@@ -24,28 +18,6 @@ use round_based::Msg;
 use anyhow::{Context, Result};
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::spawn;
-use crate::rocket_instances::SharedDb;
-
-// This function creates the communication channels between the servers
-// The messages sent to the outgoing sink will be received by other servers in their receiving_stream
-// And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
-#[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
-pub async fn receive_broadcast(db: &State<SharedDb>,
-                               room_id: u16,
-                               data: Data<'_>) -> Result<Status, std::io::Error> {
-    let mut buffer = Vec::new();
-    let data_length = data.open(1.mebibytes()).read_to_end(&mut buffer).await?;
-
-    println!("Received data length: {} bytes", data_length);
-
-    let message = String::from_utf8(buffer).unwrap_or_else(|_| String::from("Invalid UTF-8"));
-
-    if let Some(room) = db.get_room(room_id).await {
-        room.receive(message).await;
-    }
-
-    Ok(Status::Ok)
-}
 
 pub fn create_tls_config(server_id: u16) -> Client {
     // Load CA certificate

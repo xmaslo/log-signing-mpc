@@ -12,7 +12,7 @@ use futures::stream::Fuse;
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::LocalKey;
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::sign::{CompletedOfflineStage, OfflineProtocolMessage, OfflineStage, PartialSignature, SignManual};
 use round_based::{AsyncProtocol, Msg};
-use crate::common::{read_file, file_to_local_key};
+use crate::mpc::utils::local_share_utils::{read_file, file_to_local_key};
 
 /// The structure that holds current state for the offline stage with other parties
 pub struct Signer {
@@ -182,7 +182,7 @@ impl Signer {
 
 #[cfg(test)]
 mod tests {
-    use crate::signing::Signer;
+    use crate::mpc::operations::signing::Signer;
 
     #[test]
     fn add_participant_valid() {
