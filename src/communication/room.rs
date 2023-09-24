@@ -1,9 +1,15 @@
-use std::{sync::Arc};
+use std::{sync::Arc,
+          time::Duration
+};
+
 use futures::{
     channel::mpsc::SendError,
     Sink, SinkExt, Stream, StreamExt,
 };
-use tokio::sync::RwLock;
+use tokio::{
+    sync::RwLock,
+    time::timeout,
+};
 use reqwest::Client;
 use anyhow::Result;
 
@@ -36,7 +42,30 @@ impl Room {
         let mut counter = 0;
 
         loop {
-            match self.outgoing_stream.write().await.next().await {
+            let stream_lock_res =
+                timeout(Duration::from_secs(2),
+                        self.outgoing_stream.write())
+                    .await;
+
+            let next_in_stream = match stream_lock_res {
+                Ok(mut stream_lock) => {
+                    let stream_message = timeout(Duration::from_secs(2),
+                                                 stream_lock.next()).await;
+                    match stream_message {
+                        Ok(message) => message,
+                        Err(_) => {
+                            println!("Unable to receive message");
+                            continue;
+                        },
+                    }
+                }
+                Err(_) => {
+                    println!("Unable to receive message");
+                    continue;
+                }
+            };
+
+            match next_in_stream {
                 Some(Ok(message)) => {
                     counter += 1;
                     println!("Sending: {}  in round {}\n", message, counter);
