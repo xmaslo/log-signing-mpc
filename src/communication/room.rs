@@ -7,6 +7,8 @@ use tokio::sync::RwLock;
 use reqwest::Client;
 use anyhow::Result;
 
+use crate::communication::step_writer;
+
 pub struct Room {
     server_id: u16,
     room_id: u16,

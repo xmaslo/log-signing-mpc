@@ -21,6 +21,7 @@ use tokio::spawn;
 
 use crate::communication::room::Room;
 
+
 pub fn create_tls_config(server_id: u16) -> Client {
     // Load CA certificate
     let ca_cert = File::open("certs/ca_cert.pem");
