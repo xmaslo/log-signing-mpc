@@ -27,14 +27,13 @@ For easier development usage, you can unpack the certificates stored in `example
 
 If the certificates are already expired you can run provided scripts create your own self-signed certificates:
 1. Navigate into `log-signing-mpc` directory.
-2. Create `certs`, `certs\private`, and `certs\public` directories.
-3. Run:
+2. Run:
    - Linux: 
      - `./examples/certs_creation.sh`
    - Windows: First, install Git Bash (https://git-scm.com/downloads) and then run: \
      `export MSYS_NO_PATHCONV=1` \
      `./examples/certs_creation_win.sh 3`
-4. Copy the `certs` directory from where you will run `log-signing-mpc.exe`. Usually, it is the `log-signing-mpc\target\release`.
+3. Copy the `certs` directory from where you will run `log-signing-mpc.exe`. Usually, it is the `log-signing-mpc\target\release`.
 
 
 ## Implemented Features
