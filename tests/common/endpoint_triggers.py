@@ -4,17 +4,25 @@ from common.setup_for_tests import *
 from common.common import send_post_request
 
 
-async def trigger_keygen_endpoint():
-    payload1 = URL1 + "," + URL2
-    payload2 = URL2 + "," + URL0
-    payload3 = URL1 + "," + URL0
+def get_payload(server_id, urls):
+    server_id = server_id - 1
+    payload = ""
+
+    for i in range(len(urls)):
+        if i != server_id:
+            payload += urls[i] + ","
+
+    return payload[:-1]
+
+
+async def trigger_keygen_endpoint(n):
+    urls = get_urls(n, IS_DOCKER)
+    payloads = get_keygen_payloads(n, IS_DOCKER)
 
     async with aiohttp.ClientSession() as session:
-        tasks = [
-            send_post_request(session, f"{BASE_URL}:{SERVER_PORT0}/key_gen/1", payload1),
-            send_post_request(session, f"{BASE_URL}:{SERVER_PORT1}/key_gen/1", payload2),
-            send_post_request(session, f"{BASE_URL}:{SERVER_PORT2}/key_gen/1", payload3),
-        ]
+        tasks = []
+        for i in range(n):
+            tasks.append(send_post_request(session, f"{urls[i]}/key_gen/1", payloads[i]))
 
         return await asyncio.gather(*tasks)
 
