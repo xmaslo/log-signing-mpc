@@ -6,11 +6,10 @@ def test_keygen_no_keys():
     """
     Tests that keys are correctly generated on a newly set up machines.
     """
-    server1_res, server2_res, server3_res = asyncio.run(trigger_keygen_endpoint())
+    results = asyncio.run(trigger_keygen_endpoint(3))
 
-    assert server1_res[0] == 200
-    assert server2_res[0] == 200
-    assert server3_res[0] == 200
+    for result in results:
+        assert result[0] == 200
 
 
 def test_keygen_keys_already_present():
@@ -19,8 +18,7 @@ def test_keygen_keys_already_present():
     possible to regenerate new (and overwrite old ones) using the key
     generation endpoint.
     """
-    server1_res, server2_res, server3_res = asyncio.run(trigger_keygen_endpoint())
+    results = asyncio.run(trigger_keygen_endpoint(3))
 
-    assert server1_res[0] == 403
-    assert server2_res[0] == 403
-    assert server3_res[0] == 403
+    for result in results:
+        assert result[0] == 403
