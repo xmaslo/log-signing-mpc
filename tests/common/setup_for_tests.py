@@ -1,4 +1,4 @@
-IS_DOCKER = False
+IS_DOCKER = True
 
 BASE_URL = "http://localhost"
 
