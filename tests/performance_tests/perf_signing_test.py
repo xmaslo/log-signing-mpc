@@ -24,8 +24,8 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
             timestamp = get_current_timestamp()
             server1_res, server2_res = await trigger_sign_endpoint(session,
                                                                    [1, 2],
-                                                                   [URL0, URL1],
-                                                                   [SERVER_PORT0, SERVER_PORT1],
+                                                                   [URL1, URL2],
+                                                                   [SERVER_PORT1, SERVER_PORT2],
                                                                    timestamp,
                                                                    line,
                                                                    1

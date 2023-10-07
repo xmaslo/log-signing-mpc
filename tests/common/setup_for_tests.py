@@ -2,25 +2,25 @@ IS_DOCKER = True
 
 BASE_URL = "http://localhost"
 
-SERVER_PORT0 = "8001"
-SERVER_PORT1 = "8002"
-SERVER_PORT2 = "8003"
+SERVER_PORT1 = "8001"
+SERVER_PORT2 = "8002"
+SERVER_PORT3 = "8003"
 
 if IS_DOCKER:
-    URL0 = "la1:3001"
-    URL1 = "la2:3002"
-    URL2 = "la3:3003"
+    URL1 = "la1:3001"
+    URL2 = "la2:3002"
+    URL3 = "la3:3003"
 else:
-    URL0 = "127.0.0.1:3001"
-    URL1 = "127.0.0.1:3002"
-    URL2 = "127.0.0.1:3003"
+    URL1 = "127.0.0.1:3001"
+    URL2 = "127.0.0.1:3002"
+    URL3 = "127.0.0.1:3003"
 
 
 def get_urls(n, is_docker):
     urls = []
     for i in range(1, n + 1):
         if is_docker:
-            urls.append(f"la{i}:800{i}")
+            urls.append(f"http://la{i}:800{i}")
         else:
             urls.append(f"http://127.0.0.1:800{i}")
 

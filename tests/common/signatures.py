@@ -40,8 +40,8 @@ def run_parallel_signatures(number_of_parallel_signatures, data_to_sign):
     responses = asyncio.run(
         sign_data_in_parallel(
             [2, 3],
-            [URL1, URL2],
-            [SERVER_PORT1, SERVER_PORT2],
+            [URL2, URL3],
+            [SERVER_PORT2, SERVER_PORT3],
             timestamp,
             data_to_sign,
             [i for i in range(1, number_of_parallel_signatures + 1)]

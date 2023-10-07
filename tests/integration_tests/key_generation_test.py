@@ -17,13 +17,24 @@ def remove_keys(n):
 
 def test_keygen_no_keys_3():
     """
-    Tests that keys are correctly generated on a newly set up machines.
+    Tests that keys are correctly generated on a 3 newly set up machines.
     """
     number_of_parties = 3
     expected_err_code = 200
 
     generate_keys(number_of_parties, expected_err_code)
-    remove_keys(number_of_parties)
+    # remove_keys(number_of_parties)
+
+
+# def test_keygen_no_keys_4():
+#     """
+#     Tests that keys are correctly generated on a 4 newly set up machines.
+#     """
+#     number_of_parties = 4
+#     expected_err_code = 200
+#
+#     generate_keys(number_of_parties, expected_err_code)
+#     remove_keys(number_of_parties)
 
 
 def test_keygen_keys_already_present_3():
@@ -34,6 +45,6 @@ def test_keygen_keys_already_present_3():
     """
     number_of_parties = 3
 
-    generate_keys(number_of_parties, 200)
+    # generate_keys(number_of_parties, 200)
     generate_keys(number_of_parties, 403)
-    remove_keys(number_of_parties)
+    # remove_keys(number_of_parties)
