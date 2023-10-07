@@ -12,9 +12,6 @@ use round_based::{AsyncProtocol, Msg};
 
 use futures::stream::Fuse;
 
-const THRESHOLD: u16 = 1;
-const NUMBER_OF_PARTIES: u16 = 3;
-
 fn are_keys_already_generated(index: u16) -> Result<String, String> {
     let file_name: String = format!("local-share{}.json", index);
     let file_path: &Path = Path::new(file_name.as_str());
@@ -27,7 +24,9 @@ fn are_keys_already_generated(index: u16) -> Result<String, String> {
 
 pub async fn generate_keys(index: u16,
                            receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<ProtocolMessage>>>>>,
-                           outgoing_sink: Pin<&mut impl Sink<Msg<ProtocolMessage>, Error=Error>>
+                           outgoing_sink: Pin<&mut impl Sink<Msg<ProtocolMessage>, Error=Error>>,
+                           threshold: u16,
+                           number_of_parties: u16
 ) -> Result<(), String> {
     let file = are_keys_already_generated(index);
     let file = match file {
@@ -40,7 +39,7 @@ pub async fn generate_keys(index: u16,
     let five_seconds:Duration = Duration::from_secs(5);
     thread::sleep(five_seconds);
 
-    let keygen: Keygen = Keygen::new(index, THRESHOLD, NUMBER_OF_PARTIES).unwrap();
+    let keygen: Keygen = Keygen::new(index, threshold, number_of_parties).unwrap();
     let results: Result<LocalKey<Secp256k1>, Error> = AsyncProtocol::new(keygen, receiving_stream, outgoing_sink)
         .run()
         .await

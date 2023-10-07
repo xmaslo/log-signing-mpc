@@ -44,6 +44,9 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
 use tokio::sync::RwLock;
 use tokio::io::AsyncReadExt;
 
+const THRESHOLD: u16 = 1;
+const NUMBER_OF_PARTIES: u16 = 3;
+
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 pub async fn key_gen(
     db: &State<rocket_instances::SharedDb>,
@@ -62,7 +65,12 @@ pub async fn key_gen(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let generation_result = key_generation::generate_keys(server_id, receiving_stream, outgoing_sink).await;
+    let generation_result =
+        key_generation::generate_keys(server_id,
+                                      receiving_stream,
+                                      outgoing_sink,
+                                      THRESHOLD,
+                                      NUMBER_OF_PARTIES).await;
 
     let status = match generation_result {
         Ok(_) => "Ok".to_string(),
