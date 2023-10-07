@@ -44,8 +44,6 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
 use tokio::sync::RwLock;
 use tokio::io::AsyncReadExt;
 
-use crate::rocket_instances::SharedDb;
-
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 pub async fn key_gen(
     db: &State<rocket_instances::SharedDb>,
@@ -195,7 +193,7 @@ pub async fn sign(
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
 // And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
 #[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
-pub async fn receive_broadcast(db: &State<SharedDb>,
+pub async fn receive_broadcast(db: &State<rocket_instances::SharedDb>,
                                room_id: u16,
                                data: Data<'_>) -> Result<Status, std::io::Error> {
     let mut buffer = Vec::new();
