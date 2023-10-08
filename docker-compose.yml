@@ -12,9 +12,9 @@ services:
     image: log-signing-mpc-image
     container_name: la1
     ports:
-      - "8000:8000"
-      - "3000:3000"
-    command: ["1", "8000", "3000"]
+      - "8001:8001"
+      - "3001:3001"
+    command: ["1", "8001", "3001"]
     networks:
       - la-net
     depends_on:
@@ -24,9 +24,9 @@ services:
     image: log-signing-mpc-image
     container_name: la2
     ports:
-      - "8001:8001"
-      - "3001:3001"
-    command: ["2", "8001", "3001"]
+      - "8002:8002"
+      - "3002:3002"
+    command: ["2", "8002", "3002"]
     networks:
       - la-net
     depends_on:
@@ -36,9 +36,9 @@ services:
     image: log-signing-mpc-image
     container_name: la3
     ports:
-      - "8002:8002"
-      - "3002:3002"
-    command: ["3", "8002", "3002"]
+      - "8003:8003"
+      - "3003:3003"
+    command: ["3", "8003", "3003"]
     networks:
       - la-net
     depends_on:

@@ -19,10 +19,7 @@ else:
 def get_urls(n, is_docker):
     urls = []
     for i in range(1, n + 1):
-        if is_docker:
-            urls.append(f"http://la{i}:800{i}")
-        else:
-            urls.append(f"http://127.0.0.1:800{i}")
+        urls.append(f"http://127.0.0.1:800{i}")
 
     return urls
 
