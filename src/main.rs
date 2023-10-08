@@ -8,6 +8,8 @@ mod communication;
 use communication::create_communication_channel;
 mod pub_endpoints;
 mod rocket_instances;
+mod mpc_config;
+use mpc_config::MPCconfig;
 
 use std::{
     sync::{Arc},
@@ -29,6 +31,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_id = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(0);
     let port = args.get(2).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
     let port_mutual_auth = args.get(3).and_then(|s| s.parse::<u16>().ok()).unwrap_or(3000);
+    let threshold = args.get(4).and_then(|s| s.parse::<u16>().ok()).unwrap_or(1);
+    let number_of_parties = args.get(5).and_then(|s| s.parse::<u16>().ok()).unwrap_or(3);
+
+    let config = MPCconfig::new(server_id, threshold, number_of_parties);
 
     // TODO: might be good idea to adjust for development and production (https://rocket.rs/v0.4/guide/configuration/)
     // Create a figment with the desired configuration
@@ -39,11 +45,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(("limits", Limits::new().limit("json", ByteUnit::from(1048576 * 1024))));
 
 
-    let shared_db = rocket_instances::SharedDb(Arc::new(create_communication_channel::Db::empty(server_id)));
+    let shared_db = rocket_instances::SharedDb(
+        Arc::new(
+            create_communication_channel::Db::empty(config.threshold())
+        )
+    );
 
     // Create two Rocket instances with different ports and TLS settings
-    let rocket_instance_protected = rocket_instances::rocket_with_client_auth(figment.clone(), server_id , shared_db.clone(), port_mutual_auth);
-    let rocket_instance_public = rocket_instances::rocket_without_client_auth(figment.clone(), server_id, shared_db.clone(), port);
+    let rocket_instance_protected =
+        rocket_instances::rocket_with_client_auth(figment.clone(),
+                                                  config.clone(),
+                                                  shared_db.clone(),
+                                                  port_mutual_auth);
+    let rocket_instance_public =
+        rocket_instances::rocket_without_client_auth(figment.clone(),
+                                                     config.clone(),
+                                                     shared_db.clone(),
+                                                     port);
 
     let signer = Arc::new(RwLock::new(operations::signing::Signer::new(server_id)));
 

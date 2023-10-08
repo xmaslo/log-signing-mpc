@@ -23,7 +23,7 @@ def test_keygen_no_keys_3():
     expected_err_code = 200
 
     generate_keys(number_of_parties, expected_err_code)
-    # remove_keys(number_of_parties)
+    remove_keys(number_of_parties)
 
 
 # def test_keygen_no_keys_4():
@@ -34,7 +34,7 @@ def test_keygen_no_keys_3():
 #     expected_err_code = 200
 #
 #     generate_keys(number_of_parties, expected_err_code)
-#     remove_keys(number_of_parties)
+#     # remove_keys(number_of_parties)
 
 
 def test_keygen_keys_already_present_3():
@@ -45,6 +45,6 @@ def test_keygen_keys_already_present_3():
     """
     number_of_parties = 3
 
-    # generate_keys(number_of_parties, 200)
+    generate_keys(number_of_parties, 200)
     generate_keys(number_of_parties, 403)
     # remove_keys(number_of_parties)

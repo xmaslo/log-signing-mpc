@@ -44,33 +44,30 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
 use tokio::sync::RwLock;
 use tokio::io::AsyncReadExt;
 
-const THRESHOLD: u16 = 1;
-const NUMBER_OF_PARTIES: u16 = 3;
-
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 pub async fn key_gen(
     db: &State<rocket_instances::SharedDb>,
-    server_id: &State<rocket_instances::ServerIdState>,
+    config_state: &State<rocket_instances::ServerConfigState>,
     data: String,
     room_id: u16,
 ) -> Result<&'static str, status::Forbidden<&'static str>> {
 
     let urls = data.split(',').map(|s| s.to_string()).collect();
-    let server_id = *server_id.server_id.lock().unwrap();
+    let mpc_config = config_state.config().lock().unwrap().clone();
 
     let (receiving_stream, outgoing_sink) =
-        db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
+        db.create_room::<ProtocolMessage>(mpc_config.server_id(), room_id, urls).await;
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
     let generation_result =
-        key_generation::generate_keys(server_id,
+        key_generation::generate_keys(mpc_config.server_id(),
                                       receiving_stream,
                                       outgoing_sink,
-                                      THRESHOLD,
-                                      NUMBER_OF_PARTIES).await;
+                                      mpc_config.threshold(),
+                                      mpc_config.number_of_parties()).await;
 
     let status = match generation_result {
         Ok(_) => "Ok".to_string(),
@@ -87,7 +84,8 @@ pub async fn key_gen(
 }
 
 #[rocket::post("/verify", data = "<data>")]
-pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
+pub async fn verify(config_state: &State<rocket_instances::ServerConfigState>,
+                    data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
     let split_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature_hex = split_data[0].clone();
 
@@ -99,7 +97,7 @@ pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: St
     let (r,s) = check_signature::extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
-    let server_id = *server_id.server_id.lock().unwrap();
+    let server_id = config_state.config().lock().unwrap().server_id();
     let local_share_file_name = format!("local-share{}.json", server_id);
     let file_contents = local_share_utils::read_file(Path::new(&local_share_file_name));
     match file_contents {
@@ -120,12 +118,12 @@ pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: St
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 pub async fn sign(
     db: &State<rocket_instances::SharedDb>,
-    server_id: &State<rocket_instances::ServerIdState>,
+    config_state: &State<rocket_instances::ServerConfigState>,
     signer: &State<Arc<RwLock<signing::Signer>>>,
     data: String,
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
-    let server_id: u16 = *server_id.server_id.lock().unwrap();
+    let server_id: u16 = config_state.config().lock().unwrap().server_id();
     let split_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
     let url = vec![split_data[1].clone()];
