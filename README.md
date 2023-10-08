@@ -101,10 +101,8 @@ To generate keys, curl the */keygen* endpoint (you can download curl at https://
 TODO: I take advantage of the error and set timestamp far in the future.
 
 To sign a message, curl the  */sign* endpoint:
-1. `curl.exe -X POST localhost:8000/sign/1 -d "2,127.0.0.1:3001,7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d,16816533390"`
-2. `curl.exe -X POST localhost:8001/sign/1 -d "1,127.0.0.1:3000,7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d,16816533390"`
-
-Format is -d "other_party_id,other_party_address,data_to_sign,unix_seconds_timestamp".
+1. `curl.exe -X POST http://localhost:8001/sign/1 -H "Content-Type: application/json" -d '{\"participants\":[{\"server_id\":2,\"url\":\"127.0.0.1:3002\"}],\"data_to_sign\":\"7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d\",\"timestamp\":\"16816533390\"}'`
+2. `curl.exe -X POST localhost:8002/sign/1 -H "Content-Type: application/json" -d '{\"participants\":[{\"server_id\":1,\"url\":\"127.0.0.1:3001\"}],\"data_to_sign\":\"7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d\",\"timestamp\":\"16816533390\"}'`
 
 You can find current timestamp at https://www.epochconverter.com/.
 

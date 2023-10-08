@@ -44,6 +44,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
 use tokio::sync::RwLock;
 use tokio::io::AsyncReadExt;
 
+use crate::mpc::utils::parse_signature_json::EndpointSignatureData;
+
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 pub async fn key_gen(
     db: &State<rocket_instances::SharedDb>,
@@ -124,14 +126,15 @@ pub async fn sign(
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
     let server_id: u16 = config_state.config().lock().unwrap().server_id();
-    let split_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
-    let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
-    let url = vec![split_data[1].clone()];
-    let data_to_sign_hex = split_data[2].clone();
-    let data_to_sign = hex2string::hex_to_string(data_to_sign_hex);
 
-    let parsed_unix_seconds = split_data[3].clone().parse::<u64>();
-    let timestamp = match parsed_unix_seconds {
+    let esig_data = match serde_json::from_str::<EndpointSignatureData>(data.as_str()) {
+        Ok(ed) => ed,
+        Err(_) => return Err(status::BadRequest(Some("Unable to parse json data")))
+    };
+
+    let unhexlified_data = hex2string::hex_to_string(String::from(esig_data.data_to_sign()));
+
+    let timestamp = match esig_data.timestamp().clone().parse::<u64>() {
         Ok(v) => v,
         Err(_) => return Err(status::BadRequest(Some("TIMESTAMP IN BAD FORMAT")))
     };
@@ -141,26 +144,28 @@ pub async fn sign(
         return Err(status::BadRequest(Some(too_old_timestamp)));
     }
 
-    let hash = sha256::digest(data_to_sign + &split_data[3]);
+    let hash = sha256::digest(unhexlified_data + esig_data.timestamp());
+
+    let participant2_id = esig_data.participant_id(0);
+    let participant2_url = esig_data.participant_url(0);
 
     println!(
         "My ID: {}\n\
          Other server ID: {}\n\
          Other server URL: {}\n\
-         Data to sign: {}\n", server_id, participant2, url[0], hash
+         Data to sign: {}\n", server_id, participant2_id, participant2_url, hash
     );
 
-    if !signer.read().await.is_offline_stage_complete(participant2) {
-        let participant_result = signer.write().await.add_participant(participant2);
+    if !signer.read().await.is_offline_stage_complete(participant2_id) {
+        let participant_result = signer.write().await.add_participant(participant2_id);
         match participant_result {
             Err(msg) => return Err(status::BadRequest(Some(msg))),
             _ => {}
         };
-        let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
+        let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2_id);
 
-        // No check if the id is not already in use
         let (receiving_stream, outgoing_sink)
-            = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
+            = db.create_room::<OfflineProtocolMessage>(server_id, room_id, vec![String::from(participant2_url.clone())]).await;
 
         let receiving_stream = receiving_stream.fuse();
         tokio::pin!(receiving_stream);
@@ -168,7 +173,7 @@ pub async fn sign(
 
         println!("Beginning offline stage");
 
-        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2).await;
+        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2_id).await;
         match offline_stage_result {
             Err(e) => {
                 println!("{}", e.to_string());
@@ -179,7 +184,7 @@ pub async fn sign(
     }
 
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<PartialSignature>(server_id, room_id, url).await;
+        = db.create_room::<PartialSignature>(server_id, room_id, vec![String::from(participant2_url.clone())]).await;
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
@@ -188,7 +193,7 @@ pub async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, participant2)
+    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, participant2_id)
         .await
         .expect("Message could not be signed");
 
