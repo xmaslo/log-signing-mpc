@@ -147,6 +147,17 @@ impl Signer {
         }
     }
 
+    pub fn real_to_arbitrary_index(&self, other_indeces: Vec<u16>) -> u16 {
+        let mut index: u16 = 1;
+        for i in other_indeces {
+            if self.my_index > i {
+                index += 1
+            }
+        }
+
+        return index
+    }
+
     pub fn assign_numbers(input: Vec<u32>) -> Vec<u32> {
         let mut indexed = Vec::new();
 
@@ -284,5 +295,22 @@ mod tests {
         assert_eq!(Signer::assign_numbers(vec![1,2]), vec![1,2]);
         assert_eq!(Signer::assign_numbers(vec![1,3]), vec![1,2]);
         assert_eq!(Signer::assign_numbers(vec![3,1]), vec![2,1]);
+    }
+
+    #[test]
+    fn arbitrary_index_conversion() {
+        let mut s: Signer = Signer::new(2);
+        s.add_participant(1).unwrap();
+        s.add_participant(3).unwrap();
+
+        assert_eq!(s.real_to_arbitrary_index(vec![1]), 2);
+        assert_eq!(s.real_to_arbitrary_index(vec![3]), 1);
+
+        let mut s: Signer = Signer::new(3);
+        s.add_participant(1).unwrap();
+        s.add_participant(2).unwrap();
+
+        assert_eq!(s.real_to_arbitrary_index(vec![1]), 2);
+        assert_eq!(s.real_to_arbitrary_index(vec![2]), 2);
     }
 }
