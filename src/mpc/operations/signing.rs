@@ -120,9 +120,9 @@ impl Signer {
         Ok(signature)
     }
 
-    pub fn real_to_arbitrary_index(&self, other_indeces: Vec<u16>) -> u16 {
+    pub fn real_to_arbitrary_index(&self, other_indices: Vec<u16>) -> u16 {
         let mut index: u16 = 1;
-        for i in other_indeces {
+        for i in other_indices {
             if self.my_index > i {
                 index += 1
             }
