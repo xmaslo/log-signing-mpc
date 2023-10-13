@@ -16,8 +16,7 @@ async def send_post_request(session, url, payload):
         timeout = aiohttp.ClientTimeout(total=30)
         async with (session.post(url=url,
                                  data=payload,
-                                 timeout=timeout,
-                                 headers={'content-type': 'application/json'})
+                                 timeout=timeout)
                     as response):
             response_data = await response.content.read()
             return response.status, response_data
