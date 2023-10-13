@@ -61,7 +61,7 @@ impl Signer {
 
         println!("Participants: {}:{}", self.my_index, other_party_index);
         println!("My real index: {}", self.my_index);
-        println!("My other index: {}", self.convert_my_real_index_to_arbitrary_one(other_party_index));
+        println!("My other index: {}", self.real_to_arbitrary_index(vec![other_party_index]));
 
         // wait for servers to synchronize
         // TODO: do this synchronization in a better way then sleeping
@@ -69,7 +69,7 @@ impl Signer {
         thread::sleep(one_second);
 
         let signing =
-            OfflineStage::new(self.convert_my_real_index_to_arbitrary_one(other_party_index),
+            OfflineStage::new(self.real_to_arbitrary_index(vec![other_party_index]),
                               self.get_participants(other_party_index).unwrap(),
                               local_share).unwrap();
 
@@ -100,7 +100,7 @@ impl Signer {
 
         outgoing_sink
             .send(Msg {
-                sender: self.convert_my_real_index_to_arbitrary_one(other_party_index),
+                sender: self.real_to_arbitrary_index(vec![other_party_index]),
                 receiver: None,
                 body: partial_signature,
             }).await?;
@@ -120,33 +120,6 @@ impl Signer {
         Ok(signature)
     }
 
-    // parties in the ECDSA implementation needs to indexed from one, despite the fact that they have different real indexes
-    // so, if parties 2 and 3 are participating in the signature, we need to refer to them as 1 and 2 respectively
-    // the same goes for [1,2] and [1,3], we always have to refer to them as [1,2]
-    // this function converts index of this party into its arbitrary one
-    // 1 will always be indexed as 1
-    // 2 will be indexed as one depending on whether the other party is 1 or 3
-    // 3 will be always two
-    // this function only works if we strictly allow signing of two parties (TODO: rewrite this function when changing this)
-    // the function returns 0 is participant was not added by add_participant() function or some other error occurs
-    pub fn convert_my_real_index_to_arbitrary_one(&self, other_party_index: u16) -> u16 {
-        if !self.is_participant_present(other_party_index) {
-            return 0;
-        }
-
-        return if self.my_index == 1 {
-            1
-        } else if self.my_index == 2 && other_party_index == 3 {
-            1
-        } else if self.my_index == 2 && other_party_index == 1 {
-            2
-        } else if self.my_index == 3 {
-            2
-        } else {
-            0
-        }
-    }
-
     pub fn real_to_arbitrary_index(&self, other_indeces: Vec<u16>) -> u16 {
         let mut index: u16 = 1;
         for i in other_indeces {
@@ -156,25 +129,6 @@ impl Signer {
         }
 
         return index
-    }
-
-    pub fn assign_numbers(input: Vec<u32>) -> Vec<u32> {
-        let mut indexed = Vec::new();
-
-        for (index, &number) in input.iter().enumerate() {
-            indexed.push((number, index));
-        }
-
-        indexed.sort_by(|a, b| a.0.cmp(&b.0));
-
-        let mut result: Vec<u32> = vec![0; input.len()];
-        let mut count: u32 = 1;
-        for (_, index) in indexed {
-            result[index] = count;
-            count += 1;
-        }
-
-        result
     }
 
     pub fn completed_offline_stage(&self) -> &HashMap<u16, Option<CompletedOfflineStage>> {
@@ -237,43 +191,6 @@ mod tests {
     }
 
     #[test]
-    fn convert_index_other_participant_not_added() {
-        let s: Signer = Signer::new(1);
-        let result = s.convert_my_real_index_to_arbitrary_one(2);
-        assert_eq!(result, 0);
-    }
-
-    #[test]
-    fn convert_index_always_one() {
-        let mut s: Signer = Signer::new(1);
-        s.add_participant(2).unwrap();
-        s.add_participant(3).unwrap();
-
-        assert_eq!(s.convert_my_real_index_to_arbitrary_one(2), 1);
-        assert_eq!(s.convert_my_real_index_to_arbitrary_one(3), 1);
-    }
-
-    #[test]
-    fn convert_index_always_two() {
-        let mut s: Signer = Signer::new(3);
-        s.add_participant(1).unwrap();
-        s.add_participant(2).unwrap();
-
-        assert_eq!(s.convert_my_real_index_to_arbitrary_one(1), 2);
-        assert_eq!(s.convert_my_real_index_to_arbitrary_one(2), 2);
-    }
-
-    #[test]
-    fn convert_index_depending_on_other_party() {
-        let mut s: Signer = Signer::new(2);
-        s.add_participant(1).unwrap();
-        s.add_participant(3).unwrap();
-
-        assert_eq!(s.convert_my_real_index_to_arbitrary_one(1), 2);
-        assert_eq!(s.convert_my_real_index_to_arbitrary_one(3), 1);
-    }
-
-    #[test]
     fn offline_stage_complete_no() {
         let mut s: Signer = Signer::new(1);
         s.add_participant(2).unwrap();
@@ -285,16 +202,6 @@ mod tests {
     fn offline_stage_complete_missing_participant() {
         let s: Signer = Signer::new(1);
         assert!(!s.is_offline_stage_complete(2));
-    }
-
-    #[test]
-    fn assign_numbers() {
-        assert_eq!(Signer::assign_numbers(vec![3,1,4]), vec![2,1,3]);
-        assert_eq!(Signer::assign_numbers(vec![1,3,4]), vec![1,2,3]);
-
-        assert_eq!(Signer::assign_numbers(vec![1,2]), vec![1,2]);
-        assert_eq!(Signer::assign_numbers(vec![1,3]), vec![1,2]);
-        assert_eq!(Signer::assign_numbers(vec![3,1]), vec![2,1]);
     }
 
     #[test]

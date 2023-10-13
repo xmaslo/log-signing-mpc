@@ -162,7 +162,7 @@ pub async fn sign(
             Err(msg) => return Err(status::BadRequest(Some(msg))),
             _ => {}
         };
-        let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2_id);
+        let server_id = signer.read().await.real_to_arbitrary_index(vec![participant2_id]);
 
         let (receiving_stream, outgoing_sink)
             = db.create_room::<OfflineProtocolMessage>(server_id, room_id, vec![String::from(participant2_url.clone())]).await;
