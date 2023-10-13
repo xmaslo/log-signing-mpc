@@ -147,6 +147,25 @@ impl Signer {
         }
     }
 
+    pub fn assign_numbers(input: Vec<u32>) -> Vec<u32> {
+        let mut indexed = Vec::new();
+
+        for (index, &number) in input.iter().enumerate() {
+            indexed.push((number, index));
+        }
+
+        indexed.sort_by(|a, b| a.0.cmp(&b.0));
+
+        let mut result: Vec<u32> = vec![0; input.len()];
+        let mut count: u32 = 1;
+        for (_, index) in indexed {
+            result[index] = count;
+            count += 1;
+        }
+
+        result
+    }
+
     pub fn completed_offline_stage(&self) -> &HashMap<u16, Option<CompletedOfflineStage>> {
         &self.completed_offline_stage
     }
@@ -255,5 +274,15 @@ mod tests {
     fn offline_stage_complete_missing_participant() {
         let s: Signer = Signer::new(1);
         assert!(!s.is_offline_stage_complete(2));
+    }
+
+    #[test]
+    fn assign_numbers() {
+        assert_eq!(Signer::assign_numbers(vec![3,1,4]), vec![2,1,3]);
+        assert_eq!(Signer::assign_numbers(vec![1,3,4]), vec![1,2,3]);
+
+        assert_eq!(Signer::assign_numbers(vec![1,2]), vec![1,2]);
+        assert_eq!(Signer::assign_numbers(vec![1,3]), vec![1,2]);
+        assert_eq!(Signer::assign_numbers(vec![3,1]), vec![2,1]);
     }
 }
