@@ -156,13 +156,13 @@ pub async fn sign(
          Data to sign: {}\n", server_id, participant2_id, participant2_url, hash
     );
 
-    if !signer.read().await.is_offline_stage_complete(participant2_id) {
-        let participant_result = signer.write().await.add_participant(participant2_id);
-        match participant_result {
-            Err(msg) => return Err(status::BadRequest(Some(msg))),
-            _ => {}
-        };
-        let server_id = signer.read().await.real_to_arbitrary_index(vec![participant2_id]);
+    if !signer.read().await.is_offline_stage_complete(&vec![participant2_id]) {
+        // let participant_result = signer.write().await.add_participant(participant2_id);
+        // match participant_result {
+        //     Err(msg) => return Err(status::BadRequest(Some(msg))),
+        //     _ => {}
+        // };
+        let server_id = signer.read().await.real_to_arbitrary_index(&vec![participant2_id]);
 
         let (receiving_stream, outgoing_sink)
             = db.create_room::<OfflineProtocolMessage>(server_id, room_id, vec![String::from(participant2_url.clone())]).await;
@@ -173,7 +173,7 @@ pub async fn sign(
 
         println!("Beginning offline stage");
 
-        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2_id).await;
+        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, vec![participant2_id]).await;
         match offline_stage_result {
             Err(e) => {
                 println!("{}", e.to_string());
@@ -193,7 +193,7 @@ pub async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, participant2_id)
+    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, vec![participant2_id])
         .await
         .expect("Message could not be signed");
 

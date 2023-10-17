@@ -17,41 +17,56 @@ use crate::mpc::utils::local_share_utils::{read_file, file_to_local_key};
 /// The structure that holds current state for the offline stage with other parties
 pub struct Signer {
     my_index: u16,
-    completed_offline_stage: HashMap<u16, Option<CompletedOfflineStage>>,
+    // completed_offline_stage: HashMap<u16, Option<CompletedOfflineStage>>,
+    offline_stage: HashMap<String, CompletedOfflineStage>
 }
 
 impl Signer {
     pub fn new(mi: u16) -> Signer {
         Signer {
             my_index: mi,
-            completed_offline_stage: HashMap::new()
+            // completed_offline_stage: HashMap::new(),
+            offline_stage: HashMap::new()
         }
     }
 
-    pub fn add_participant(&mut self, new_participant: u16) -> Result<u16, &'static str> {
-        if new_participant == self.my_index {
-            return Err("New participant must have different index from current instance");
+    // pub fn add_participant(&mut self, new_participant: u16) -> Result<u16, &'static str> {
+    //     if new_participant == self.my_index {
+    //         return Err("New participant must have different index from current instance");
+    //     }
+    //
+    //     if self.completed_offline_stage.contains_key(&new_participant) {
+    //         println!("Participant with that id is already present");
+    //         return Ok(0);
+    //     }
+    //
+    //     self.completed_offline_stage.insert(new_participant, None);
+    //     Ok(new_participant)
+    // }
+
+    fn vec_to_string(participants: &Vec<u16>) -> String {
+        let mut participants = participants.clone();
+        let mut result: String = String::new();
+        participants.sort();
+        for participant in participants {
+            result.push_str( participant.to_string().as_str());
         }
 
-        if self.completed_offline_stage.contains_key(&new_participant) {
-            println!("Participant with that id is already present");
-            return Ok(0);
-        }
-
-        self.completed_offline_stage.insert(new_participant, None);
-        Ok(new_participant)
+        return result;
     }
 
     pub async fn do_offline_stage(
         &mut self,
         receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<OfflineProtocolMessage>>>>>,
         outgoing_sink: Pin<&mut impl Sink<Msg<OfflineProtocolMessage>, Error=Error>>,
-        other_party_index: u16
+        // other_party_index: u16
+        participants: Vec<u16>
     ) -> Result<(), Error>
     {
-        if !self.is_participant_present(other_party_index) {
-            return Err(anyhow!("Participant {} is not present", other_party_index));
-        }
+        // if !self.is_participant_present(other_party_index) {
+        //     return Err(anyhow!("Participant {} is not present", other_party_index));
+        // }
+        let participants_string = Signer::vec_to_string(&participants);
 
         let local_share = self.get_local_share();
         if local_share.is_none() {
@@ -59,9 +74,9 @@ impl Signer {
         }
         let local_share: LocalKey<Secp256k1> = local_share.unwrap();
 
-        println!("Participants: {}:{}", self.my_index, other_party_index);
+        println!("Participants: {}:{}", self.my_index, participants_string);
         println!("My real index: {}", self.my_index);
-        println!("My other index: {}", self.real_to_arbitrary_index(vec![other_party_index]));
+        println!("My other index: {}", self.real_to_arbitrary_index(&participants));
 
         // wait for servers to synchronize
         // TODO: do this synchronization in a better way then sleeping
@@ -69,8 +84,8 @@ impl Signer {
         thread::sleep(one_second);
 
         let signing =
-            OfflineStage::new(self.real_to_arbitrary_index(vec![other_party_index]),
-                              self.get_participants(other_party_index).unwrap(),
+            OfflineStage::new(self.real_to_arbitrary_index(&participants),
+                              self.get_participants(&participants).unwrap(),
                               local_share).unwrap();
 
         let offline_stage = AsyncProtocol::new(signing, receiving_stream, outgoing_sink)
@@ -78,8 +93,8 @@ impl Signer {
             .await
             .map_err(|e| anyhow!("protocol execution terminated with error: {}", e));
 
-        // self.completed_offline_stage = Some(offline_stage?);
-        self.completed_offline_stage.insert(other_party_index, Some(offline_stage?));
+        // self.completed_offline_stage.insert(other_party_index, Some(offline_stage?));
+        self.offline_stage.insert(participants_string, offline_stage?);
 
         println!("OFFLINE STAGE IS COMPLETED");
 
@@ -91,16 +106,25 @@ impl Signer {
         hash_to_sign: &String,
         receiving_stream: Pin<&mut impl Stream<Item = Result<Msg<PartialSignature>, Error>>>,
         mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>,
-        other_party_index: u16
-    ) -> Result<String> {
+        // other_party_index: u16
+        participants: Vec<u16>
+    ) -> Result<String, anyhow::Error> {
+        let participants_string = Signer::vec_to_string(&participants);
+
+        let offline_stage = match self.offline_stage.get(participants_string.as_str()) {
+            None => return Err(anyhow!("Offline stage not completed")),
+            Some(os) => os.clone()
+        };
+
         let (signing, partial_signature) = SignManual::new(
             BigInt::from_bytes(&hex::decode(hash_to_sign).unwrap()),
-            self.completed_offline_stage.get(&other_party_index).unwrap().as_ref().unwrap().clone()
+            // self.completed_offline_stage.get(&other_party_index).unwrap().as_ref().unwrap().clone()
+            offline_stage
         )?;
 
         outgoing_sink
             .send(Msg {
-                sender: self.real_to_arbitrary_index(vec![other_party_index]),
+                sender: self.real_to_arbitrary_index(&participants),
                 receiver: None,
                 body: partial_signature,
             }).await?;
@@ -120,10 +144,10 @@ impl Signer {
         Ok(signature)
     }
 
-    pub fn real_to_arbitrary_index(&self, other_indices: Vec<u16>) -> u16 {
+    pub fn real_to_arbitrary_index(&self, other_indices: &Vec<u16>) -> u16 {
         let mut index: u16 = 1;
         for i in other_indices {
-            if self.my_index > i {
+            if self.my_index > i.clone() {
                 index += 1
             }
         }
@@ -131,20 +155,23 @@ impl Signer {
         return index
     }
 
-    pub fn completed_offline_stage(&self) -> &HashMap<u16, Option<CompletedOfflineStage>> {
-        &self.completed_offline_stage
-    }
+    // pub fn completed_offline_stage(&self) -> &HashMap<u16, Option<CompletedOfflineStage>> {
+    //     &self.completed_offline_stage
+    // }
 
-    pub fn is_participant_present(&self, index: u16) -> bool {
-        self.completed_offline_stage().contains_key(&index)
-    }
+    // pub fn is_participant_present(&self, index: u16) -> bool {
+    //     self.completed_offline_stage().contains_key(&index)
+    // }
 
-    pub fn is_offline_stage_complete(&self, participant: u16) -> bool {
-        let participant_value = self.completed_offline_stage.get(&participant);
-        return match participant_value {
-            Some(v) => !v.is_none(),
-            None => false
-        }
+    pub fn is_offline_stage_complete(&self, participants: &Vec<u16>) -> bool {
+        let participants_string = Signer::vec_to_string(participants);
+        self.offline_stage.contains_key(participants_string.as_str())
+
+        // let participant_value = self.completed_offline_stage.get(&participant);
+        // return match participant_value {
+        //     Some(v) => !v.is_none(),
+        //     None => false
+        // }
     }
 
     fn get_local_share(&self) -> Option<LocalKey<Secp256k1>> {
@@ -153,14 +180,16 @@ impl Signer {
         Some(file_to_local_key(&file_content))
     }
 
-    fn get_participants(&self, other_party_index: u16) -> Result<Vec<u16>,&'static str>  {
-        if !self.is_participant_present(other_party_index) {
-            return Err("Participant is not present");
-        }
+    fn get_participants(&self, participants: &Vec<u16>) -> Result<Vec<u16>,&'static str>  {
+        // if !self.is_participant_present(other_party_index) {
+        //     return Err("Participant is not present");
+        // }
 
-        let mut participants: Vec<u16> = vec![self.my_index, other_party_index];
-        participants.sort(); // both parties my provide indexes in the same order
-        Ok(participants)
+        let mut p = participants.clone();
+        let mut all_participants: Vec<u16> = vec![self.my_index];
+        all_participants.append(&mut p);
+        all_participants.sort(); // both parties must provide indexes in the same order
+        Ok(all_participants)
     }
 }
 
