@@ -7,11 +7,11 @@ from common.signatures import sign_data, run_parallel_signatures
 DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
 
 
-def test_signing_42():
+def test_signing_14():
     timestamp = get_current_timestamp()
 
 
-def test_signing_on_all_party_combinations_3():
+def test_signing_on_all_party_combinations_13():
     """
     Verifies that all signing combinations, namely
     [1,2], [1,3], and [2,3] work.
@@ -58,7 +58,7 @@ def test_signing_on_all_party_combinations_3():
     assert server2_res[0] == 200
 
 
-def test_parallel_signatures_3():
+def test_parallel_signatures_13():
     number_of_parallel_signatures = 2
 
     responses = run_parallel_signatures(number_of_parallel_signatures,

@@ -15,7 +15,7 @@ def remove_keys(n):
         os.remove(f"target/release/local-share{i}.json")
 
 
-def test_keygen_no_keys_3():
+def test_keygen_no_keys_13():
     """
     Tests that keys are correctly generated on a 3 newly set up machines.
     """
@@ -26,7 +26,7 @@ def test_keygen_no_keys_3():
     # remove_keys(number_of_parties)
 
 
-# def test_keygen_no_keys_4():
+# def test_keygen_no_keys_14():
 #     """
 #     Tests that keys are correctly generated on a 4 newly set up machines.
 #     """
@@ -37,7 +37,7 @@ def test_keygen_no_keys_3():
 #     # remove_keys(number_of_parties)
 
 
-def test_keygen_keys_already_present_3():
+def test_keygen_keys_already_present_13():
     """
     Tests that once the keys were generated on the machines, it is not
     possible to regenerate new (and overwrite old ones) using the key
