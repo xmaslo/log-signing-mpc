@@ -17,7 +17,6 @@ use crate::mpc::utils::local_share_utils::{read_file, file_to_local_key};
 /// The structure that holds current state for the offline stage with other parties
 pub struct Signer {
     my_index: u16,
-    // completed_offline_stage: HashMap<u16, Option<CompletedOfflineStage>>,
     offline_stage: HashMap<String, CompletedOfflineStage>
 }
 
@@ -25,7 +24,6 @@ impl Signer {
     pub fn new(mi: u16) -> Signer {
         Signer {
             my_index: mi,
-            // completed_offline_stage: HashMap::new(),
             offline_stage: HashMap::new()
         }
     }
@@ -45,7 +43,6 @@ impl Signer {
         &mut self,
         receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<OfflineProtocolMessage>>>>>,
         outgoing_sink: Pin<&mut impl Sink<Msg<OfflineProtocolMessage>, Error=Error>>,
-        // other_party_index: u16
         participants: Vec<u16>
     ) -> Result<(), Error>
     {
