@@ -63,7 +63,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                      shared_db.clone(),
                                                      port);
 
-    let signer = Arc::new(RwLock::new(operations::signing::Signer::new(server_id)));
+    let signer = Arc::new(RwLock::new(
+        operations::signing::Signer::new(
+            config.server_id(),
+            config.number_of_parties()
+        )));
 
     let rocket_instance_protected = rocket_instance_protected.manage(signer.clone());
     let rocket_instance_public = rocket_instance_public.manage(signer.clone());

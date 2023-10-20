@@ -17,14 +17,16 @@ use crate::mpc::utils::local_share_utils::{read_file, file_to_local_key};
 /// The structure that holds current state for the offline stage with other parties
 pub struct Signer {
     my_index: u16,
-    offline_stage: HashMap<String, CompletedOfflineStage>
+    offline_stage: HashMap<String, CompletedOfflineStage>,
+    n_of_participants: u16
 }
 
 impl Signer {
-    pub fn new(mi: u16) -> Signer {
+    pub fn new(mi: u16, n: u16) -> Signer {
         Signer {
             my_index: mi,
-            offline_stage: HashMap::new()
+            offline_stage: HashMap::new(),
+            n_of_participants: n
         }
     }
 
@@ -46,6 +48,9 @@ impl Signer {
         participants: Vec<u16>
     ) -> Result<(), Error>
     {
+        if !self.are_participants_valid(&participants) {
+            return Err(anyhow!("Invalid participants provided"));
+        }
         let participants_string = Signer::vec_to_string(&participants);
 
         let local_share = self.get_local_share();
@@ -87,6 +92,10 @@ impl Signer {
         mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>,
         participants: Vec<u16>
     ) -> Result<String, Error> {
+        if !self.are_participants_valid(&participants) {
+            return Err(anyhow!("Invalid participants provided"));
+        }
+
         let participants_string = Signer::vec_to_string(&participants);
 
         let offline_stage = match self.offline_stage.get(participants_string.as_str()) {
@@ -149,6 +158,17 @@ impl Signer {
         all_participants.append(&mut p);
         all_participants.sort(); // both parties must provide indexes in the same order
         Ok(all_participants)
+    }
+
+    fn are_participants_valid(&self, participants: &Vec<u16>) -> bool {
+        for participant in participants {
+            if participant == &self.my_index ||
+                participant > &self.n_of_participants {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
