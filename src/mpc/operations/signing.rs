@@ -18,15 +18,17 @@ use crate::mpc::utils::local_share_utils::{read_file, file_to_local_key};
 pub struct Signer {
     my_index: u16,
     offline_stage: HashMap<String, CompletedOfflineStage>,
-    n_of_participants: u16
+    threshold: u16,
+    n_of_participants: u16,
 }
 
 impl Signer {
-    pub fn new(mi: u16, n: u16) -> Signer {
+    pub fn new(mi: u16, n: u16, t: u16) -> Signer {
         Signer {
             my_index: mi,
             offline_stage: HashMap::new(),
-            n_of_participants: n
+            threshold: t,
+            n_of_participants: n,
         }
     }
 
@@ -161,6 +163,10 @@ impl Signer {
     }
 
     fn are_participants_valid(&self, participants: &Vec<u16>) -> bool {
+        if participants.len() as u16 != self.threshold {
+            return false;
+        }
+
         for participant in participants {
             if participant == &self.my_index ||
                 participant > &self.n_of_participants {
@@ -200,7 +206,7 @@ mod tests {
 
     #[test]
     fn offline_stage_complete_no() {
-        let s: Signer = Signer::new(1, 3);
+        let s: Signer = Signer::new(1, 1, 3);
 
         assert!(!s.is_offline_stage_complete(&vec![2]));
     }
@@ -213,12 +219,16 @@ mod tests {
 
     #[test]
     fn arbitrary_index_conversion() {
-        let s: Signer = Signer::new(2, 3);
+        let s: Signer = Signer::new(2, 1, 3);
         assert_eq!(s.real_to_arbitrary_index(&vec![1]), 2);
         assert_eq!(s.real_to_arbitrary_index(&vec![3]), 1);
 
-        let s: Signer = Signer::new(3, 3);
+        let s: Signer = Signer::new(3, 1, 3);
         assert_eq!(s.real_to_arbitrary_index(&vec![1]), 2);
         assert_eq!(s.real_to_arbitrary_index(&vec![2]), 2);
+
+        let s: Signer = Signer::new(2, 3, 4);
+        assert_eq!(s.real_to_arbitrary_index(&vec![3,4]), 1);
+        assert_eq!(s.real_to_arbitrary_index(&vec![1,3]), 2);
     }
 }

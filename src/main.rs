@@ -66,6 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signer = Arc::new(RwLock::new(
         operations::signing::Signer::new(
             config.server_id(),
+            config.threshold(),
             config.number_of_parties()
         )));
 
