@@ -42,10 +42,6 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
     fileinput.close()
 
 
-def test_signing_10_logs_in_order():
-    asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
-
-
 def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
     start_time = time.time()
 
@@ -70,9 +66,9 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
     fileinput.close()
 
 
-def test_signing_10_logs_in_parallel():
-    send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME)
+class TestPerformance:
+    def test_signing_10_logs_in_order(self):
+        asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
 
-
-# def test_signing_100_logs_in_parallel():
-#     send_n_logs_for_signature_in_parallel(100, LOG_FILE_NAME)
+    def test_signing_10_logs_in_parallel(self):
+        send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME)

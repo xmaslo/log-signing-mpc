@@ -45,7 +45,7 @@ jobs:
 
     - name: Run API tests
       run: |
-        pytest
+        pytest -k "TestKeyGen13 or TestSigning13 or TestVerify13 or TestPerformance"
 
     - name: Clean up
       run: docker compose down

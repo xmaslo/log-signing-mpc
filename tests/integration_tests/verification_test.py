@@ -26,17 +26,18 @@ async def get_signature(timestamp):
     return None
 
 
-def test_verify_signature_on_all_parties():
-    """
-    Tests that we can verify signature on all servers.
-    """
-    timestamp = get_current_timestamp()
-    signature = asyncio.run(get_signature(timestamp))
+class TestVerify13:
+    def test_verify_signature_on_all_parties(self):
+        """
+        Tests that we can verify signature on all servers.
+        """
+        timestamp = get_current_timestamp()
+        signature = asyncio.run(get_signature(timestamp))
 
-    response1 = asyncio.run(trigger_verify_endpoint(BASE_URL + f":{SERVER_PORT1}", DATA_TO_SIGN, signature, timestamp))
-    response2 = asyncio.run(trigger_verify_endpoint(BASE_URL + f":{SERVER_PORT2}", DATA_TO_SIGN, signature, timestamp))
-    response3 = asyncio.run(trigger_verify_endpoint(BASE_URL + f":{SERVER_PORT3}", DATA_TO_SIGN, signature, timestamp))
+        response1 = asyncio.run(trigger_verify_endpoint(BASE_URL + f":{SERVER_PORT1}", DATA_TO_SIGN, signature, timestamp))
+        response2 = asyncio.run(trigger_verify_endpoint(BASE_URL + f":{SERVER_PORT2}", DATA_TO_SIGN, signature, timestamp))
+        response3 = asyncio.run(trigger_verify_endpoint(BASE_URL + f":{SERVER_PORT3}", DATA_TO_SIGN, signature, timestamp))
 
-    assert response1[0] == 200
-    assert response2[0] == 200
-    assert response3[0] == 200
+        assert response1[0] == 200
+        assert response2[0] == 200
+        assert response3[0] == 200
