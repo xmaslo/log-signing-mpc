@@ -5,18 +5,21 @@ BASE_URL = "http://localhost"
 SERVER_PORT1 = "8001"
 SERVER_PORT2 = "8002"
 SERVER_PORT3 = "8003"
+SERVER_PORT4 = "8004"
 
 if IS_DOCKER:
     URL1 = "la1:3001"
     URL2 = "la2:3002"
     URL3 = "la3:3003"
+    # TODO: adjust dockerfile
 else:
     URL1 = "127.0.0.1:3001"
     URL2 = "127.0.0.1:3002"
     URL3 = "127.0.0.1:3003"
+    URL4 = "127.0.0.1:3004"
 
 
-def get_urls(n, is_docker):
+def get_urls(n):
     urls = []
     for i in range(1, n + 1):
         urls.append(f"http://127.0.0.1:800{i}")

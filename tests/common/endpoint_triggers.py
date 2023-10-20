@@ -6,7 +6,7 @@ from common.create_payload import create_sign_payload
 
 
 async def trigger_keygen_endpoint(n):
-    urls = get_urls(n, IS_DOCKER)
+    urls = get_urls(n)
     payloads = get_keygen_payloads(n, IS_DOCKER)
 
     async with aiohttp.ClientSession() as session:
