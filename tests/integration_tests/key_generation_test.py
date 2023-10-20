@@ -16,8 +16,7 @@ def remove_keys(n):
 
 
 class TestKeyGen13:
-
-    def test_keygen_no_keys_13(self):
+    def test_keygen_no_keys(self):
         """
         Tests that keys are correctly generated on a 3 newly set up machines.
         """
@@ -26,7 +25,7 @@ class TestKeyGen13:
         generate_keys(number_of_parties, expected_err_code)
         # remove_keys(number_of_parties)
 
-    def test_keygen_keys_already_present_13(self):
+    def test_keygen_keys_already_present(self):
         """
         Tests that once the keys were generated on the machines, it is not
         possible to regenerate new (and overwrite old ones) using the key
@@ -42,7 +41,7 @@ class TestKeyGen13:
 
 class TestKeyGen24:
 
-    def test_keygen_no_keys_14(self):
+    def test_keygen_no_keys(self):
         """
         Tests that keys are correctly generated on a 4 newly set up machines.
         """
