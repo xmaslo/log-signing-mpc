@@ -132,7 +132,7 @@ pub async fn sign(
         Err(_) => return Err(status::BadRequest(Some("Unable to parse json data")))
     };
 
-    let unhexlified_data = hex2string::hex_to_string(String::from(esig_data.data_to_sign()));
+    let original_data = hex2string::hex_to_string(String::from(esig_data.data_to_sign()));
 
     let timestamp = match esig_data.timestamp().clone().parse::<u64>() {
         Ok(v) => v,
@@ -144,7 +144,7 @@ pub async fn sign(
         return Err(status::BadRequest(Some(too_old_timestamp)));
     }
 
-    let hash = sha256::digest(unhexlified_data + esig_data.timestamp());
+    let hash = sha256::digest(original_data + esig_data.timestamp());
 
     let participant2_id = esig_data.participant_id(0);
     let participant2_url = esig_data.participant_url(0);
