@@ -28,9 +28,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
 
     // id that will be used to filter out messages
-    let server_id = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(0);
-    let port = args.get(2).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8000);
-    let port_mutual_auth = args.get(3).and_then(|s| s.parse::<u16>().ok()).unwrap_or(3000);
+    let server_id = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(1);
+    let port = args.get(2).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8001);
+    let port_mutual_auth = args.get(3).and_then(|s| s.parse::<u16>().ok()).unwrap_or(3001);
     let threshold = args.get(4).and_then(|s| s.parse::<u16>().ok()).unwrap_or(1);
     let number_of_parties = args.get(5).and_then(|s| s.parse::<u16>().ok()).unwrap_or(3);
 
