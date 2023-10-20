@@ -86,7 +86,7 @@ impl Signer {
         receiving_stream: Pin<&mut impl Stream<Item = Result<Msg<PartialSignature>, Error>>>,
         mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>,
         participants: Vec<u16>
-    ) -> Result<String, anyhow::Error> {
+    ) -> Result<String, Error> {
         let participants_string = Signer::vec_to_string(&participants);
 
         let offline_stage = match self.offline_stage.get(participants_string.as_str()) {
