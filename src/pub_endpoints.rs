@@ -157,11 +157,6 @@ pub async fn sign(
     );
 
     if !signer.read().await.is_offline_stage_complete(&vec![participant2_id]) {
-        // let participant_result = signer.write().await.add_participant(participant2_id);
-        // match participant_result {
-        //     Err(msg) => return Err(status::BadRequest(Some(msg))),
-        //     _ => {}
-        // };
         let server_id = signer.read().await.real_to_arbitrary_index(&vec![participant2_id]);
 
         let (receiving_stream, outgoing_sink)

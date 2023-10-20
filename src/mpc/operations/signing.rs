@@ -30,20 +30,6 @@ impl Signer {
         }
     }
 
-    // pub fn add_participant(&mut self, new_participant: u16) -> Result<u16, &'static str> {
-    //     if new_participant == self.my_index {
-    //         return Err("New participant must have different index from current instance");
-    //     }
-    //
-    //     if self.completed_offline_stage.contains_key(&new_participant) {
-    //         println!("Participant with that id is already present");
-    //         return Ok(0);
-    //     }
-    //
-    //     self.completed_offline_stage.insert(new_participant, None);
-    //     Ok(new_participant)
-    // }
-
     fn vec_to_string(participants: &Vec<u16>) -> String {
         let mut participants = participants.clone();
         let mut result: String = String::new();
@@ -63,9 +49,6 @@ impl Signer {
         participants: Vec<u16>
     ) -> Result<(), Error>
     {
-        // if !self.is_participant_present(other_party_index) {
-        //     return Err(anyhow!("Participant {} is not present", other_party_index));
-        // }
         let participants_string = Signer::vec_to_string(&participants);
 
         let local_share = self.get_local_share();
@@ -155,23 +138,9 @@ impl Signer {
         return index
     }
 
-    // pub fn completed_offline_stage(&self) -> &HashMap<u16, Option<CompletedOfflineStage>> {
-    //     &self.completed_offline_stage
-    // }
-
-    // pub fn is_participant_present(&self, index: u16) -> bool {
-    //     self.completed_offline_stage().contains_key(&index)
-    // }
-
     pub fn is_offline_stage_complete(&self, participants: &Vec<u16>) -> bool {
         let participants_string = Signer::vec_to_string(participants);
         self.offline_stage.contains_key(participants_string.as_str())
-
-        // let participant_value = self.completed_offline_stage.get(&participant);
-        // return match participant_value {
-        //     Some(v) => !v.is_none(),
-        //     None => false
-        // }
     }
 
     fn get_local_share(&self) -> Option<LocalKey<Secp256k1>> {
@@ -181,10 +150,6 @@ impl Signer {
     }
 
     fn get_participants(&self, participants: &Vec<u16>) -> Result<Vec<u16>,&'static str>  {
-        // if !self.is_participant_present(other_party_index) {
-        //     return Err("Participant is not present");
-        // }
-
         let mut p = participants.clone();
         let mut all_participants: Vec<u16> = vec![self.my_index];
         all_participants.append(&mut p);
