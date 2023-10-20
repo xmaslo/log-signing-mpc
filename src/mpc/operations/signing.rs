@@ -61,9 +61,14 @@ impl Signer {
         }
         let local_share: LocalKey<Secp256k1> = local_share.unwrap();
 
+        let arbitrary_index = match self.real_to_arbitrary_index(&participants) {
+            None => return Err(anyhow!("Invalid participants")),
+            Some(ai) => ai
+        };
+
         println!("Participants: {}:{}", self.my_index, participants_string);
         println!("My real index: {}", self.my_index);
-        println!("My other index: {}", self.real_to_arbitrary_index(&participants));
+        println!("My other index: {}", arbitrary_index);
 
         // wait for servers to synchronize
         // TODO: do this synchronization in a better way then sleeping
@@ -71,7 +76,7 @@ impl Signer {
         thread::sleep(one_second);
 
         let signing =
-            OfflineStage::new(self.real_to_arbitrary_index(&participants),
+            OfflineStage::new(arbitrary_index,
                               self.get_participants(&participants).unwrap(),
                               local_share).unwrap();
 
@@ -110,9 +115,14 @@ impl Signer {
             offline_stage
         )?;
 
+        let arbitrary_index = match self.real_to_arbitrary_index(&participants) {
+            None => return Err(anyhow!("Invalid participants")),
+            Some(ai) => ai
+        };
+
         outgoing_sink
             .send(Msg {
-                sender: self.real_to_arbitrary_index(&participants),
+                sender: arbitrary_index,
                 receiver: None,
                 body: partial_signature,
             }).await?;
@@ -132,7 +142,10 @@ impl Signer {
         Ok(signature)
     }
 
-    pub fn real_to_arbitrary_index(&self, other_indices: &Vec<u16>) -> u16 {
+    pub fn real_to_arbitrary_index(&self, other_indices: &Vec<u16>) -> Option<u16> {
+        if !self.are_participants_valid(other_indices) {
+            return None;
+        }
         let mut index: u16 = 1;
         for i in other_indices {
             if self.my_index > i.clone() {
@@ -140,7 +153,7 @@ impl Signer {
             }
         }
 
-        return index
+        return Some(index)
     }
 
     pub fn is_offline_stage_complete(&self, participants: &Vec<u16>) -> bool {
@@ -192,15 +205,15 @@ mod tests {
     #[test]
     fn arbitrary_index_conversion() {
         let s: Signer = Signer::new(2, 1, 3);
-        assert_eq!(s.real_to_arbitrary_index(&vec![1]), 2);
-        assert_eq!(s.real_to_arbitrary_index(&vec![3]), 1);
+        assert_eq!(s.real_to_arbitrary_index(&vec![1]), Some(2));
+        assert_eq!(s.real_to_arbitrary_index(&vec![3]), Some(1));
 
         let s: Signer = Signer::new(3, 1, 3);
-        assert_eq!(s.real_to_arbitrary_index(&vec![1]), 2);
-        assert_eq!(s.real_to_arbitrary_index(&vec![2]), 2);
+        assert_eq!(s.real_to_arbitrary_index(&vec![1]), Some(2));
+        assert_eq!(s.real_to_arbitrary_index(&vec![2]), Some(2));
 
-        let s: Signer = Signer::new(2, 3, 3);
-        assert_eq!(s.real_to_arbitrary_index(&vec![3,4]), 1);
-        assert_eq!(s.real_to_arbitrary_index(&vec![1,3]), 2);
+        let s: Signer = Signer::new(2, 2, 4);
+        assert_eq!(s.real_to_arbitrary_index(&vec![3,4]), Some(1));
+        assert_eq!(s.real_to_arbitrary_index(&vec![1,3]), Some(2));
     }
 }

@@ -157,10 +157,14 @@ pub async fn sign(
     );
 
     if !signer.read().await.is_offline_stage_complete(&vec![participant2_id]) {
-        let server_id = signer.read().await.real_to_arbitrary_index(&vec![participant2_id]);
+        let arbitrary_server_id = match signer.read().await.
+            real_to_arbitrary_index(&vec![participant2_id]) {
+            None => return Err(status::BadRequest(Some("Second participant is invalid"))),
+            Some(asi) => asi
+        };
 
         let (receiving_stream, outgoing_sink)
-            = db.create_room::<OfflineProtocolMessage>(server_id, room_id, vec![String::from(participant2_url.clone())]).await;
+            = db.create_room::<OfflineProtocolMessage>(arbitrary_server_id, room_id, vec![String::from(participant2_url.clone())]).await;
 
         let receiving_stream = receiving_stream.fuse();
         tokio::pin!(receiving_stream);
