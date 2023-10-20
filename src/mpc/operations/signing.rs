@@ -86,7 +86,6 @@ impl Signer {
         hash_to_sign: &String,
         receiving_stream: Pin<&mut impl Stream<Item = Result<Msg<PartialSignature>, Error>>>,
         mut outgoing_sink: Pin<&mut (impl Sink<Msg<PartialSignature>, Error=Error> + Sized)>,
-        // other_party_index: u16
         participants: Vec<u16>
     ) -> Result<String, anyhow::Error> {
         let participants_string = Signer::vec_to_string(&participants);
