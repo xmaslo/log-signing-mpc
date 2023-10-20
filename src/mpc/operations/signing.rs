@@ -73,7 +73,6 @@ impl Signer {
             .await
             .map_err(|e| anyhow!("protocol execution terminated with error: {}", e));
 
-        // self.completed_offline_stage.insert(other_party_index, Some(offline_stage?));
         self.offline_stage.insert(participants_string, offline_stage?);
 
         println!("OFFLINE STAGE IS COMPLETED");
@@ -97,7 +96,6 @@ impl Signer {
 
         let (signing, partial_signature) = SignManual::new(
             BigInt::from_bytes(&hex::decode(hash_to_sign).unwrap()),
-            // self.completed_offline_stage.get(&other_party_index).unwrap().as_ref().unwrap().clone()
             offline_stage
         )?;
 
