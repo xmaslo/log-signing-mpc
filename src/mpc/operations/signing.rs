@@ -47,13 +47,13 @@ impl Signer {
         &mut self,
         receiving_stream: Pin<&mut Fuse<impl Stream<Item=Result<Msg<OfflineProtocolMessage>>>>>,
         outgoing_sink: Pin<&mut impl Sink<Msg<OfflineProtocolMessage>, Error=Error>>,
-        participants: Vec<u16>
+        participants: &Vec<u16>
     ) -> Result<(), Error>
     {
-        if !self.are_participants_valid(&participants) {
+        if !self.are_participants_valid(participants) {
             return Err(anyhow!("Invalid participants provided"));
         }
-        let participants_string = Signer::vec_to_string(&participants);
+        let participants_string = Signer::vec_to_string(participants);
 
         let local_share = self.get_local_share();
         if local_share.is_none() {
@@ -61,7 +61,7 @@ impl Signer {
         }
         let local_share: LocalKey<Secp256k1> = local_share.unwrap();
 
-        let arbitrary_index = match self.real_to_arbitrary_index(&participants) {
+        let arbitrary_index = match self.real_to_arbitrary_index(participants) {
             None => return Err(anyhow!("Invalid participants")),
             Some(ai) => ai
         };

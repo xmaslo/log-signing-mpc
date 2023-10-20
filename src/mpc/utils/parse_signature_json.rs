@@ -17,14 +17,6 @@ pub struct EndpointSignatureData {
 }
 
 impl EndpointSignatureData {
-    pub fn participant_id(&self, n: usize) -> u16 {
-        self.participants[n].server_id
-    }
-
-    pub fn participant_url(&self, n: usize) -> &str {
-        &self.participants[n].url
-    }
-
     pub fn data_to_sign(&self) -> &str {
         &self.data_to_sign
     }
@@ -32,7 +24,7 @@ impl EndpointSignatureData {
         &self.timestamp
     }
 
-    pub fn get_ids(&self) -> Vec<u16> {
+    pub fn participant_ids(&self) -> Vec<u16> {
         let mut res: Vec<u16> = Vec::new();
         for participant in &self.participants {
             res.push(participant.server_id);
@@ -41,7 +33,7 @@ impl EndpointSignatureData {
         res
     }
 
-    pub fn get_urls(&self) -> Vec<String> {
+    pub fn participant_urls(&self) -> Vec<String> {
         let mut res: Vec<String> = Vec::new();
         for participant in &self.participants {
             res.push(participant.url.clone());
@@ -99,7 +91,7 @@ mod tests {
         let json_str = get_testing_data();
 
         if let Ok(json_data) = serde_json::from_str::<EndpointSignatureData>(json_str.as_str()) {
-            let ids = json_data.get_ids();
+            let ids = json_data.participant_ids();
             assert_eq!(ids[0], 1);
             assert_eq!(ids[1], 2);
         }
@@ -113,7 +105,7 @@ mod tests {
         let json_str = get_testing_data();
 
         if let Ok(json_data) = serde_json::from_str::<EndpointSignatureData>(json_str.as_str()) {
-            let urls = json_data.get_urls();
+            let urls = json_data.participant_urls();
             assert_eq!(urls[0], "http://127.0.0.1:3001");
             assert_eq!(urls[1], "http://127.0.0.1:3002");
         }

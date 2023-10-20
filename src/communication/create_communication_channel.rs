@@ -67,7 +67,7 @@ impl Db {
     }
 
     pub async fn create_room<SerializableMessage: Serialize + DeserializeOwned>(
-        &self, server_id: u16, room_id: u16, server_urls: Vec<String>) -> (
+        &self, server_id: u16, room_id: u16, server_urls: &Vec<String>) -> (
         impl Stream<Item = Result<Msg<SerializableMessage>>>,
         impl Sink<Msg<SerializableMessage>, Error = anyhow::Error>,
     ) {
@@ -105,8 +105,9 @@ impl Db {
 
         let room_clone = Arc::clone(&room);
 
+        let urls_clone = server_urls.clone();
         spawn(async move {
-            room_clone.init_room(&server_urls).await;
+            room_clone.init_room(&urls_clone).await;
         });
 
         (receiving_stream, outgoing_sink)

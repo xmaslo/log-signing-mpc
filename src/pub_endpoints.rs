@@ -54,11 +54,11 @@ pub async fn key_gen(
     room_id: u16,
 ) -> Result<&'static str, status::Forbidden<&'static str>> {
 
-    let urls = data.split(',').map(|s| s.to_string()).collect();
+    let urls: Vec<String> = data.split(',').map(|s| s.to_string()).collect();
     let mpc_config = config_state.config().lock().unwrap().clone();
 
     let (receiving_stream, outgoing_sink) =
-        db.create_room::<ProtocolMessage>(mpc_config.server_id(), room_id, urls).await;
+        db.create_room::<ProtocolMessage>(mpc_config.server_id(), room_id, &urls).await;
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
@@ -146,25 +146,25 @@ pub async fn sign(
 
     let hash = sha256::digest(original_data + esig_data.timestamp());
 
-    let participant2_id = esig_data.participant_id(0);
-    let participant2_url = esig_data.participant_url(0);
+    let participant_ids = esig_data.participant_ids();
+    let participant_urls = esig_data.participant_urls();
 
     println!(
         "My ID: {}\n\
-         Other server ID: {}\n\
-         Other server URL: {}\n\
-         Data to sign: {}\n", server_id, participant2_id, participant2_url, hash
+         Other server IDs: {:?}\n\
+         Other server URLs: {:?}\n\
+         Data to sign: {}\n", server_id, &participant_ids, &participant_urls, hash
     );
 
-    if !signer.read().await.is_offline_stage_complete(&vec![participant2_id]) {
+    if !signer.read().await.is_offline_stage_complete(&participant_ids) {
         let arbitrary_server_id = match signer.read().await.
-            real_to_arbitrary_index(&vec![participant2_id]) {
+            real_to_arbitrary_index(&participant_ids) {
             None => return Err(status::BadRequest(Some("Second participant is invalid"))),
             Some(asi) => asi
         };
 
         let (receiving_stream, outgoing_sink)
-            = db.create_room::<OfflineProtocolMessage>(arbitrary_server_id, room_id, vec![String::from(participant2_url.clone())]).await;
+            = db.create_room::<OfflineProtocolMessage>(arbitrary_server_id, room_id, &participant_urls).await;
 
         let receiving_stream = receiving_stream.fuse();
         tokio::pin!(receiving_stream);
@@ -172,7 +172,7 @@ pub async fn sign(
 
         println!("Beginning offline stage");
 
-        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, vec![participant2_id]).await;
+        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, &participant_ids).await;
         match offline_stage_result {
             Err(e) => {
                 println!("{}", e.to_string());
@@ -183,7 +183,7 @@ pub async fn sign(
     }
 
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<PartialSignature>(server_id, room_id, vec![String::from(participant2_url.clone())]).await;
+        = db.create_room::<PartialSignature>(server_id, room_id, &participant_urls).await;
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
@@ -192,7 +192,7 @@ pub async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, vec![participant2_id])
+    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, participant_ids)
         .await
         .expect("Message could not be signed");
 
