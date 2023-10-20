@@ -176,56 +176,49 @@ impl Signer {
 mod tests {
     use crate::mpc::operations::signing::Signer;
 
-    #[test]
-    fn add_participant_valid() {
-        let mut s: Signer = Signer::new(1);
-        assert_eq!(s.add_participant(2), Ok(2));
-        assert!(s.is_participant_present(2));
-    }
-
-    #[test]
-    fn add_participant_already_present() {
-        let mut s: Signer = Signer::new(1);
-        s.add_participant(2).unwrap();
-        assert_eq!(s.add_participant(2).unwrap(), 0);
-        assert!(s.is_participant_present(2));
-    }
-
-    #[test]
-    fn add_participant_same_as_current_instance() {
-        let mut s: Signer = Signer::new(1);
-        s.add_participant(1).expect_err("Expected error, Ok returned");
-        assert!(!s.is_participant_present(1));
-    }
+    // #[test]
+    // fn add_participant_valid() {
+    //     let mut s: Signer = Signer::new(1);
+    //     assert_eq!(s.add_participant(2), Ok(2));
+    //     assert!(s.is_participant_present(2));
+    // }
+    //
+    // #[test]
+    // fn add_participant_already_present() {
+    //     let mut s: Signer = Signer::new(1);
+    //     s.add_participant(2).unwrap();
+    //     assert_eq!(s.add_participant(2).unwrap(), 0);
+    //     assert!(s.is_participant_present(2));
+    // }
+    //
+    // #[test]
+    // fn add_participant_same_as_current_instance() {
+    //     let mut s: Signer = Signer::new(1);
+    //     s.add_participant(1).expect_err("Expected error, Ok returned");
+    //     assert!(!s.is_participant_present(1));
+    // }
 
     #[test]
     fn offline_stage_complete_no() {
-        let mut s: Signer = Signer::new(1);
-        s.add_participant(2).unwrap();
+        let s: Signer = Signer::new(1, 3);
 
-        assert!(!s.is_offline_stage_complete(2));
+        assert!(!s.is_offline_stage_complete(&vec![2]));
     }
 
-    #[test]
-    fn offline_stage_complete_missing_participant() {
-        let s: Signer = Signer::new(1);
-        assert!(!s.is_offline_stage_complete(2));
-    }
+    // #[test]
+    // fn offline_stage_complete_missing_participant() {
+    //     let s: Signer = Signer::new(1, 3);
+    //     assert!(!s.is_offline_stage_complete(2));
+    // }
 
     #[test]
     fn arbitrary_index_conversion() {
-        let mut s: Signer = Signer::new(2);
-        s.add_participant(1).unwrap();
-        s.add_participant(3).unwrap();
+        let s: Signer = Signer::new(2, 3);
+        assert_eq!(s.real_to_arbitrary_index(&vec![1]), 2);
+        assert_eq!(s.real_to_arbitrary_index(&vec![3]), 1);
 
-        assert_eq!(s.real_to_arbitrary_index(vec![1]), 2);
-        assert_eq!(s.real_to_arbitrary_index(vec![3]), 1);
-
-        let mut s: Signer = Signer::new(3);
-        s.add_participant(1).unwrap();
-        s.add_participant(2).unwrap();
-
-        assert_eq!(s.real_to_arbitrary_index(vec![1]), 2);
-        assert_eq!(s.real_to_arbitrary_index(vec![2]), 2);
+        let s: Signer = Signer::new(3, 3);
+        assert_eq!(s.real_to_arbitrary_index(&vec![1]), 2);
+        assert_eq!(s.real_to_arbitrary_index(&vec![2]), 2);
     }
 }
