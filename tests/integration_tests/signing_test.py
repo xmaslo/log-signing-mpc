@@ -26,7 +26,7 @@ class TestSigning13:
             )
         )
         assert responses[0][0] == 200
-        assert responses[0][0] == 200
+        assert responses[1][0] == 200
 
         responses = asyncio.run(
             sign_data(
@@ -39,7 +39,7 @@ class TestSigning13:
             )
         )
         assert responses[0][0] == 200
-        assert responses[0][0] == 200
+        assert responses[1][0] == 200
 
         responses = asyncio.run(
             sign_data(
@@ -52,7 +52,7 @@ class TestSigning13:
             )
         )
         assert responses[0][0] == 200
-        assert responses[0][0] == 200
+        assert responses[1][0] == 200
 
     def test_parallel_signatures(self):
         number_of_parallel_signatures = 2
@@ -68,3 +68,17 @@ class TestSigning13:
 class TestSigning14:
     def test_signing(self):
         timestamp = get_current_timestamp()
+
+        responses = asyncio.run(
+            sign_data(
+                [1, 2, 3],
+                [URL1, URL2, URL3],
+                [SERVER_PORT1, SERVER_PORT2, SERVER_PORT3],
+                timestamp,
+                DATA_TO_SIGN,
+                1
+            )
+        )
+        assert responses[0][0] == 200
+        assert responses[1][0] == 200
+        assert responses[2][0] == 200
