@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 from common.setup_for_tests import *
 from common.common import send_post_request
-from common.create_payload import create_sign_payload
+from common.create_payload import create_sign_payload, get_payloads_layout
 
 
 async def trigger_keygen_endpoint(n):
@@ -38,13 +38,20 @@ async def trigger_sign_endpoint_in_multiple_rooms(session,
 
     tasks = []
 
+    payloads_layout = get_payloads_layout(ports, participating_parties, urls)
+
     for count, room in enumerate(rooms):
         data = data_list[count].encode().hex()
-        payload1 = create_sign_payload([participating_parties[1]], [urls[1]], data, timestamp)
-        payload2 = create_sign_payload([participating_parties[0]], [urls[0]], data, timestamp)
 
-        tasks.append(send_post_request(session, f"{BASE_URL}:{ports[0]}/sign/{room}", payload1))
-        tasks.append(send_post_request(session, f"{BASE_URL}:{ports[1]}/sign/{room}", payload2))
+        payloads = {}
+        for pl_key, pl_val in payloads_layout.items():
+            payloads[pl_key] = create_sign_payload([x[0] for x in pl_val],
+                                                   [x[1] for x in pl_val],
+                                                   data,
+                                                   timestamp)
+
+        for pl_key, pl_val in payloads.items():
+            tasks.append(send_post_request(session, f"{BASE_URL}:{pl_key}/sign/{room}", pl_val))
 
     return await asyncio.gather(*tasks)
 

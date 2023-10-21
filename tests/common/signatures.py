@@ -7,16 +7,16 @@ from common.setup_for_tests import *
 
 async def sign_data(participating_parties, urls, ports, timestamp, data, room):
     async with aiohttp.ClientSession() as session:
-        server1_res, server2_res = await trigger_sign_endpoint(session,
-                                                               participating_parties,
-                                                               urls,
-                                                               ports,
-                                                               timestamp,
-                                                               data,
-                                                               room
-                                                               )
+        responses = await trigger_sign_endpoint(session,
+                                                participating_parties,
+                                                urls,
+                                                ports,
+                                                timestamp,
+                                                data,
+                                                room
+                                                )
 
-        return server1_res, server2_res
+        return responses
 
 
 async def sign_data_in_parallel(participating_parties, urls, ports, timestamp, data_list, rooms):
