@@ -58,7 +58,10 @@ class TestSigning13:
         number_of_parallel_signatures = 2
 
         responses = run_parallel_signatures(number_of_parallel_signatures,
-                                            [DATA_TO_SIGN for _ in range(number_of_parallel_signatures)])
+                                            [DATA_TO_SIGN for _ in range(number_of_parallel_signatures)],
+                                            [2, 3],
+                                            [URL2, URL3],
+                                            [SERVER_PORT2, SERVER_PORT3])
 
         for i in range(0, number_of_parallel_signatures, 2):
             assert responses[i][0][0] == 200

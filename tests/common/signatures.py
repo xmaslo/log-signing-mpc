@@ -2,7 +2,6 @@ import aiohttp
 import asyncio
 from common.endpoint_triggers import trigger_sign_endpoint, trigger_sign_endpoint_in_multiple_rooms
 from common.common import get_current_timestamp
-from common.setup_for_tests import *
 
 
 async def sign_data(participating_parties, urls, ports, timestamp, data, room):
@@ -32,16 +31,16 @@ async def sign_data_in_parallel(participating_parties, urls, ports, timestamp, d
         return responses
 
 
-def run_parallel_signatures(number_of_parallel_signatures, data_to_sign):
+def run_parallel_signatures(number_of_parallel_signatures, data_to_sign, parties, urls, ports):
     assert number_of_parallel_signatures == len(data_to_sign)
 
     timestamp = get_current_timestamp()
 
     responses = asyncio.run(
         sign_data_in_parallel(
-            [2, 3],
-            [URL2, URL3],
-            [SERVER_PORT2, SERVER_PORT3],
+            parties,
+            urls,
+            ports,
             timestamp,
             data_to_sign,
             [i for i in range(1, number_of_parallel_signatures + 1)]

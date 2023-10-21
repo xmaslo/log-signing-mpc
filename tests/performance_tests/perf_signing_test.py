@@ -42,7 +42,7 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
     fileinput.close()
 
 
-def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
+def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, participants, urls, ports):
     start_time = time.time()
 
     counter = 0
@@ -53,7 +53,7 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
         counter += 1
         logs.append(line)
 
-    responses = run_parallel_signatures(number_of_logs, logs)
+    responses = run_parallel_signatures(number_of_logs, logs, participants, urls, ports)
     for server1_res, server2_res in responses:
         assert server1_res[0] and server1_res[1]
         assert server2_res[0] and server2_res[1]
@@ -71,4 +71,4 @@ class TestPerformance:
         asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
 
     def test_signing_10_logs_in_parallel(self):
-        send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME)
+        send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME, [2, 3], [URL2, URL3], [SERVER_PORT2, SERVER_PORT3])
