@@ -68,7 +68,7 @@ class TestSigning13:
             assert responses[i][1][0] == 200
 
 
-class TestSigning14:
+class TestSigning24:
     def test_signing_different_combinations(self):
         timestamp = get_current_timestamp()
 
@@ -113,3 +113,17 @@ class TestSigning14:
         assert responses[0][0] == 200
         assert responses[1][0] == 200
         assert responses[2][0] == 200
+
+    def test_parallel_signatures(self):
+        number_of_parallel_signatures = 2
+
+        responses = run_parallel_signatures(number_of_parallel_signatures,
+                                            [DATA_TO_SIGN for _ in range(number_of_parallel_signatures)],
+                                            [2, 3, 4],
+                                            [URL2, URL3, URL4],
+                                            [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4])
+
+        for i in range(0, number_of_parallel_signatures, 2):
+            assert responses[i][0][0] == 200
+            assert responses[i][1][0] == 200
+            assert responses[i][2][0] == 200
