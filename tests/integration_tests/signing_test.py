@@ -28,7 +28,7 @@ class TestSigning13:
         assert responses[0][0] == 200
         assert responses[0][0] == 200
 
-        server1_res, server2_res = asyncio.run(
+        responses = asyncio.run(
             sign_data(
                 [1, 3],
                 [URL1, URL3],
@@ -41,7 +41,7 @@ class TestSigning13:
         assert responses[0][0] == 200
         assert responses[0][0] == 200
 
-        server1_res, server2_res = asyncio.run(
+        responses = asyncio.run(
             sign_data(
                 [2, 3],
                 [URL2, URL3],
@@ -54,7 +54,7 @@ class TestSigning13:
         assert responses[0][0] == 200
         assert responses[0][0] == 200
 
-    def test_parallel_signatures_13(self):
+    def test_parallel_signatures(self):
         number_of_parallel_signatures = 2
 
         responses = run_parallel_signatures(number_of_parallel_signatures,
