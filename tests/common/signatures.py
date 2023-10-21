@@ -48,7 +48,8 @@ def run_parallel_signatures(number_of_parallel_signatures, data_to_sign, parties
     )
 
     grouped_responses = []
-    for i in range(0, len(responses), 2):
-        grouped_responses.append((responses[i], responses[i + 1]))
+    for i in range(0, len(responses), len(parties)):
+        responses_for_room = responses[i: i + len(parties)]
+        grouped_responses.append(responses_for_room)
 
     return grouped_responses

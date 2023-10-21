@@ -4,7 +4,8 @@ from common.common import get_current_timestamp
 from common.signatures import sign_data, run_parallel_signatures
 
 
-DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
+DATA_TO_SIGN1 = "{some,arbitrary,data,to,sign}"
+DATA_TO_SIGN2 = "{another,arbitrary,data}"
 
 
 class TestSigning13:
@@ -21,7 +22,7 @@ class TestSigning13:
                 [URL1, URL2],
                 [SERVER_PORT1, SERVER_PORT2],
                 timestamp,
-                DATA_TO_SIGN,
+                DATA_TO_SIGN1,
                 1
             )
         )
@@ -34,7 +35,7 @@ class TestSigning13:
                 [URL1, URL3],
                 [SERVER_PORT1, SERVER_PORT3],
                 timestamp,
-                DATA_TO_SIGN,
+                DATA_TO_SIGN1,
                 1
             )
         )
@@ -47,7 +48,7 @@ class TestSigning13:
                 [URL2, URL3],
                 [SERVER_PORT2, SERVER_PORT3],
                 timestamp,
-                DATA_TO_SIGN,
+                DATA_TO_SIGN1,
                 1
             )
         )
@@ -58,7 +59,7 @@ class TestSigning13:
         number_of_parallel_signatures = 2
 
         responses = run_parallel_signatures(number_of_parallel_signatures,
-                                            [DATA_TO_SIGN for _ in range(number_of_parallel_signatures)],
+                                            [DATA_TO_SIGN1, DATA_TO_SIGN2],
                                             [2, 3],
                                             [URL2, URL3],
                                             [SERVER_PORT2, SERVER_PORT3])
@@ -78,7 +79,7 @@ class TestSigning24:
                 [URL1, URL2, URL3],
                 [SERVER_PORT1, SERVER_PORT2, SERVER_PORT3],
                 timestamp,
-                DATA_TO_SIGN,
+                DATA_TO_SIGN1,
                 1
             )
         )
@@ -92,7 +93,7 @@ class TestSigning24:
                 [URL2, URL3, URL4],
                 [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4],
                 timestamp,
-                DATA_TO_SIGN,
+                DATA_TO_SIGN1,
                 1
             )
         )
@@ -106,7 +107,7 @@ class TestSigning24:
                 [URL1, URL2, URL4],
                 [SERVER_PORT1, SERVER_PORT2, SERVER_PORT4],
                 timestamp,
-                DATA_TO_SIGN,
+                DATA_TO_SIGN1,
                 1
             )
         )
@@ -118,12 +119,12 @@ class TestSigning24:
         number_of_parallel_signatures = 2
 
         responses = run_parallel_signatures(number_of_parallel_signatures,
-                                            [DATA_TO_SIGN for _ in range(number_of_parallel_signatures)],
+                                            [DATA_TO_SIGN1, DATA_TO_SIGN2],
                                             [2, 3, 4],
                                             [URL2, URL3, URL4],
                                             [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4])
 
-        for i in range(0, number_of_parallel_signatures, 2):
+        for i in range(0, number_of_parallel_signatures):
             assert responses[i][0][0] == 200
             assert responses[i][1][0] == 200
             assert responses[i][2][0] == 200
