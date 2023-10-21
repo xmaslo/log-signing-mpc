@@ -66,7 +66,7 @@ class TestSigning13:
 
 
 class TestSigning14:
-    def test_signing(self):
+    def test_signing_different_combinations(self):
         timestamp = get_current_timestamp()
 
         responses = asyncio.run(
@@ -74,6 +74,34 @@ class TestSigning14:
                 [1, 2, 3],
                 [URL1, URL2, URL3],
                 [SERVER_PORT1, SERVER_PORT2, SERVER_PORT3],
+                timestamp,
+                DATA_TO_SIGN,
+                1
+            )
+        )
+        assert responses[0][0] == 200
+        assert responses[1][0] == 200
+        assert responses[2][0] == 200
+
+        responses = asyncio.run(
+            sign_data(
+                [2, 3, 4],
+                [URL2, URL3, URL4],
+                [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4],
+                timestamp,
+                DATA_TO_SIGN,
+                1
+            )
+        )
+        assert responses[0][0] == 200
+        assert responses[1][0] == 200
+        assert responses[2][0] == 200
+
+        responses = asyncio.run(
+            sign_data(
+                [1, 2, 4],
+                [URL1, URL2, URL4],
+                [SERVER_PORT1, SERVER_PORT2, SERVER_PORT4],
                 timestamp,
                 DATA_TO_SIGN,
                 1
