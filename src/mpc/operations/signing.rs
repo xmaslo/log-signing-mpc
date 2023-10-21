@@ -128,7 +128,7 @@ impl Signer {
             }).await?;
 
         let partial_signatures: Vec<_> = receiving_stream
-            .take(1)
+            .take(self.threshold as usize)
             .map_ok(|msg| msg.body)
             .try_collect()
             .await?;
