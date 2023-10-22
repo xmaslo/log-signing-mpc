@@ -44,6 +44,18 @@ services:
     depends_on:
       - build-service
 
+  la4:
+    image: log-signing-mpc-image
+    container_name: la4
+    ports:
+      - "8004:8004"
+      - "3004:3004"
+    command: [ "4", "8004", "3004" ]
+    networks:
+      - la-net
+    depends_on:
+      - build-service
+
 networks:
   la-net:
     driver: bridge

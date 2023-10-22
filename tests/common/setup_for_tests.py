@@ -11,7 +11,7 @@ if IS_DOCKER:
     URL1 = "la1:3001"
     URL2 = "la2:3002"
     URL3 = "la3:3003"
-    # TODO: adjust dockerfile
+    URL4 = "la4:3004"
 else:
     URL1 = "127.0.0.1:3001"
     URL2 = "127.0.0.1:3002"
