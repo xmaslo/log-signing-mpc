@@ -16,7 +16,7 @@ jobs:
       run: docker compose build build-service-13
 
     - name: Run servers
-      run: docker-compose -f docker-compose-13.yml up
+      run: docker-compose -f docker-compose-13.yml up -d
 
     - name: Wait for servers to start
       run: |
