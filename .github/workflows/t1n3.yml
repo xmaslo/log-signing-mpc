@@ -16,7 +16,7 @@ jobs:
         python-version: '3.x'
 
     - name: Build the Docker image
-      run: docker compose build build-service
+      run: docker compose build build-service-13
 
     - name: Run servers
       run: docker-compose -f docker-compose-13.yml up
