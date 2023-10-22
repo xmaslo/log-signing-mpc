@@ -9,12 +9,6 @@ This repository is based on the backend of a timestamping project from PV204 cou
 
 This project is its direct fork. From commit https://github.com/davidmaslo/timestamping-server/commit/71a01282d7b1577d11576d039573256edef9deee, I worked on this project completely on my own.
 
-## How to Build and Run Project
-
-To build and run the LA servers, there are two options:
-1. As separate docker containers ([Build and Run Servers inside Docker](#build-and-run-servers-inside-docker)).
-2. Direct compilation on your machine ([Build and Run Servers on Bare Metal](#build-and-run-servers-on-bare-metal)).
-
 ## TLS
 
 First, you need to create and provide a TLS certificate, certificate authority, and a private key.
@@ -35,6 +29,11 @@ If the certificates are already expired you can run provided scripts create your
      `./examples/certs_creation_win.sh 3`
 3. Copy the `certs` directory from where you will run `log-signing-mpc.exe`. Usually, it is the `log-signing-mpc\target\release`.
 
+## How to Build and Run Project
+
+To build and run the LA servers, there are two options:
+1. As separate docker containers ([Build and Run Servers inside Docker](#build-and-run-servers-inside-docker)).
+2. Direct compilation on your machine ([Build and Run Servers on Bare Metal](#build-and-run-servers-on-bare-metal)).
 
 ## Implemented Features
 1. [Key Generation](#key-generation).
@@ -120,101 +119,4 @@ Format is -d "signature_hex_string;signed_data_with_timestamp".
 2. Static analysis: `cargo clippy`
 3. Test project with command line output: `cargo test -- --nocapture`.
 4. Run image interactively with bash: `docker run -it --entrypoint bash log-signing-mpc-image`
-
-
-
-[//]: # (## Client start-up)
-
-[//]: # ()
-[//]: # (Included client is a standalone webpage that can be served with any HTTP&#40;S&#41;-capable server.)
-
-[//]: # (For development purposes, one can serve the client with the Python in-build HTTP server:)
-
-[//]: # ()
-[//]: # (```bash)
-
-[//]: # (&#40; cd web-frontend && python3 -m http.server 8080 &#41;)
-
-[//]: # (```)
-
-[//]: # ()
-[//]: # (Then navigate to [127.0.0.1:8080]&#40;http://127.0.0.1:8080&#41;.)
-
-[//]: # ()
-[//]: # (The client also support DEBUG mode, which can be enabled by pasting)
-
-[//]: # ()
-[//]: # (```js)
-
-[//]: # (localStorage.setItem&#40;'DEBUG', '1'&#41;)
-
-[//]: # (```)
-
-[//]: # ()
-[//]: # (into browser's console while on page.)
-
-[//]: # ()
-[//]: # (## TLS)
-
-[//]: # ()
-[//]: # (First, you need to create and provide a TLS certificate, certificate authority, and a private key.)
-
-[//]: # (The server will look for them in the `certs` directory. The directory must be located in the same directory as the executable.)
-
-[//]: # (The ca certificate lies directly in that directory and is named ca_cert.pem.)
-
-[//]: # (The public certificate and the private key must be located in a subdirectory named `private` and public respectively.)
-
-[//]: # (The certificate and the private key must be named `cert_{server_id}.pem` and `private_key_{server_id}.pem` respectively.)
-
-[//]: # ()
-[//]: # (For easier development usage, you can unpack the certificates stored in `examples/certs.zip` or run the `certs_creation.sh` to)
-
-[//]: # (create your own self-signed certificates.)
-
-[//]: # ()
-[//]: # (## Server Setup on Linux)
-
-[//]: # ()
-[//]: # (Run `keygen_example.sh` script. For subsequent runs, a `start-stop.sh` script is available:)
-
-[//]: # (```bash)
-
-[//]: # (./start-stop.sh start 1  # starts first server)
-
-[//]: # (./start-stop.sh stop 1 # stops first server)
-
-[//]: # (./start-stop.sh restart 1 # restarts first server)
-
-[//]: # (./start-stop.sh start all # starts all servers)
-
-[//]: # (```)
-
-[//]: # ()
-[//]: # (## Example Running with Cargo Run For Debugging Purposes)
-
-[//]: # (- cargo run --example gg20_sm_manager --no-default-features --features curv-kzen/num-bigint)
-
-[//]: # (- cargo run --example gg20_keygen --no-default-features --features curv-kzen/num-bigint -- -t 1 -n 3 -i 1 --output local-share1.json)
-
-[//]: # (- cargo run --example gg20_signing --no-default-features --features curv-kzen/num-bigint -- -p 1,2 -d "hello" -l local-share1.json)
-
-[//]: # ()
-[//]: # (## Static Analysis)
-
-[//]: # ()
-[//]: # (Execute `cargo clippy`)
-
-[//]: # ()
-[//]: # (## Example Running with Cargo Run For Debugging Purposes)
-
-[//]: # (- `cargo run --example gg20_sm_manager --no-default-features --features curv-kzen/num-bigint`)
-
-[//]: # (- `cargo run --example gg20_keygen --no-default-features --features curv-kzen/num-bigint -- -t 1 -n 3 -i 1 --output local-share1.json`)
-
-[//]: # (- `cargo run --example gg20_signing --no-default-features --features curv-kzen/num-bigint -- -p 1,2 -d "hello" -l local-share1.json`)
-
-[//]: # ()
-[//]: # (## Cargo Test With Command Line Output)
-
-[//]: # (- `cargo test -- --nocapture`)
+5. Do not supress docker output: `docker compose build build-service --progress=plain --no-cache`

@@ -1,61 +1,21 @@
 version: "3.9"
 services:
-  build-service:
+  build-service-13:
     image: log-signing-mpc-image
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        N_OF_PARTIES: 3
+
+  build-service-24:
+    image: log-signing-mpc-image
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        N_OF_PARTIES: 4
 
   unit-tests:
     image: log-signing-mpc-image
     entrypoint: cargo test --release
-
-  la1:
-    image: log-signing-mpc-image
-    container_name: la1
-    ports:
-      - "8001:8001"
-      - "3001:3001"
-    command: ["1", "8001", "3001"]
-    networks:
-      - la-net
-    depends_on:
-      - build-service
-
-  la2:
-    image: log-signing-mpc-image
-    container_name: la2
-    ports:
-      - "8002:8002"
-      - "3002:3002"
-    command: ["2", "8002", "3002"]
-    networks:
-      - la-net
-    depends_on:
-      - build-service
-
-  la3:
-    image: log-signing-mpc-image
-    container_name: la3
-    ports:
-      - "8003:8003"
-      - "3003:3003"
-    command: ["3", "8003", "3003"]
-    networks:
-      - la-net
-    depends_on:
-      - build-service
-
-  la4:
-    image: log-signing-mpc-image
-    container_name: la4
-    ports:
-      - "8004:8004"
-      - "3004:3004"
-    command: [ "4", "8004", "3004" ]
-    networks:
-      - la-net
-    depends_on:
-      - build-service
-
-networks:
-  la-net:
-    driver: bridge

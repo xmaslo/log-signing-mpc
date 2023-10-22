@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  la1:
+    image: log-signing-mpc-image
+    container_name: la1
+    ports:
+      - "8001:8001"
+      - "3001:3001"
+    command: ["1", "8001", "3001", "1", "3"]
+    networks:
+      - la-net
+
+  la2:
+    image: log-signing-mpc-image
+    container_name: la2
+    ports:
+      - "8002:8002"
+      - "3002:3002"
+    command: ["2", "8002", "3002", "1", "3"]
+    networks:
+      - la-net
+
+  la3:
+    image: log-signing-mpc-image
+    container_name: la3
+    ports:
+      - "8003:8003"
+      - "3003:3003"
+    command: ["3", "8003", "3003", "1", "3"]
+    networks:
+      - la-net
+
+networks:
+  la-net:
+    driver: bridge
