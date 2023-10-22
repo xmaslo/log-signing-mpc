@@ -1,12 +1,6 @@
-name: Integration Tests
+name: threshold-1-number-of-parties-3
 
 on: workflow_dispatch
-
-#on:
-#  push:
-#    branches: [ "main" ]
-#  pull_request:
-#    branches: [ "main" ]
 
 jobs:
   build:
@@ -19,10 +13,10 @@ jobs:
         python-version: '3.x'
 
     - name: Build the Docker image
-      run: docker compose build build-service
+      run: docker compose build build-service-13
 
     - name: Run servers
-      run: docker compose up -d la1 la2 la3
+      run: docker-compose -f docker-compose-13.yml up
 
     - name: Wait for servers to start
       run: |
@@ -30,9 +24,9 @@ jobs:
         max_retries=10
         while [[ $retries -lt $max_retries ]]; do
           sleep 5
-          if curl --silent --head --fail http://la1:8000 && \
-             curl --silent --head --fail http://la2:8001 && \
-             curl --silent --head --fail http://la3:8002; then
+          if curl --silent --head --fail http://la1:8001 && \
+             curl --silent --head --fail http://la2:8002 && \
+             curl --silent --head --fail http://la3:8003; then
             break
           fi
           retries=$((retries+1))
@@ -45,7 +39,7 @@ jobs:
 
     - name: Run API tests
       run: |
-        pytest
+        pytest -k "TestKeyGen13 or TestSigning13 or TestVerify13 or TestPerformance13"
 
     - name: Clean up
       run: docker compose down

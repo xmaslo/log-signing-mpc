@@ -2,8 +2,8 @@
 $currentDirectory = $PWD.Path
 
 # Check if any command-line argument was provided
-if ($args.Length -eq 0) {
-    Write-Host "Usage: .\run_servers_on_localhost.ps1 path\to\the\app\binary"
+if ($args.Length -ne 3) {
+    Write-Host "Usage: .\run_servers_on_localhost.ps1 path\to\the\app\binary threshold numServers"
     return
 }
 
@@ -18,24 +18,23 @@ if (Test-Path -Path $absolutePath -PathType Container) {
     # Change the working directory to the absolute path
     Set-Location -Path $absolutePath
 
-    # Additional command line arguments for the program
-    $sArguments1 = "1", "8000", "3000"
-    $sArguments2 = "2", "8001", "3001"
-    $sArguments3 = "3", "8002", "3002"
+    $threshold = [int]$args[1]
+    $numServers = [int]$args[2]
+    # Define the arguments for the program
+    $programArguments = @()
 
-    # 1 server
-    Write-Host "Running program: "log-signing-mpc.exe" $sArguments1"
-    Start-Process -FilePath "log-signing-mpc.exe" -ArgumentList $sArguments1
+    for ($i = 1; $i -le $numServers; $i++) {
+        $programArguments += "$i", "800$i", "300$i", "$threshold", "$numServers"
+    }
 
-    # 2 server
-    Write-Host "Running program: "log-signing-mpc.exe" $sArguments2"
-    Start-Process -FilePath "log-signing-mpc.exe" -ArgumentList $sArguments2
+    # Start the "log-signing-mpc.exe" processes
+    for ($i = 1; $i -le $numServers; $i++) {
+        $exePath = "log-signing-mpc.exe"
+        Write-Host "Running program: $exePath $($programArguments[(($i - 1) * 5)..($i * 5 - 1)])"
+        Start-Process -FilePath $exePath -ArgumentList $programArguments[(($i - 1) * 5)..($i * 5 - 1)]
+    }
 
-    # 3 server
-    Write-Host "Running program: "log-signing-mpc.exe" $sArguments3"
-    Start-Process -FilePath "log-signing-mpc.exe" -ArgumentList $sArguments3
-
-    # return current working directory back to the previous version
+    # Return the current working directory back to the previous version
     Set-Location -Path $currentDirectory
 }
 else {

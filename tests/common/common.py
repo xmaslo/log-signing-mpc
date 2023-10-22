@@ -14,7 +14,10 @@ async def send_post_request(session, url, payload):
     """
     try:
         timeout = aiohttp.ClientTimeout(total=30)
-        async with session.post(url=url, data=payload, timeout=timeout) as response:
+        async with (session.post(url=url,
+                                 data=payload,
+                                 timeout=timeout)
+                    as response):
             response_data = await response.content.read()
             return response.status, response_data
     except asyncio.TimeoutError:
@@ -26,4 +29,3 @@ def get_current_timestamp():
     :return: Number of seconds from the beginning of the epoch.
     """
     return str(int(time.time()))
-

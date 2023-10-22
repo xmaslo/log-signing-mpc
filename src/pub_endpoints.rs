@@ -44,27 +44,32 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::{
 use tokio::sync::RwLock;
 use tokio::io::AsyncReadExt;
 
-use crate::rocket_instances::SharedDb;
+use crate::mpc::utils::parse_signature_json::EndpointSignatureData;
 
 #[rocket::post("/key_gen/<room_id>", data = "<data>")]
 pub async fn key_gen(
     db: &State<rocket_instances::SharedDb>,
-    server_id: &State<rocket_instances::ServerIdState>,
+    config_state: &State<rocket_instances::ServerConfigState>,
     data: String,
     room_id: u16,
 ) -> Result<&'static str, status::Forbidden<&'static str>> {
 
-    let urls = data.split(',').map(|s| s.to_string()).collect();
-    let server_id = *server_id.server_id.lock().unwrap();
+    let urls: Vec<String> = data.split(',').map(|s| s.to_string()).collect();
+    let mpc_config = config_state.config().lock().unwrap().clone();
 
     let (receiving_stream, outgoing_sink) =
-        db.create_room::<ProtocolMessage>(server_id, room_id, urls).await;
+        db.create_room::<ProtocolMessage>(mpc_config.server_id(), room_id, &urls).await;
 
     let receiving_stream = receiving_stream.fuse();
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let generation_result = key_generation::generate_keys(server_id, receiving_stream, outgoing_sink).await;
+    let generation_result =
+        key_generation::generate_keys(mpc_config.server_id(),
+                                      receiving_stream,
+                                      outgoing_sink,
+                                      mpc_config.threshold(),
+                                      mpc_config.number_of_parties()).await;
 
     let status = match generation_result {
         Ok(_) => "Ok".to_string(),
@@ -81,7 +86,8 @@ pub async fn key_gen(
 }
 
 #[rocket::post("/verify", data = "<data>")]
-pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
+pub async fn verify(config_state: &State<rocket_instances::ServerConfigState>,
+                    data: String) -> Result<&'static str, status::BadRequest<&'static str>> {
     let split_data = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
     let signature_hex = split_data[0].clone();
 
@@ -93,7 +99,7 @@ pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: St
     let (r,s) = check_signature::extract_rs(signature.as_str());
     let msg = BigInt::from_bytes(&hex::decode(signed_data).unwrap());
 
-    let server_id = *server_id.server_id.lock().unwrap();
+    let server_id = config_state.config().lock().unwrap().server_id();
     let local_share_file_name = format!("local-share{}.json", server_id);
     let file_contents = local_share_utils::read_file(Path::new(&local_share_file_name));
     match file_contents {
@@ -114,20 +120,21 @@ pub async fn verify(server_id: &State<rocket_instances::ServerIdState>, data: St
 #[rocket::post("/sign/<room_id>", data = "<data>")]
 pub async fn sign(
     db: &State<rocket_instances::SharedDb>,
-    server_id: &State<rocket_instances::ServerIdState>,
+    config_state: &State<rocket_instances::ServerConfigState>,
     signer: &State<Arc<RwLock<signing::Signer>>>,
     data: String,
     room_id: u16
 ) -> Result<String, status::BadRequest<&'static str>> {
-    let server_id: u16 = *server_id.server_id.lock().unwrap();
-    let split_data: Vec<String> = data.split(',').map(|s| s.to_string()).collect::<Vec<String>>();
-    let participant2: u16 = split_data[0].as_str().parse::<u16>().unwrap();
-    let url = vec![split_data[1].clone()];
-    let data_to_sign_hex = split_data[2].clone();
-    let data_to_sign = hex2string::hex_to_string(data_to_sign_hex);
+    let server_id: u16 = config_state.config().lock().unwrap().server_id();
 
-    let parsed_unix_seconds = split_data[3].clone().parse::<u64>();
-    let timestamp = match parsed_unix_seconds {
+    let esig_data = match serde_json::from_str::<EndpointSignatureData>(data.as_str()) {
+        Ok(ed) => ed,
+        Err(_) => return Err(status::BadRequest(Some("Unable to parse json data")))
+    };
+
+    let original_data = hex2string::hex_to_string(String::from(esig_data.data_to_sign()));
+
+    let timestamp = match esig_data.timestamp().clone().parse::<u64>() {
         Ok(v) => v,
         Err(_) => return Err(status::BadRequest(Some("TIMESTAMP IN BAD FORMAT")))
     };
@@ -137,26 +144,27 @@ pub async fn sign(
         return Err(status::BadRequest(Some(too_old_timestamp)));
     }
 
-    let hash = sha256::digest(data_to_sign + &split_data[3]);
+    let hash = sha256::digest(original_data + esig_data.timestamp());
+
+    let participant_ids = esig_data.participant_ids();
+    let participant_urls = esig_data.participant_urls();
 
     println!(
         "My ID: {}\n\
-         Other server ID: {}\n\
-         Other server URL: {}\n\
-         Data to sign: {}\n", server_id, participant2, url[0], hash
+         Other server IDs: {:?}\n\
+         Other server URLs: {:?}\n\
+         Data to sign: {}\n", server_id, &participant_ids, &participant_urls, hash
     );
 
-    if !signer.read().await.is_offline_stage_complete(participant2) {
-        let participant_result = signer.write().await.add_participant(participant2);
-        match participant_result {
-            Err(msg) => return Err(status::BadRequest(Some(msg))),
-            _ => {}
+    if !signer.read().await.is_offline_stage_complete(&participant_ids) {
+        let arbitrary_server_id = match signer.read().await.
+            real_to_arbitrary_index(&participant_ids) {
+            None => return Err(status::BadRequest(Some("Second participant is invalid"))),
+            Some(asi) => asi
         };
-        let server_id = signer.read().await.convert_my_real_index_to_arbitrary_one(participant2);
 
-        // No check if the id is not already in use
         let (receiving_stream, outgoing_sink)
-            = db.create_room::<OfflineProtocolMessage>(server_id, room_id, url.clone()).await;
+            = db.create_room::<OfflineProtocolMessage>(arbitrary_server_id, room_id, &participant_urls).await;
 
         let receiving_stream = receiving_stream.fuse();
         tokio::pin!(receiving_stream);
@@ -164,7 +172,7 @@ pub async fn sign(
 
         println!("Beginning offline stage");
 
-        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, participant2).await;
+        let offline_stage_result = signer.write().await.do_offline_stage(receiving_stream, outgoing_sink, &participant_ids).await;
         match offline_stage_result {
             Err(e) => {
                 println!("{}", e.to_string());
@@ -175,7 +183,7 @@ pub async fn sign(
     }
 
     let (receiving_stream, outgoing_sink)
-        = db.create_room::<PartialSignature>(server_id, room_id, url).await;
+        = db.create_room::<PartialSignature>(server_id, room_id, &participant_urls).await;
 
     thread::sleep(Duration::from_secs(2)); // wait for others to finish offline stage
 
@@ -184,7 +192,7 @@ pub async fn sign(
     tokio::pin!(receiving_stream);
     tokio::pin!(outgoing_sink);
 
-    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, participant2)
+    let signature = signer.read().await.sign_hash(&hash, receiving_stream, outgoing_sink, participant_ids)
         .await
         .expect("Message could not be signed");
 
@@ -195,7 +203,7 @@ pub async fn sign(
 // The messages sent to the outgoing sink will be received by other servers in their receiving_stream
 // And vice versa, the messages sent by other servers to their outgoing sink will be received by this server in its receiving_stream
 #[rocket::post("/receive_broadcast/<room_id>", data = "<data>")]
-pub async fn receive_broadcast(db: &State<SharedDb>,
+pub async fn receive_broadcast(db: &State<rocket_instances::SharedDb>,
                                room_id: u16,
                                data: Data<'_>) -> Result<Status, std::io::Error> {
     let mut buffer = Vec::new();

@@ -11,7 +11,7 @@ import time
 LOG_FILE_NAME = 'tests/log_files/nginx_json_logs.txt'
 
 
-async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
+async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs, parties, urls, ports):
     start_time = time.time()
 
     async with aiohttp.ClientSession() as session:
@@ -22,17 +22,17 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
             counter += 1
 
             timestamp = get_current_timestamp()
-            server1_res, server2_res = await trigger_sign_endpoint(session,
-                                                                   [1, 2],
-                                                                   [URL0, URL1],
-                                                                   [SERVER_PORT0, SERVER_PORT1],
-                                                                   timestamp,
-                                                                   line,
-                                                                   1
-                                                                   )
+            responses = await trigger_sign_endpoint(session,
+                                                    parties,
+                                                    urls,
+                                                    ports,
+                                                    timestamp,
+                                                    line,
+                                                    1
+                                                    )
 
-            assert server1_res[0] == 200
-            assert server2_res[0] == 200
+            assert responses[0][0] == 200
+            assert responses[0][0] == 200
 
         end_time = time.time()
         execution_time = end_time - start_time
@@ -42,11 +42,7 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
     fileinput.close()
 
 
-def test_signing_10_logs_in_order():
-    asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
-
-
-def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
+def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, participants, urls, ports):
     start_time = time.time()
 
     counter = 0
@@ -57,10 +53,10 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
         counter += 1
         logs.append(line)
 
-    responses = run_parallel_signatures(number_of_logs, logs)
-    for server1_res, server2_res in responses:
-        assert server1_res[0] and server1_res[1]
-        assert server2_res[0] and server2_res[1]
+    responses = run_parallel_signatures(number_of_logs, logs, participants, urls, ports)
+    for room_responses in responses:
+        for rp in room_responses:
+            assert rp[0] and rp[1]
 
     end_time = time.time()
     execution_time = end_time - start_time
@@ -70,9 +66,33 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs):
     fileinput.close()
 
 
-def test_signing_10_logs_in_parallel():
-    send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME)
+class TestPerformance13:
+    def test_signing_10_logs_in_order(self):
+        asyncio.run(send_n_logs_for_signature_in_order(10,
+                                                       LOG_FILE_NAME,
+                                                       [2, 3],
+                                                       [URL2, URL3],
+                                                       [SERVER_PORT2, SERVER_PORT3]))
+
+    def test_signing_10_logs_in_parallel(self):
+        send_n_logs_for_signature_in_parallel(10,
+                                              LOG_FILE_NAME,
+                                              [2, 3],
+                                              [URL2, URL3],
+                                              [SERVER_PORT2, SERVER_PORT3])
 
 
-def test_signing_100_logs_in_parallel():
-    send_n_logs_for_signature_in_parallel(100, LOG_FILE_NAME)
+class TestPerformance24:
+    def test_signing_10_logs_in_order(self):
+        asyncio.run(send_n_logs_for_signature_in_order(10,
+                                                       LOG_FILE_NAME,
+                                                       [2, 3, 4],
+                                                       [URL2, URL3, URL4],
+                                                       [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4]))
+
+    def test_signing_10_logs_in_parallel(self):
+        send_n_logs_for_signature_in_parallel(10,
+                                              LOG_FILE_NAME,
+                                              [2, 3, 4],
+                                              [URL2, URL3, URL4],
+                                              [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4])

@@ -7,8 +7,16 @@ use crate::pub_endpoints::{key_gen, sign, verify};
 use crate::communication::create_communication_channel;
 use crate::pub_endpoints::receive_broadcast;
 
-pub struct ServerIdState{
-    pub server_id: Mutex<u16>,
+use crate::mpc_config::MPCconfig;
+
+pub struct ServerConfigState {
+    config: Mutex<MPCconfig>,
+}
+
+impl ServerConfigState {
+    pub fn config(&self) -> &Mutex<MPCconfig> {
+        &self.config
+    }
 }
 
 pub struct SharedDb(pub Arc<create_communication_channel::Db>);
@@ -29,12 +37,14 @@ impl std::ops::Deref for SharedDb {
 
 pub fn rocket_with_client_auth(
     figment: rocket::figment::Figment,
-    server_id: u16,
+    config: MPCconfig,
     db: SharedDb,
     port: u16,
 ) -> rocket::Rocket<Build> {
-    let tls_config = TlsConfig::from_paths(format!("certs/public/cert_{}.pem", server_id),
-                                           format!("certs/private/private_key_{}.pem", server_id),)
+    let public_cert = format!("certs/public/cert_{}.pem", config.server_id());
+    let private_cert = format!("certs/private/private_key_{}.pem", config.server_id());
+
+    let tls_config = TlsConfig::from_paths(public_cert, private_cert)
         .with_mutual(MutualTls::from_path("certs/ca_cert.pem").mandatory(true))
     ;
 
@@ -46,21 +56,21 @@ pub fn rocket_with_client_auth(
 
     rocket::custom(figment)
         .mount("/", rocket::routes![receive_broadcast])
-        .manage(ServerIdState{server_id: Mutex::new(server_id)})
+        .manage(ServerConfigState { config: Mutex::new(config)})
         .manage(db)
 }
 
 pub fn rocket_without_client_auth(
     figment: rocket::figment::Figment,
-    server_id: u16,
+    config: MPCconfig,
     db: SharedDb,
-    port: u16,
+    port: u16
 ) -> rocket::Rocket<Build> {
     let figment = figment.merge(("port", port));
 
     rocket::custom(figment)
         .mount("/",
                rocket::routes![key_gen, sign, verify])
-        .manage(ServerIdState{server_id: Mutex::new(server_id)})
+        .manage(ServerConfigState { config: Mutex::new(config)})
         .manage(db)
 }
