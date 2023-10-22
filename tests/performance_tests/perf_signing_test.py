@@ -11,7 +11,7 @@ import time
 LOG_FILE_NAME = 'tests/log_files/nginx_json_logs.txt'
 
 
-async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
+async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs, parties, urls, ports):
     start_time = time.time()
 
     async with aiohttp.ClientSession() as session:
@@ -23,9 +23,9 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs):
 
             timestamp = get_current_timestamp()
             server1_res, server2_res = await trigger_sign_endpoint(session,
-                                                                   [1, 2],
-                                                                   [URL1, URL2],
-                                                                   [SERVER_PORT1, SERVER_PORT2],
+                                                                   parties,
+                                                                   urls,
+                                                                   ports,
                                                                    timestamp,
                                                                    line,
                                                                    1
@@ -66,9 +66,17 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, partic
     fileinput.close()
 
 
-class TestPerformance:
+class TestPerformance13:
     def test_signing_10_logs_in_order(self):
-        asyncio.run(send_n_logs_for_signature_in_order(10, LOG_FILE_NAME))
+        asyncio.run(send_n_logs_for_signature_in_order(10,
+                                                       LOG_FILE_NAME,
+                                                       [2, 3],
+                                                       [URL2, URL3],
+                                                       [SERVER_PORT2, SERVER_PORT3]))
 
     def test_signing_10_logs_in_parallel(self):
-        send_n_logs_for_signature_in_parallel(10, LOG_FILE_NAME, [2, 3], [URL2, URL3], [SERVER_PORT2, SERVER_PORT3])
+        send_n_logs_for_signature_in_parallel(10,
+                                              LOG_FILE_NAME,
+                                              [2, 3],
+                                              [URL2, URL3],
+                                              [SERVER_PORT2, SERVER_PORT3])
