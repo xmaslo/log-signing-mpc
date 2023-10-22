@@ -1,4 +1,4 @@
-name: Integration Tests
+name: threshold-2-number-of-parties-4
 
 on:
   workflow_dispatch:
