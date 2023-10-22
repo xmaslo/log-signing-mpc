@@ -10,10 +10,6 @@ DATA_TO_SIGN2 = "{another,arbitrary,data}"
 
 class TestSigning13:
     def test_signing_on_all_party_combinations(self):
-        """
-        Verifies that all signing combinations, namely
-        [1,2], [1,3], and [2,3] work.
-        """
         timestamp = get_current_timestamp()
 
         responses = asyncio.run(
@@ -70,7 +66,7 @@ class TestSigning13:
 
 
 class TestSigning24:
-    def test_signing_different_combinations(self):
+    def test_signing_on_all_party_combinations(self):
         timestamp = get_current_timestamp()
 
         responses = asyncio.run(
@@ -106,6 +102,20 @@ class TestSigning24:
                 [1, 2, 4],
                 [URL1, URL2, URL4],
                 [SERVER_PORT1, SERVER_PORT2, SERVER_PORT4],
+                timestamp,
+                DATA_TO_SIGN1,
+                1
+            )
+        )
+        assert responses[0][0] == 200
+        assert responses[1][0] == 200
+        assert responses[2][0] == 200
+
+        responses = asyncio.run(
+            sign_data(
+                [1, 3, 4],
+                [URL1, URL3, URL4],
+                [SERVER_PORT1, SERVER_PORT3, SERVER_PORT4],
                 timestamp,
                 DATA_TO_SIGN1,
                 1
