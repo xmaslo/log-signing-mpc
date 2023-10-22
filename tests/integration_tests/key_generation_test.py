@@ -50,3 +50,16 @@ class TestKeyGen24:
 
         generate_keys(number_of_parties, expected_err_code)
         # remove_keys(number_of_parties)
+
+    def test_keygen_keys_already_present(self):
+        """
+        Tests that once the keys were generated on the machines, it is not
+        possible to regenerate new (and overwrite old ones) using the key
+        generation endpoint.
+        """
+        number_of_parties = 4
+        expected_err_code = 403
+
+        # generate_keys(number_of_parties, 200)
+        generate_keys(number_of_parties, expected_err_code)
+        # remove_keys(number_of_parties)
