@@ -1,4 +1,4 @@
-FROM rust:1.72
+FROM rust:1.69
 ARG N_OF_PARTIES
 
 WORKDIR /usr/src/log-signing-mpc
