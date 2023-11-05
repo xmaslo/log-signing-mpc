@@ -81,7 +81,7 @@ pub async fn key_gen(
         Ok("Keys were successfully generated")
     } else {
         println!("Keys could NOT be generated");
-        Err(status::Forbidden(Some("Keys could NOT be generated")))
+        Err(status::Forbidden("Keys could NOT be generated"))
     }
 }
 
@@ -103,7 +103,7 @@ pub async fn verify(config_state: &State<rocket_instances::ServerConfigState>,
     let local_share_file_name = format!("local-share{}.json", server_id);
     let file_contents = local_share_utils::read_file(Path::new(&local_share_file_name));
     match file_contents {
-        None => return Err(status::BadRequest(Some("local-share.json is missing. Generate it first with the /keygen endpoint"))),
+        None => return Err(status::BadRequest("local-share.json is missing. Generate it first with the /keygen endpoint")),
         _ => {}
     }
     let file_contents = file_contents.unwrap();
@@ -113,7 +113,7 @@ pub async fn verify(config_state: &State<rocket_instances::ServerConfigState>,
     return if check_signature::check_sig(&r, &s, &msg, &public_key) {
         Ok("Valid signature")
     } else {
-        Err(status::BadRequest(Some("Invalid signature")))
+        Err(status::BadRequest("Invalid signature"))
     }
 }
 
@@ -129,19 +129,19 @@ pub async fn sign(
 
     let esig_data = match serde_json::from_str::<EndpointSignatureData>(data.as_str()) {
         Ok(ed) => ed,
-        Err(_) => return Err(status::BadRequest(Some("Unable to parse json data")))
+        Err(_) => return Err(status::BadRequest("Unable to parse json data"))
     };
 
     let original_data = hex2string::hex_to_string(String::from(esig_data.data_to_sign()));
 
     let timestamp = match esig_data.timestamp().clone().parse::<u64>() {
         Ok(v) => v,
-        Err(_) => return Err(status::BadRequest(Some("TIMESTAMP IN BAD FORMAT")))
+        Err(_) => return Err(status::BadRequest("TIMESTAMP IN BAD FORMAT"))
     };
     if !check_timestamp::verify_timestamp_10_minute_window(timestamp) {
         let too_old_timestamp: &str = "TIMESTAMP IS OLDER THAN 10 MINUTES";
         println!("{}", too_old_timestamp);
-        return Err(status::BadRequest(Some(too_old_timestamp)));
+        return Err(status::BadRequest(too_old_timestamp));
     }
 
     let hash = sha256::digest(original_data + esig_data.timestamp());
@@ -159,7 +159,7 @@ pub async fn sign(
     if !signer.read().await.is_offline_stage_complete(&participant_ids) {
         let arbitrary_server_id = match signer.read().await.
             real_to_arbitrary_index(&participant_ids) {
-            None => return Err(status::BadRequest(Some("Second participant is invalid"))),
+            None => return Err(status::BadRequest("Second participant is invalid")),
             Some(asi) => asi
         };
 
@@ -176,7 +176,7 @@ pub async fn sign(
         match offline_stage_result {
             Err(e) => {
                 println!("{}", e.to_string());
-                return Err(status::BadRequest(Some("Offline stage failed")));
+                return Err(status::BadRequest("Offline stage failed"));
             },
             _ => {}
         }
