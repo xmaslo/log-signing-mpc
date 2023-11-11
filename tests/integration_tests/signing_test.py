@@ -171,3 +171,42 @@ class TestSigning24:
             assert responses[i][0][0] == 200
             assert responses[i][1][0] == 200
             assert responses[i][2][0] == 200
+
+
+class TestSigning12:
+    def test_sign_data(self):
+        timestamp = get_current_timestamp()
+
+        responses = asyncio.run(
+            sign_data(
+                [1, 2],
+                [URL1, URL2],
+                [SERVER_PORT1, SERVER_PORT2],
+                timestamp,
+                DATA_TO_SIGN1,
+                1
+            )
+        )
+        assert responses[0][0] == 200
+        assert responses[1][0] == 200
+
+
+class TestSigning36:
+    def test_sign_data(self):
+        timestamp = get_current_timestamp()
+
+        responses = asyncio.run(
+            sign_data(
+                [1, 2, 3, 4],
+                [URL1, URL2, URL3, URL4],
+                [SERVER_PORT1, SERVER_PORT2, SERVER_PORT3, SERVER_PORT4],
+                timestamp,
+                DATA_TO_SIGN1,
+                1
+            )
+        )
+        assert responses[0][0] == 200
+        assert responses[1][0] == 200
+        assert responses[2][0] == 200
+        assert responses[3][0] == 200
+

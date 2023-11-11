@@ -96,3 +96,21 @@ class TestPerformance24:
                                               [2, 3, 4],
                                               [URL2, URL3, URL4],
                                               [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4])
+
+
+class TestPerformance12:
+    def test_signing_10_logs_in_parallel(self):
+        send_n_logs_for_signature_in_parallel(10,
+                                              LOG_FILE_NAME,
+                                              [1, 2],
+                                              [URL1, URL2],
+                                              [SERVER_PORT1, SERVER_PORT2])
+
+
+class TestPerformance36:
+    def test_signing_10_logs_in_parallel(self):
+        send_n_logs_for_signature_in_parallel(10,
+                                              LOG_FILE_NAME,
+                                              [1, 2, 3, 4],
+                                              [URL1, URL2, URL3, URL4],
+                                              [SERVER_PORT1, SERVER_PORT2, SERVER_PORT3, SERVER_PORT4])
