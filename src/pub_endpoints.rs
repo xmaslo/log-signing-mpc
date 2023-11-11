@@ -159,7 +159,7 @@ pub async fn sign(
     if !signer.read().await.is_offline_stage_complete(&participant_ids) {
         let arbitrary_server_id = match signer.read().await.
             real_to_arbitrary_index(&participant_ids) {
-            None => return Err(status::BadRequest("Second participant is invalid")),
+            None => return Err(status::BadRequest("Other participants are invalid")),
             Some(asi) => asi
         };
 
