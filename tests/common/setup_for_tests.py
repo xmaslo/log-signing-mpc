@@ -1,6 +1,6 @@
 IS_DOCKER = True
 
-BASE_URL = "http://localhost"
+BASE_URL = "http://127.0.0.1"
 
 SERVER_PORT1 = "8001"
 SERVER_PORT2 = "8002"
@@ -28,7 +28,7 @@ else:
 def get_urls(n):
     urls = []
     for i in range(1, n + 1):
-        urls.append(f"http://127.0.0.1:800{i}")
+        urls.append(f"{BASE_URL}:800{i}")
 
     return urls
 
