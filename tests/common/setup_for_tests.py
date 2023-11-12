@@ -35,7 +35,7 @@ def get_ports(n, port):
     return ports
 
 
-def create_urls(n, port, is_docker):
+def create_urls(n, port, is_docker, url):
     urls = []
     port_number = port
     for i in range(1, n + 1):
@@ -43,17 +43,17 @@ def create_urls(n, port, is_docker):
         if is_docker:
             urls.append(f"la{i}:{port_number}")
         else:
-            urls.append(f"{BASE_URL}:{port_number}")
+            urls.append(f"{url}:{port_number}")
 
     return urls
 
 
 def get_endpoint_urls(n, is_docker):
-    return create_urls(n, 8000, is_docker)
+    return create_urls(n, 8000, is_docker, BASE_URL)
 
 
 def get_inter_comm_urls(n, is_docker):
-    return create_urls(n, 3000, is_docker)
+    return create_urls(n, 3000, is_docker, "127.0.0.1")
 
 
 def get_keygen_payloads(n, is_docker):
