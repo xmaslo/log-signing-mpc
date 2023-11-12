@@ -1,28 +1,6 @@
-IS_DOCKER = False
+IS_DOCKER = True
 
 BASE_URL = "http://127.0.0.1"
-
-SERVER_PORT1 = "8001"
-SERVER_PORT2 = "8002"
-SERVER_PORT3 = "8003"
-SERVER_PORT4 = "8004"
-SERVER_PORT5 = "8005"
-SERVER_PORT6 = "8006"
-
-if IS_DOCKER:
-    URL1 = "la1:3001"
-    URL2 = "la2:3002"
-    URL3 = "la3:3003"
-    URL4 = "la4:3004"
-    URL5 = "la5:3005"
-    URL6 = "la6:3006"
-else:
-    URL1 = "127.0.0.1:3001"
-    URL2 = "127.0.0.1:3002"
-    URL3 = "127.0.0.1:3003"
-    URL4 = "127.0.0.1:3004"
-    URL5 = "127.0.0.1:3005"
-    URL6 = "127.0.0.1:3006"
 
 
 def get_ports(n, port):
