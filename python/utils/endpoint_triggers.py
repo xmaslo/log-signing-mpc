@@ -1,8 +1,8 @@
 import asyncio
 import aiohttp
-from python_utils.setup_for_tests import *
-from python_utils.common import send_post_request
-from python_utils.create_payload import get_keygen_payloads, create_sign_payload, get_payloads_layout
+from python.utils.setup_for_tests import *
+from python.utils.common import send_post_request
+from python.utils.create_payload import get_keygen_payloads, create_sign_payload, get_payloads_layout
 
 
 async def trigger_keygen_endpoint(n):

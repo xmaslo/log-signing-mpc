@@ -1,6 +1,6 @@
 import asyncio
 import os
-from python_utils.endpoint_triggers import trigger_keygen_endpoint
+from python.utils.endpoint_triggers import trigger_keygen_endpoint
 
 
 def generate_keys(n, expected_err_code):

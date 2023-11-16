@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
-from python_utils.endpoint_triggers import trigger_sign_endpoint, trigger_sign_endpoint_in_multiple_rooms
-from python_utils.common import get_current_timestamp
+from python.utils.endpoint_triggers import trigger_sign_endpoint, trigger_sign_endpoint_in_multiple_rooms
+from python.utils.common import get_current_timestamp
 
 
 async def sign_data(participating_parties, urls, ports, timestamp, data, room):
