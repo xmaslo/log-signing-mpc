@@ -5,6 +5,22 @@ from common.common import send_post_request
 from common.create_payload import create_sign_payload, get_payloads_layout
 
 
+def get_keygen_payloads(n, is_docker):
+    payloads = []
+    for i in range(n):
+        payload = ""
+        for j in range(n):
+            if i != j:
+                if is_docker:
+                    payload += f"la{j + 1}:300{j + 1},"
+                else:
+                    payload += f"127.0.0.1:300{j + 1},"
+
+        payloads.append(payload[:-1])  # remove trailing ','
+
+    return payloads
+
+
 async def trigger_keygen_endpoint(n):
     urls = get_endpoint_urls(n)
     payloads = get_keygen_payloads(n, IS_DOCKER)
