@@ -1,6 +1,9 @@
 IS_DOCKER = True
 
-BASE_URL = "http://127.0.0.1"
+BASE_URL = "127.0.0.1"
+BASE_DOCKER_URL = "la"
+BASE_URL_HTTP = f"http://{BASE_URL}"
+BASE_DOCKER_URL_HTTP = f"http://{BASE_DOCKER_URL}"
 
 
 def get_ports(n, port):
@@ -13,25 +16,25 @@ def get_ports(n, port):
     return ports
 
 
-def create_urls(n, port, is_docker, url):
+def get_endpoint_urls(n):
     urls = []
-    port_number = port
+    port_number = 8000
     for i in range(1, n + 1):
         port_number += 1
-        if is_docker:
-            urls.append(f"la{i}:{port_number}")
-        else:
-            urls.append(f"{url}:{port_number}")
-
+        urls.append(f"{BASE_URL_HTTP}:{port_number}")
     return urls
 
 
-def get_endpoint_urls(n, is_docker):
-    return create_urls(n, 8000, is_docker, BASE_URL)
-
-
 def get_inter_comm_urls(n, is_docker):
-    return create_urls(n, 3000, is_docker, "127.0.0.1")
+    urls = []
+    port_number = 3000
+    for i in range(1, n + 1):
+        port_number += 1
+        if is_docker:
+            urls.append(f"{BASE_DOCKER_URL}{i}:{port_number}")
+        else:
+            urls.append(f"{BASE_URL}:{port_number}")
+    return urls
 
 
 def get_keygen_payloads(n, is_docker):

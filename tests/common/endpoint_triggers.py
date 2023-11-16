@@ -6,7 +6,7 @@ from common.create_payload import create_sign_payload, get_payloads_layout
 
 
 async def trigger_keygen_endpoint(n):
-    urls = get_endpoint_urls(n, IS_DOCKER)
+    urls = get_endpoint_urls(n)
     payloads = get_keygen_payloads(n, IS_DOCKER)
 
     async with aiohttp.ClientSession() as session:
@@ -51,7 +51,7 @@ async def trigger_sign_endpoint_in_multiple_rooms(session,
                                                    timestamp)
 
         for pl_key, pl_val in payloads.items():
-            tasks.append(send_post_request(session, f"{BASE_URL}:{pl_key}/sign/{room}", pl_val))
+            tasks.append(send_post_request(session, f"{BASE_URL_HTTP}:{pl_key}/sign/{room}", pl_val))
 
     return await asyncio.gather(*tasks)
 

@@ -38,11 +38,11 @@ class TestVerify13:
                           [outside_ports[0], outside_ports[1]]))
 
         response1 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
         response2 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL + f":{outside_ports[1]}", DATA_TO_SIGN, signature, timestamp))
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[1]}", DATA_TO_SIGN, signature, timestamp))
         response3 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL + f":{outside_ports[2]}", DATA_TO_SIGN, signature, timestamp))
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[2]}", DATA_TO_SIGN, signature, timestamp))
 
         assert response1[0] == 200
         assert response2[0] == 200
@@ -62,13 +62,13 @@ class TestVerify24:
                           [outside_ports[0], outside_ports[2], outside_ports[3]]))
 
         response1 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
         response2 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL + f":{outside_ports[1]}", DATA_TO_SIGN, signature, timestamp))
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[1]}", DATA_TO_SIGN, signature, timestamp))
         response3 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL + f":{outside_ports[2]}", DATA_TO_SIGN, signature, timestamp))
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[2]}", DATA_TO_SIGN, signature, timestamp))
         response4 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL + f":{outside_ports[3]}", DATA_TO_SIGN, signature, timestamp))
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[3]}", DATA_TO_SIGN, signature, timestamp))
 
         assert response1[0] == 200
         assert response2[0] == 200
