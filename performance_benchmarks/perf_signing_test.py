@@ -1,7 +1,7 @@
-from common.common import get_current_timestamp
-from common.setup_for_tests import *
-from common.endpoint_triggers import trigger_sign_endpoint
-from common.signatures import run_parallel_signatures
+from python_utils.common import get_current_timestamp
+from python_utils.setup_for_tests import *
+from python_utils.endpoint_triggers import trigger_sign_endpoint
+from python_utils.signatures import run_parallel_signatures
 import asyncio
 import aiohttp
 import fileinput

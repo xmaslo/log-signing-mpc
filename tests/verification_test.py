@@ -1,8 +1,8 @@
 import asyncio
-from common.setup_for_tests import *
-from integration_tests.signing_test import sign_data
-from common.common import get_current_timestamp
-from common.endpoint_triggers import trigger_verify_endpoint
+from python_utils.setup_for_tests import *
+from tests.signing_test import sign_data
+from python_utils.common import get_current_timestamp
+from python_utils.endpoint_triggers import trigger_verify_endpoint
 
 DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
 

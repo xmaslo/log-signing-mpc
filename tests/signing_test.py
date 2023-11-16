@@ -1,7 +1,7 @@
 import asyncio
-from common.setup_for_tests import *
-from common.common import get_current_timestamp
-from common.signatures import sign_data, run_parallel_signatures
+from python_utils.setup_for_tests import *
+from python_utils.common import get_current_timestamp
+from python_utils.signatures import sign_data, run_parallel_signatures
 
 
 DATA_TO_SIGN1 = "{some,arbitrary,data,to,sign}"
