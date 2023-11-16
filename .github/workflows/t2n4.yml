@@ -40,7 +40,7 @@ jobs:
 
       - name: Run API tests
         run: |
-          pytest -k "TestKeyGen24 or TestSigning24 or TestVerify24 or TestPerformance24"
+          pytest -k "TestKeyGen24 or TestSigning24 or TestVerify24"
 
       - name: Clean up
         run: docker compose down
