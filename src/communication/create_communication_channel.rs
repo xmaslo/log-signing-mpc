@@ -21,9 +21,9 @@ use tokio::spawn;
 
 use crate::communication::room::Room;
 
-pub fn create_tls_config(server_id: u16) -> Client {
+pub fn create_tls_config(server_id: u16, dir: &str) -> Client {
     // Load CA certificate
-    let ca_cert = File::open("certs/ca_cert.pem");
+    let ca_cert = File::open(format!("{dir}/ca_cert.pem"));
 
     let mut client = Client::builder()
         .use_rustls_tls()
@@ -42,7 +42,7 @@ pub fn create_tls_config(server_id: u16) -> Client {
 
     // Load public certificates
     let mut buf = Vec::new();
-    let _ = File::open(format!("certs/private/cert_and_key_{}.pem", server_id))
+    let _ = File::open(format!("{dir}/private/cert_and_key_{server_id}.pem"))
         .unwrap()
         .read_to_end(&mut buf)
         .unwrap();
@@ -62,7 +62,7 @@ impl Db {
     pub fn empty(server_id: u16) -> Self {
         Self {
             rooms: RwLock::new(HashMap::new()),
-            client: create_tls_config(server_id),
+            client: create_tls_config(server_id, "certs"),
         }
     }
 
