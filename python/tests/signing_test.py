@@ -1,5 +1,5 @@
 import asyncio
-from python.utils.setup_for_tests import *
+from python.setup import *
 from python.utils.common import get_current_timestamp
 from python.utils.signatures import sign_data, run_parallel_signatures
 

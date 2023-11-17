@@ -1,6 +1,6 @@
 import asyncio
 import aiohttp
-from python.utils.setup_for_tests import *
+from python.setup import *
 from python.utils.common import send_post_request
 from python.utils.create_payload import get_keygen_payloads, create_sign_payload, get_payloads_layout
 

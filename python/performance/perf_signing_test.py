@@ -1,5 +1,5 @@
 from python.utils.common import get_current_timestamp
-from python.utils.setup_for_tests import *
+from python.setup import *
 from python.utils.endpoint_triggers import trigger_sign_endpoint
 from python.utils.signatures import run_parallel_signatures
 import asyncio
