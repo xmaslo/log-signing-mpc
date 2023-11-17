@@ -6,9 +6,10 @@ use mpc::operations;
 
 mod communication;
 use communication::create_communication_channel;
-mod pub_endpoints;
+pub mod endpoints;
 mod rocket_instances;
 mod mpc_config;
+
 use mpc_config::MPCconfig;
 
 use std::{

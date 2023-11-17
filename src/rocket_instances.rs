@@ -2,10 +2,10 @@
 use std::sync::{Arc, Mutex};
 use rocket::Build;
 use rocket::config::{TlsConfig, MutualTls};
-use crate::pub_endpoints::{key_gen, sign, verify};
+
+use crate::endpoints::pub_endpoints::{key_gen, sign, verify, receive_broadcast};
 
 use crate::communication::create_communication_channel;
-use crate::pub_endpoints::receive_broadcast;
 
 use crate::mpc_config::MPCconfig;
 
