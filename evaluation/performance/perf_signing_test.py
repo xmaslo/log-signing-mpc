@@ -1,7 +1,7 @@
-from python.utils.common import get_current_timestamp
-from python.setup import *
-from python.utils.endpoint_triggers import trigger_sign_endpoint
-from python.utils.signatures import run_parallel_signatures
+from evaluation.utils.common import get_current_timestamp
+from evaluation.setup import *
+from evaluation.utils.endpoint_triggers import trigger_sign_endpoint
+from evaluation.utils.signatures import run_parallel_signatures
 import asyncio
 import aiohttp
 import fileinput
