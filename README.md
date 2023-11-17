@@ -184,6 +184,10 @@ Navigate to the root directory and run:
 Navigate to the root directory and run:
 1. `pytest -v "tests/integration_tests/verification_test.py::TestVerify24::test_verify_signature_on_all_parties"`
 
+# Evaluation
+1. Add your project root directory into the PYTHONPATH: `$env:PYTHONPATH = "D:\log-signing-mpc;$env:PYTHONPATH"`.
+2. Run performance benchmark of your choice: `python benchmark.py <args>`.
+
 # Useful Commands
 1. Run unit-tests inside docker: `docker compose run unit-tests`.
 2. Static analysis: `cargo clippy`
