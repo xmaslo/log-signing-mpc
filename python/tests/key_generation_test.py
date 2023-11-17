@@ -9,7 +9,6 @@ class TestKeyGen13:
         number_of_parties = 3
         expected_err_code = 200
         generate_keys(number_of_parties, expected_err_code)
-        # remove_keys(number_of_parties)
 
     def test_keygen_keys_already_present(self):
         """
@@ -20,9 +19,7 @@ class TestKeyGen13:
         number_of_parties = 3
         expected_err_code = 403
 
-        # generate_keys(number_of_parties, 200)
         generate_keys(number_of_parties, expected_err_code)
-        # remove_keys(number_of_parties)
 
 
 class TestKeyGen24:
@@ -35,7 +32,6 @@ class TestKeyGen24:
         expected_err_code = 200
 
         generate_keys(number_of_parties, expected_err_code)
-        # remove_keys(number_of_parties)
 
     def test_keygen_keys_already_present(self):
         """
@@ -46,9 +42,7 @@ class TestKeyGen24:
         number_of_parties = 4
         expected_err_code = 403
 
-        # generate_keys(number_of_parties, 200)
         generate_keys(number_of_parties, expected_err_code)
-        # remove_keys(number_of_parties)
 
 
 class TestKeyGen12:
