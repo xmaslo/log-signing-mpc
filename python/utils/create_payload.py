@@ -1,6 +1,22 @@
 import json
 
 
+def get_keygen_payloads(n, is_docker):
+    payloads = []
+    for i in range(n):
+        payload = ""
+        for j in range(n):
+            if i != j:
+                if is_docker:
+                    payload += f"la{j + 1}:300{j + 1},"
+                else:
+                    payload += f"127.0.0.1:300{j + 1},"
+
+        payloads.append(payload[:-1])  # remove trailing ','
+
+    return payloads
+
+
 def create_sign_payload(server_ids, server_urls, data, timestamp):
     payload = {}
     assert len(server_ids) == len(server_urls)

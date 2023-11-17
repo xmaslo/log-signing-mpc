@@ -1,7 +1,7 @@
-from common.common import get_current_timestamp
-from common.setup_for_tests import *
-from common.endpoint_triggers import trigger_sign_endpoint
-from common.signatures import run_parallel_signatures
+from python.utils.common import get_current_timestamp
+from python.setup import *
+from python.utils.endpoint_triggers import trigger_sign_endpoint
+from python.utils.signatures import run_parallel_signatures
 import asyncio
 import aiohttp
 import fileinput
@@ -68,49 +68,67 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, partic
 
 class TestPerformance13:
     def test_signing_10_logs_in_order(self):
+        internal_urls = get_inter_comm_urls(3, IS_DOCKER)
+        outside_ports = get_ports(3, 8000)
+
         asyncio.run(send_n_logs_for_signature_in_order(10,
                                                        LOG_FILE_NAME,
                                                        [2, 3],
-                                                       [URL2, URL3],
-                                                       [SERVER_PORT2, SERVER_PORT3]))
+                                                       [internal_urls[1], internal_urls[2]],
+                                                       [outside_ports[1], outside_ports[2]]))
 
     def test_signing_10_logs_in_parallel(self):
+        internal_urls = get_inter_comm_urls(3, IS_DOCKER)
+        outside_ports = get_ports(3, 8000)
+
         send_n_logs_for_signature_in_parallel(10,
                                               LOG_FILE_NAME,
                                               [2, 3],
-                                              [URL2, URL3],
-                                              [SERVER_PORT2, SERVER_PORT3])
+                                              [internal_urls[1], internal_urls[2]],
+                                              [outside_ports[1], outside_ports[2]])
 
 
 class TestPerformance24:
     def test_signing_10_logs_in_order(self):
+        internal_urls = get_inter_comm_urls(4, IS_DOCKER)
+        outside_ports = get_ports(4, 8000)
+
         asyncio.run(send_n_logs_for_signature_in_order(10,
                                                        LOG_FILE_NAME,
                                                        [2, 3, 4],
-                                                       [URL2, URL3, URL4],
-                                                       [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4]))
+                                                       [internal_urls[1], internal_urls[2], internal_urls[3]],
+                                                       [outside_ports[1], outside_ports[2], outside_ports[3]]))
 
     def test_signing_10_logs_in_parallel(self):
+        internal_urls = get_inter_comm_urls(4, IS_DOCKER)
+        outside_ports = get_ports(4, 8000)
+
         send_n_logs_for_signature_in_parallel(10,
                                               LOG_FILE_NAME,
                                               [2, 3, 4],
-                                              [URL2, URL3, URL4],
-                                              [SERVER_PORT2, SERVER_PORT3, SERVER_PORT4])
+                                              [internal_urls[1], internal_urls[2], internal_urls[3]],
+                                              [outside_ports[1], outside_ports[2], outside_ports[3]])
 
 
 class TestPerformance12:
     def test_signing_10_logs_in_parallel(self):
+        internal_urls = get_inter_comm_urls(2, IS_DOCKER)
+        outside_ports = get_ports(2, 8000)
+
         send_n_logs_for_signature_in_parallel(10,
                                               LOG_FILE_NAME,
                                               [1, 2],
-                                              [URL1, URL2],
-                                              [SERVER_PORT1, SERVER_PORT2])
+                                              [internal_urls[0], internal_urls[1]],
+                                              [outside_ports[0], outside_ports[1]])
 
 
 class TestPerformance36:
     def test_signing_10_logs_in_parallel(self):
+        internal_urls = get_inter_comm_urls(6, IS_DOCKER)
+        outside_ports = get_ports(6, 8000)
+
         send_n_logs_for_signature_in_parallel(10,
                                               LOG_FILE_NAME,
                                               [1, 2, 3, 4],
-                                              [URL1, URL2, URL3, URL4],
-                                              [SERVER_PORT1, SERVER_PORT2, SERVER_PORT3, SERVER_PORT4])
+                                              [internal_urls[0], internal_urls[1], internal_urls[2], internal_urls[3]],
+                                              [outside_ports[0], outside_ports[1], outside_ports[2], outside_ports[3]])

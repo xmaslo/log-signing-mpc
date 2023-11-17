@@ -1,18 +1,4 @@
-import asyncio
-import os
-from common.endpoint_triggers import trigger_keygen_endpoint
-
-
-def generate_keys(n, expected_err_code):
-    results = asyncio.run(trigger_keygen_endpoint(n))
-
-    for result in results:
-        assert result[0] == expected_err_code
-
-
-def remove_keys(n):
-    for i in range(1, n + 1):
-        os.remove(f"target/release/local-share{i}.json")
+from python.utils.keygen import generate_keys
 
 
 class TestKeyGen13:
