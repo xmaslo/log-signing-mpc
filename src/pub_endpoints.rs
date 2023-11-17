@@ -134,11 +134,12 @@ pub async fn sign(
 
     let original_data = hex2string::hex_to_string(String::from(esig_data.data_to_sign()));
 
+    let window = Duration::from_secs(600);
     let timestamp = match esig_data.timestamp().clone().parse::<u64>() {
         Ok(v) => v,
         Err(_) => return Err(status::BadRequest("TIMESTAMP IN BAD FORMAT"))
     };
-    if !check_timestamp::verify_timestamp_10_minute_window(timestamp) {
+    if !check_timestamp::verify_timestamp_10_minute_window(timestamp, window) {
         let too_old_timestamp: &str = "TIMESTAMP IS OLDER THAN 10 MINUTES";
         println!("{}", too_old_timestamp);
         return Err(status::BadRequest(too_old_timestamp));
