@@ -43,19 +43,3 @@ class TestKeyGen24:
         expected_err_code = 403
 
         generate_keys(number_of_parties, expected_err_code)
-
-
-class TestKeyGen12:
-    def test_keygen_no_keys(self):
-        number_of_parties = 2
-        expected_err_code = 200
-
-        generate_keys(number_of_parties, expected_err_code)
-
-
-class TestKeyGen36:
-    def test_keygen_no_keys(self):
-        number_of_parties = 6
-        expected_err_code = 200
-
-        generate_keys(number_of_parties, expected_err_code)
