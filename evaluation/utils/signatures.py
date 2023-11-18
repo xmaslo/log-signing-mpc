@@ -4,6 +4,24 @@ from evaluation.utils.endpoint_triggers import trigger_sign_endpoint, trigger_si
 from evaluation.utils.common import get_current_timestamp
 
 
+async def get_signature(timestamp, parties, urls, ports, data_to_sign):
+    responses = await \
+        sign_data(
+            parties,
+            urls,
+            ports,
+            timestamp,
+            data_to_sign,
+            1
+        )
+
+    if responses[0][0] == 200:
+        return responses[0][1]
+
+    print("Unable to obtain signature")
+    return None
+
+
 async def sign_data(participating_parties, urls, ports, timestamp, data, room):
     async with aiohttp.ClientSession() as session:
         responses = await trigger_sign_endpoint(session,

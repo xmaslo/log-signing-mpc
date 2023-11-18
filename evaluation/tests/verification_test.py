@@ -1,28 +1,10 @@
 import asyncio
 from evaluation.setup import *
-from evaluation.tests.signing_test import sign_data
 from evaluation.utils.common import get_current_timestamp
 from evaluation.utils.endpoint_triggers import trigger_verify_endpoint
+from evaluation.utils.signatures import get_signature
 
 DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
-
-
-async def get_signature(timestamp, parties, urls, ports):
-    responses = await \
-        sign_data(
-            parties,
-            urls,
-            ports,
-            timestamp,
-            DATA_TO_SIGN,
-            1
-        )
-
-    if responses[0][0] == 200:
-        return responses[0][1]
-
-    print("Unable to obtain signature")
-    return None
 
 
 class TestVerify13:
@@ -35,7 +17,8 @@ class TestVerify13:
             get_signature(timestamp,
                           [1, 2],
                           [internal_urls[0], internal_urls[1]],
-                          [outside_ports[0], outside_ports[1]]))
+                          [outside_ports[0], outside_ports[1]],
+                          DATA_TO_SIGN))
 
         response1 = asyncio.run(
             trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
@@ -59,7 +42,8 @@ class TestVerify24:
             get_signature(timestamp,
                           [1, 3, 4],
                           [internal_urls[0], internal_urls[2], internal_urls[3]],
-                          [outside_ports[0], outside_ports[2], outside_ports[3]]))
+                          [outside_ports[0], outside_ports[2], outside_ports[3]],
+                          DATA_TO_SIGN))
 
         response1 = asyncio.run(
             trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
