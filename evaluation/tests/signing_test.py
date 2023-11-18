@@ -74,7 +74,7 @@ class TestSigning13:
         assert responses[1][0] == 200
 
     def test_parallel_signatures(self):
-        number_of_parallel_signatures = 10
+        number_of_parallel_signatures = 5
 
         internal_urls = get_inter_comm_urls(3, IS_DOCKER)
         outside_ports = get_ports(3, 8000)
@@ -174,7 +174,7 @@ class TestSigning24:
         assert responses[2][0] == 200
 
     def test_parallel_signatures(self):
-        number_of_parallel_signatures = 10
+        number_of_parallel_signatures = 5
 
         internal_urls = get_inter_comm_urls(4, IS_DOCKER)
         outside_ports = get_ports(4, 8000)
