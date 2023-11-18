@@ -35,3 +35,7 @@ def get_inter_comm_urls(n, is_docker):
         else:
             urls.append(f"{BASE_URL}:{port_number}")
     return urls
+
+
+def get_parties(n):
+    return list(range(1, n+1))
