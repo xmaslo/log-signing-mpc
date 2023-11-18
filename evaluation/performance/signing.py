@@ -86,7 +86,7 @@ LOG_FILE_NAME = 'log_files/nginx_json_logs.txt'
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python script.py <threshold> <test_type> <log_count>")
+        print("Usage: python signing.py <threshold> <test_type> <log_count>")
         sys.exit(1)
 
     threshold = int(sys.argv[1])

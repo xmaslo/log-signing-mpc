@@ -15,7 +15,7 @@ def keygen_bench(node_count):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python script.py <number_of_nodes>")
+        print("Usage: python key_generation.py <number_of_nodes>")
         sys.exit(1)
 
     keygen_bench(int(sys.argv[1]))
