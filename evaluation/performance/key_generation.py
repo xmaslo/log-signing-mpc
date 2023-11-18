@@ -1,11 +1,12 @@
 import time
+import sys
 from evaluation.utils.keygen import generate_keys
 
 
-def keygen_bench(n):
+def keygen_bench(node_count):
     start_time = time.time()
 
-    generate_keys(n, 200)
+    generate_keys(node_count, 200)
 
     end_time = time.time()
     execution_time = end_time - start_time
@@ -13,4 +14,8 @@ def keygen_bench(n):
 
 
 if __name__ == "__main__":
-    keygen_bench(3)
+    if len(sys.argv) != 2:
+        print("Usage: python script.py <number_of_nodes>")
+        sys.exit(1)
+
+    keygen_bench(int(sys.argv[1]))
