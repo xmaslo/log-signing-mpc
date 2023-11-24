@@ -88,13 +88,12 @@ def benchmark(parallel_n, log_file_name, parties_n, internals_n, ports_n, t_type
 
 def compute_average(n, p_count, file_name, parties, urls, ports, tt):
     # the first signature should be ignored
-    benchmark(p_count,
-              file_name,
-              parties,
-              urls,
-              ports,
-              tt)
-    
+    asyncio.run(send_n_logs_for_signature_in_order(1,
+                                                   file_name,
+                                                   parties,
+                                                   urls,
+                                                   ports))
+
     cumulated_time = 0
     cumulated_average = 0
     for _ in range(n):
