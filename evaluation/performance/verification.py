@@ -34,11 +34,26 @@ def verify_bench(threshold, signature_count):
     end_time = time.time()
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time:.2f} seconds")
+    print(f"Execution time per log: {signature_count/execution_time}")
+    return (execution_time, signature_count/execution_time)
+
+
+def compute_average(n, threshold, signature_count):
+    cumulated_time = 0
+    cumulated_average = 0
+    for _ in range(n):
+        result = verify_bench(threshold, signature_count)
+        
+        cumulated_time += result[0]
+        cumulated_average += result[1]
+    
+    print(f"\nExecution time: {cumulated_time/n:.2f} seconds")
+    print(f"Execution time per log: {cumulated_average/n:.2f} log/sec")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python verification.py <threshold> <number_of_signatures_to_verify>")
+    if len(sys.argv) != 4:
+        print("Usage: python verification.py <threshold> <number_of_signatures_to_verify> <number_of_trials>")
         sys.exit(1)
 
-    verify_bench(int(sys.argv[1]), int(sys.argv[2]))
+    compute_average(int(sys.argv[3]), int(sys.argv[1]), int(sys.argv[2]))

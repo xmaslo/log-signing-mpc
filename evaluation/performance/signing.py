@@ -39,6 +39,8 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs, par
 
     fileinput.close()
 
+    return (execution_time, number_of_logs/execution_time)
+
 
 def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, participants, urls, ports):
     start_time = time.time()
@@ -63,43 +65,74 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, partic
 
     fileinput.close()
 
+    return (execution_time, number_of_logs/execution_time)
+
 
 def benchmark(parallel_n, log_file_name, parties_n, internals_n, ports_n, t_type):
     if t_type == "order":
-        asyncio.run(send_n_logs_for_signature_in_order(parallel_n,
-                                                       log_file_name,
-                                                       parties_n,
-                                                       internals_n,
-                                                       ports_n))
+        return asyncio.run(send_n_logs_for_signature_in_order(parallel_n,
+                                                              log_file_name,
+                                                              parties_n,
+                                                              internals_n,
+                                                              ports_n))
     elif t_type == "parallel":
-        send_n_logs_for_signature_in_parallel(parallel_n,
-                                              log_file_name,
-                                              parties_n,
-                                              internals_n,
-                                              ports_n)
+        return send_n_logs_for_signature_in_parallel(parallel_n,
+                                                     log_file_name,
+                                                     parties_n,
+                                                     internals_n,
+                                                     ports_n)
     else:
         print(f"Unknown test type: {t_type}")
+        return None
+
+
+def compute_average(n, p_count, file_name, parties, urls, ports, tt):
+    # the first signature should be ignored
+    benchmark(p_count,
+              file_name,
+              parties,
+              urls,
+              ports,
+              tt)
+    
+    cumulated_time = 0
+    cumulated_average = 0
+    for _ in range(n):
+        result = benchmark(p_count,
+                           file_name,
+                           parties,
+                           urls,
+                           ports,
+                           tt)
+        
+        cumulated_time += result[0]
+        cumulated_average += result[1]
+    
+    print(f"\nExecution time: {cumulated_time/n:.2f} seconds")
+    print(f"Execution time per log: {cumulated_average/n:.2f} log/sec")
 
 
 LOG_FILE_NAME = 'log_files/nginx_json_logs.txt'
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python signing.py <threshold> <test_type> <log_count>")
+    if len(sys.argv) != 5:
+        print("Usage: python signing.py <threshold> <test_type> <log_count> <number_of_trials>")
         sys.exit(1)
 
     threshold = int(sys.argv[1])
     test_type = sys.argv[2]
     parallel_count = int(sys.argv[3])
+    number_of_trials = int(sys.argv[4])
 
     participating_parties = get_parties(threshold + 1)
     internal_urls = get_inter_comm_urls(threshold + 1, IS_DOCKER)
     outside_ports = get_ports(threshold + 1, 8000)
 
-    benchmark(parallel_count,
-              LOG_FILE_NAME,
-              participating_parties,
-              internal_urls,
-              outside_ports,
-              test_type)
+    compute_average(number_of_trials,
+                    parallel_count,
+                    LOG_FILE_NAME,
+                    participating_parties,
+                    internal_urls,
+                    outside_ports,
+                    test_type)
