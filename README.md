@@ -38,6 +38,10 @@ If the certificates are already expired you can run provided scripts create your
 
 ## Build, Run, and Test
 
+The newest version of the compiler that can be used for this project is 1.72.0 because it contains dependencies that are no longer supported and need to be replaced.
+
+You can download the most recent version of Rustup at https://www.rust-lang.org/tools/install}{https://www.rust-lang.org/tools/install and then downgrade to the version 1.72.0 by simply running `rustup install 1.72.0` and `rustup default 1.72.0`.
+
 ### Build
 1. Build Debug: `cargo build` \
    Build Release: `cargo build --release`
