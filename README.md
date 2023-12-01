@@ -55,7 +55,7 @@ Alternatively, navigate to `log-signing-mpc\target\release` and run:
 3. `.\log-signing-mpc.exe 3 8003 3003 2 4`
 4. `.\log-signing-mpc.exe 4 8004 3004 2 4`
 
-The format is: `.\log-signing-mpc.exe server-id http-port tls-port threshold number-of-parties`.
+The format is: `.\log-signing-mpc.exe server-id HTTP-port TLS-port threshold number-of-parties`.
 
 ### Test
 To run tests, follow:
@@ -78,7 +78,7 @@ To generate keys, curl the */keygen* endpoint (you can download curl at https://
 3. `curl.exe -X POST localhost:8003/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3002,127.0.0.1:3004"`
 4. `curl.exe -X POST localhost:8004/key_gen/1 -d "127.0.0.1:3001,127.0.0.1:3002,127.0.0.1:3003"`
 
-The format is `curl.exe -X POST localhost:{HTTP-PORT}/key_gen/1 -d "{OTHER-SERVER-URLS-WITH-THEIR-TLS-PORTS}"`.
+The format is `curl.exe -X POST localhost:{HTTP-port}/key_gen/1 -d "{OTHER-SERVER-URLS-WITH-THEIR-TLS-PORTS}"`.
 
 Each of the servers will generate its keys named `local-shareX.json`, where X is the id of the server (usually in `target\release` directory).
 
@@ -91,7 +91,7 @@ To sign a message, curl the  */sign* endpoint (you can convert signature to hexs
 2. `curl.exe -X POST localhost:8002/sign/1 -H "Content-Type: application/json" -d '{\"participants\":[{\"server_id\":1,\"url\":\"127.0.0.1:3001\"},{\"server_id\":3,\"url\":\"127.0.0.1:3003\"}],\"data_to_sign\":\"7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d\",\"timestamp\":\"16816533390\"}'`
 3. `curl.exe -X POST localhost:8003/sign/1 -H "Content-Type: application/json" -d '{\"participants\":[{\"server_id\":1,\"url\":\"127.0.0.1:3001\"},{\"server_id\":2,\"url\":\"127.0.0.1:3002\"}],\"data_to_sign\":\"7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d\",\"timestamp\":\"16816533390\"}'`
 
-The format is `curl.exe -X POST localhost:{HTTP-PORT}/sign/1 -H "Content-Type: application/json" '{JSON-DATA}`.
+The format is `curl.exe -X POST localhost:{HTTP-port}/sign/1 -H "Content-Type: application/json" '{JSON-DATA}`.
 
 The `JSON-DATA}` are of the following format:
 
@@ -119,7 +119,7 @@ succeed. If you are unable to do so, you can use pre-prepared python scripts, se
 To verify a signature, curl the  */verify* endpoint:
 1. `curl.exe -X POST localhost:8001/verify -d "7b2272223a7b226375727665223a22736563703235366b31222c227363616c6172223a5b3235352c3233322c36372c33372c33372c3230342c3136322c34392c3133322c3132312c3130312c3134302c39312c3130332c3137392c37392c3135372c37302c35352c33382c3131322c31372c3130372c3133352c362c3132302c3134312c37382c3131342c3130392c3131362c3137355d7d2c2273223a7b226375727665223a22736563703235366b31222c227363616c6172223a5b36302c3137302c3134322c33312c3230332c3137322c35302c3234302c31322c3230352c3231312c32322c32312c3137302c3133362c3233372c31352c3139362c36342c39392c3231332c3135312c38322c35372c3230302c38312c37352c3136362c3234322c3233302c32302c335d7d2c227265636964223a307d,7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d,16816533390"`
 
-The format is `curl.exe -X POST localhost:{HTTP-PORT}/verify -d "{SIGNATURE-AS-HEX-STRING},{SHA256-HASH-OF-DATA},{TIMESTAMP}"`.
+The format is `curl.exe -X POST localhost:{HTTP-port}/verify -d "{SIGNATURE-AS-HEX-STRING},{SHA256-HASH-OF-DATA},{TIMESTAMP}"`.
 
 NOTE: This should produce "Invalid signature" because you have different keys.
 
