@@ -88,8 +88,6 @@ Each of the servers will generate its keys named `local-shareX.json`, where X is
 
 ### Signing
 
-TODO: I take advantage of the error and set timestamp far in the future.
-
 To sign a message, curl the  */sign* endpoint (you can convert signature to hexstring at https://string-functions.com/string-hex.aspx):
 1. `curl.exe -X POST localhost:8001/sign/1 -H "Content-Type: application/json" -d '{\"participants\":[{\"server_id\":2,\"url\":\"127.0.0.1:3002\"},{\"server_id\":3,\"url\":\"127.0.0.1:3003\"}],\"data_to_sign\":\"7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d\",\"timestamp\":\"16816533390\"}'`
 2. `curl.exe -X POST localhost:8002/sign/1 -H "Content-Type: application/json" -d '{\"participants\":[{\"server_id\":1,\"url\":\"127.0.0.1:3001\"},{\"server_id\":3,\"url\":\"127.0.0.1:3003\"}],\"data_to_sign\":\"7b736f6d652c6172626974726172792c646174612c746f2c7369676e7d\",\"timestamp\":\"16816533390\"}'`
