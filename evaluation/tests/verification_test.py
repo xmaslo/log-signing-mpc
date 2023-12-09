@@ -23,42 +23,25 @@ def compute_signature(n, data_to_sign):
     return signature, timestamp
 
 
+def assert_all_parties(n, response_code, signature, timestamp):
+    outside_ports = get_ports(n, 8000)
+
+    for i in range(n):
+        response = asyncio.run(
+            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
+
+        assert response[0] == response_code
+
+
 class TestVerify13:
     def test_verify_signature_on_all_parties(self):
-        response_code = 200
-
         signature, timestamp = compute_signature(2, DATA_TO_SIGN)
-        outside_ports = get_ports(3, 8000)
 
-        response1 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
-        response2 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[1]}", DATA_TO_SIGN, signature, timestamp))
-        response3 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[2]}", DATA_TO_SIGN, signature, timestamp))
-
-        assert response1[0] == response_code
-        assert response2[0] == response_code
-        assert response3[0] == response_code
+        assert_all_parties(3, 200, signature, timestamp)
 
 
 class TestVerify24:
     def test_verify_signature_on_all_parties(self):
-        response_code = 200
-
         signature, timestamp = compute_signature(3, DATA_TO_SIGN)
-        outside_ports = get_ports(4, 8000)
 
-        response1 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[0]}", DATA_TO_SIGN, signature, timestamp))
-        response2 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[1]}", DATA_TO_SIGN, signature, timestamp))
-        response3 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[2]}", DATA_TO_SIGN, signature, timestamp))
-        response4 = asyncio.run(
-            trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[3]}", DATA_TO_SIGN, signature, timestamp))
-
-        assert response1[0] == response_code
-        assert response2[0] == response_code
-        assert response3[0] == response_code
-        assert response4[0] == response_code
+        assert_all_parties(4, 200, signature, timestamp)
