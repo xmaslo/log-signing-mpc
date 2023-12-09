@@ -25,6 +25,8 @@ def compute_signature(n, data_to_sign):
 
 class TestVerify13:
     def test_verify_signature_on_all_parties(self):
+        response_code = 200
+
         signature, timestamp = compute_signature(2, DATA_TO_SIGN)
         outside_ports = get_ports(3, 8000)
 
@@ -35,13 +37,15 @@ class TestVerify13:
         response3 = asyncio.run(
             trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[2]}", DATA_TO_SIGN, signature, timestamp))
 
-        assert response1[0] == 200
-        assert response2[0] == 200
-        assert response3[0] == 200
+        assert response1[0] == response_code
+        assert response2[0] == response_code
+        assert response3[0] == response_code
 
 
 class TestVerify24:
     def test_verify_signature_on_all_parties(self):
+        response_code = 200
+
         signature, timestamp = compute_signature(3, DATA_TO_SIGN)
         outside_ports = get_ports(4, 8000)
 
@@ -54,7 +58,7 @@ class TestVerify24:
         response4 = asyncio.run(
             trigger_verify_endpoint(BASE_URL_HTTP + f":{outside_ports[3]}", DATA_TO_SIGN, signature, timestamp))
 
-        assert response1[0] == 200
-        assert response2[0] == 200
-        assert response3[0] == 200
-        assert response4[0] == 200
+        assert response1[0] == response_code
+        assert response2[0] == response_code
+        assert response3[0] == response_code
+        assert response4[0] == response_code
