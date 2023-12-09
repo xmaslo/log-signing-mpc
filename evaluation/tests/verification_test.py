@@ -39,9 +39,21 @@ class TestVerify13:
 
         assert_all_parties(3, 200, signature, timestamp)
 
+    def test_invalid_signature(self):
+        signature, timestamp = compute_signature(2, DATA_TO_SIGN)
+        timestamp = str(int(timestamp) - 1)
+
+        assert_all_parties(3, 400, signature, timestamp)
+
 
 class TestVerify24:
     def test_verify_signature_on_all_parties(self):
         signature, timestamp = compute_signature(3, DATA_TO_SIGN)
 
         assert_all_parties(4, 200, signature, timestamp)
+
+    def test_invalid_signature(self):
+        signature, timestamp = compute_signature(3, DATA_TO_SIGN)
+        timestamp = str(int(timestamp) - 1)
+
+        assert_all_parties(4, 400, signature, timestamp)
