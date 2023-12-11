@@ -13,7 +13,7 @@ async def send_post_request(session, url, payload):
     :return: Response status and response data.
     """
     try:
-        timeout = aiohttp.ClientTimeout(total=30)
+        timeout = aiohttp.ClientTimeout(total=50)
         async with (session.post(url=url,
                                  data=payload,
                                  timeout=timeout)
