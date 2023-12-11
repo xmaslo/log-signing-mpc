@@ -11,7 +11,7 @@ from evaluation.utils.signatures import get_signature
 DATA_TO_SIGN = "{some,arbitrary,data,to,sign}"
 
 
-def verify_bench(threshold, signature_count):
+def compute_signature(threshold):
     timestamp = get_current_timestamp()
     internal_urls = get_inter_comm_urls(threshold + 1, IS_DOCKER)
     outside_ports = get_ports(threshold + 1, 8000)
@@ -24,6 +24,11 @@ def verify_bench(threshold, signature_count):
                       outside_ports,
                       DATA_TO_SIGN))
 
+    return signature, timestamp
+
+
+def verify_bench(threshold, signature_count, signature, timestamp):
+    outside_ports = get_ports(threshold + 1, 8000)
     start_time = time.time()
 
     for i in range(signature_count):
@@ -39,16 +44,20 @@ def verify_bench(threshold, signature_count):
 
 
 def compute_average(n, threshold, signature_count):
-    cumulated_time = 0
-    cumulated_average = 0
+    cumulated_times = []
+    cumulated_averages = []
+
+    signature, timestamp = compute_signature(threshold)
     for _ in range(n):
-        result = verify_bench(threshold, signature_count)
+        result = verify_bench(threshold, signature_count, signature, timestamp)
         
-        cumulated_time += result[0]
-        cumulated_average += result[1]
+        cumulated_times.append(result[0])
+        cumulated_averages.append(result[1])
     
-    print(f"\nExecution time: {cumulated_time/n:.2f} seconds")
-    print(f"Execution time per log: {cumulated_average/n:.2f} log/sec")
+    print(f"\nTimes: {cumulated_times}")
+    print(f"Averages: {cumulated_averages}")
+    print(f"Execution time: {sum(cumulated_times)/n:.2f} seconds")
+    print(f"Execution time per log: {sum(cumulated_averages)/n:.2f} log/sec")
 
 
 if __name__ == "__main__":
