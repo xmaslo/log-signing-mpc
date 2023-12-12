@@ -39,7 +39,7 @@ async def send_n_logs_for_signature_in_order(number_of_logs, file_with_logs, par
 
     fileinput.close()
 
-    return (execution_time, number_of_logs/execution_time)
+    return execution_time, number_of_logs / execution_time
 
 
 def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, participants, urls, ports):
@@ -65,7 +65,7 @@ def send_n_logs_for_signature_in_parallel(number_of_logs, file_with_logs, partic
 
     fileinput.close()
 
-    return (execution_time, number_of_logs/execution_time)
+    return execution_time, number_of_logs / execution_time
 
 
 def benchmark(parallel_n, log_file_name, parties_n, internals_n, ports_n, t_type):
