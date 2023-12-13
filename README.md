@@ -24,9 +24,9 @@ The ca certificate lies directly in that directory and is named ca_cert.pem.
 The public certificate and the private key must be located in a subdirectory named `private` and public respectively.
 The certificate and the private key must be named `cert_{server_id}.pem` and `private_key_{server_id}.pem` respectively.
 
-For easier development usage, you can unpack the certificates in `examples/certs.zip`, which store 9 certificates with 100 years of validity (only use them for development).
+For easier development usage, you can unpack the certificates in `examples/certs.zip`, which stores 9 certificates with 100 years of validity (only use them for development).
 
-If the certificates are already expired you can run provided scripts create your own self-signed certificates:
+If you want to create your own self-signed certificates, you can do the following:
 1. Navigate into `log-signing-mpc` directory.
 2. Run:
     - Linux:
