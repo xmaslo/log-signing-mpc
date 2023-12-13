@@ -182,19 +182,23 @@ Exactly the same as in the [Verification](#verification).
 
 ### Key Generation
 Navigate to the root directory and run:
-1. `pytest -v "tests/integration_tests/key_generation_test.py::TestKeyGen24::test_keygen_no_keys"`
+1. `python .\evaluation\performance\key_generation.py 4 1 ..\target\release`
 
 ### Signing
 Navigate to the root directory and run:
-1. `pytest -v "tests/integration_tests/signing_test.py::TestSigning24::test_sign_data"`
+1. `pytest -v "evaluation/tests/integration_tests/signing_test.py::TestSigning24::test_sign_data"`
 
 ### Verification
 Navigate to the root directory and run:
-1. `pytest -v "tests/integration_tests/verification_test.py::TestVerify24::test_verify_signature_on_all_parties"`
+1. `pytest -v "evaluation/tests/integration_tests/verification_test.py::TestVerify24::test_verify_signature_on_all_parties"`
 
 # Evaluation
 1. Add your project root directory into the PYTHONPATH: `$env:PYTHONPATH = "D:\log-signing-mpc;$env:PYTHONPATH"`.
-2. Run performance benchmark of your choice: `python benchmark.py <args>`.
+2. Navigate to the `evaluation\performance`.
+3. Run performance benchmark of your choice: \
+   Key generation: `python key_generation.py <number_of_nodes> <number_of_trials> <path_to_generated_keys>`, \
+   Signing: `python signing.py <threshold> <test_type> <log_count> <number_of_trials>`, \
+   Verification: `python verification.py <threshold> <number_of_signatures_to_verify> <number_of_trials>`.
 
 # Useful Commands
 1. Run unit-tests inside docker: `docker compose run unit-tests`.
