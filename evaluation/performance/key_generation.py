@@ -39,7 +39,8 @@ if __name__ == "__main__":
     
     execution_times = []
     for i in range(number_of_trials):
-        remove_json_and_local_share_files(path_to_keys)
+        if path_to_keys != "none":
+            remove_json_and_local_share_files(path_to_keys)
         execution_times.append(keygen_bench(int(sys.argv[1])))
     
     print(f"Times: {execution_times}")
