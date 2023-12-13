@@ -9,7 +9,7 @@ prompt = no
 countryName = CZ
 stateOrProvinceName = N/A
 localityName = Brno
-organizationName = pv204
+organizationName = DistributedLogSigning
 commonName = 127.0.0.1
 
 [req_ext]
