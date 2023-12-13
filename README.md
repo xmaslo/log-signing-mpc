@@ -48,12 +48,15 @@ You can download the most recent version of Rustup at https://www.rust-lang.org/
 
 ### Run
 NOTE: If running in powershell, you might need to change execution (administrator priviliges required): `set-executionpolicy remotesigned`.
+
 Navigate to `.\log-signing-mpc\scripts` and run:
 1. `.\run_servers_on_localhost.ps1 ..\target\release 2 4`
 
 The format is `.\run_servers_on_localhost.ps1 build-directory threshold number-of-parties`.
 
-Alternatively, navigate to `log-signing-mpc\target\release` and run:
+OR
+
+Navigate to `log-signing-mpc\target\release` and run:
 1. `.\log-signing-mpc.exe 1 8001 3001 2 4`
 2. `.\log-signing-mpc.exe 2 8002 3002 2 4`
 3. `.\log-signing-mpc.exe 3 8003 3003 2 4`
@@ -146,7 +149,9 @@ For more information about local networking with docker containers follow https:
 Navigate to root directory and run:
 1. `docker compose -f .\docker-compose-24.yml up`
 
-Alternatively, if you do not want to use **docker compose**, you can run it yourself:
+OR
+
+If you do not want to use **docker compose**, you can run it yourself:
 1. Run server 1: `docker run --name la1 --network la-net --rm -p 8001:8001 -p 3001:3001 log-signing-mpc-image 1 8001 3001 2 4`
 2. Run server 2: `docker run --name la2 --network la-net --rm -p 8002:8002 -p 3002:3002 log-signing-mpc-image 2 8002 3002 2 4`
 3. Run server 3: `docker run --name la3 --network la-net --rm -p 8003:8003 -p 3003:3003 log-signing-mpc-image 3 8003 3003 2 4`
