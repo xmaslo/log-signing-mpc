@@ -195,9 +195,10 @@ Examples of usage: \
 `python .\verification.py 4 data123 1702548777 7b2272223a7b226375727665223a22736563703235366b31222c227363616c6172223a5b34352c3230382c3132302c3231302c3131352c38352c3133392c31312c3133362c3137322c31312c3231392c3139312c3130342c3136332c3230372c31352c38332c37372c3134302c3232392c372c3233332c3133322c3233312c3136352c3138322c31312c3132392c38372c3130342c36315d7d2c2273223a7b226375727665223a22736563703235366b31222c227363616c6172223a5b3132372c3134372c3139332c33392c3130392c3130392c34312c34352c39342c33372c3134362c3132372c3131382c31342c37362c39362c372c3136352c36382c3133322c3131312c3132362c3139352c36372c392c3137392c3133362c36362c3137312c3131372c35392c375d7d2c227265636964223a307d`
 
 # Evaluation
-1. Add your project root directory into the PYTHONPATH: `$env:PYTHONPATH = "D:\log-signing-mpc;$env:PYTHONPATH"`.
-2. Navigate to the `evaluation\performance`.
-3. Run the performance benchmark of your choice: \
+1. `pip install -r .\evaluation\requirements.txt`.
+2. Add your project root directory into the PYTHONPATH: `$env:PYTHONPATH = "D:\log-signing-mpc;$env:PYTHONPATH"`.
+3. Navigate to the `evaluation\performance`.
+4. Run the performance benchmark of your choice: \
    **Key generation:** `python key_generation.py <number_of_nodes> <number_of_trials> <path_to_generated_keys>`, \
    **Signing:** `python signing.py <threshold> <test_type> <log_count> <number_of_trials>`, \
    **Verification:** `python verification.py <threshold> <number_of_signatures_to_verify> <number_of_trials>`.
