@@ -179,7 +179,7 @@ Same as in the [Signing](#signing), but the addresses are different:
 The same as in the [Verification](#verification).
 
 # Alternative Way to Run TS Operations
-Navigate into the `evaluation\simple_operations` and run: \
+Navigate into the `evaluation\simple_operations` and run (make sure to run `pip install -r .\evaluation\requirements.txt`): \
 *Key generation:* `python key_generation.py <number_of_nodes>`, \
 *Signing:* `python signing.py <threshold> <data_to_sign>`, \
 *Verification:* `python verification.py <server_id> <signed_data> <timestamp> <signature_in_hex>`.
@@ -209,7 +209,7 @@ currently, it only works on non-docker deployment because I did not find a good 
 
 For **signing**, you have to specify the threshold of the scheme, test type, number of logs to sign, and the number of trials.
 *Test_type* can be either *order* or *parallel*. If it is *order*, *number_of_logs* specifies the number of logs that
-will be signed in order in a single trial, where *number_of_trials* specifies their count. If it is *parallel*, the *number_of_logs*
+will be signed in a single trial, and *number_of_trials* specifies number of trials. If it is *parallel*, the *number_of_logs*
 specifies how many logs will be sent in parallel, and *number_of_trials* specifies how many trials of that test you want
 to do.
 
