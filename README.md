@@ -68,9 +68,10 @@ The format is: `.\log-signing-mpc.exe server-id HTTP-port TLS-port threshold num
 To run tests, follow:
 1. `pip install -r .\evaluation\requirements.txt`
 2. In the `tests\common`, modify the `IS_DOCKER` to be **False**.
-3. In the `scripts`, to run servers: `.\run_servers_on_localhost.ps1 ..\target\release 2 4`.
-4. `pytest -k "TestKeyGen24 or TestSigning24 or TestVerify24"`.
-5. Make sure the previous test runs did not already generate the keys; otherwise, the first test will fail (if generated, keys are usually present in the `target\release` under names `local-shareX.json`, where X is the number of a share).
+3. Add your project root directory into the PYTHONPATH: `$env:PYTHONPATH = "D:\log-signing-mpc;$env:PYTHONPATH"`.
+4. In the `scripts`, to run servers: `.\run_servers_on_localhost.ps1 ..\target\release 2 4`.
+5. `pytest -k "TestKeyGen24 or TestSigning24 or TestVerify24"`.
+6. Make sure the previous test runs did not already generate the keys; otherwise, the first test will fail (if generated, keys are usually present in the `target\release` under names `local-shareX.json`, where X is the number of a share).
 
 ## Threshold Signature Operations
 
