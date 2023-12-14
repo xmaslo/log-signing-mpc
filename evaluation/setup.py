@@ -1,4 +1,4 @@
-IS_DOCKER = True
+IS_DOCKER = False
 
 BASE_URL = "127.0.0.1"
 BASE_DOCKER_URL = "la"
