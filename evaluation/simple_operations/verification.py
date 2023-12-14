@@ -5,7 +5,7 @@ from evaluation.utils.endpoint_triggers import trigger_verify_endpoint
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python signing.py <server_id> <signed_data> <timestamp> <signature_in_hex>")
+        print("Usage: python verification.py <server_id> <signed_data> <timestamp> <signature_in_hex>")
         sys.exit(1)
 
     server_id = int(sys.argv[1])
