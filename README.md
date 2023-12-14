@@ -186,7 +186,7 @@ Navigate into the `evaluation\simple_operations` and run: \
 The *key\_generation.py* takes the number of servers a scheme has and generates keys. The *signing.py* takes the
 threshold of the scheme with data that you want to sign and prints to the standard output the signature in hex and the
 timestamp used. The *verification.py* takes the server_id on which you want to do verification, the data you signed,
-and the timestamp with the signature provided by the signing.py script. It Then prints whether the signature is **valid** or **invalid**.
+and the timestamp with the signature provided by the signing.py script. Then, it prints whether the signature is **valid** or **invalid**.
 
 Examples of usage: \
 `python .\key_generation.py 4` \
