@@ -94,8 +94,8 @@ def compute_average(n, p_count, file_name, parties, urls, ports, tt):
                                                    urls,
                                                    ports))
 
-    cumulated_time = 0
-    cumulated_average = 0
+    cumulated_times = []
+    cumulated_averages = []
     for _ in range(n):
         result = benchmark(p_count,
                            file_name,
@@ -104,11 +104,11 @@ def compute_average(n, p_count, file_name, parties, urls, ports, tt):
                            ports,
                            tt)
         
-        cumulated_time += result[0]
-        cumulated_average += result[1]
+        cumulated_times.append(result[0])
+        cumulated_averages.append(result[1])
     
-    print(f"\nExecution time: {cumulated_time/n:.2f} seconds")
-    print(f"Execution time per log: {cumulated_average/n:.2f} log/sec")
+    print(f"\n\nExecution time average: {sum(cumulated_times)/n:.2f} seconds")
+    print(f"Execution time per log average: {sum(cumulated_averages)/n:.2f} log/sec")
 
 
 LOG_FILE_NAME = 'log_files/nginx_json_logs.txt'
