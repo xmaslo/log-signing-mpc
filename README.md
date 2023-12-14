@@ -179,26 +179,52 @@ Same as in the [Signing](#signing), but the addresses are different:
 Exactly the same as in the [Verification](#verification).
 
 # Alternative Way to Run TS Operations
+Navigate into the `evaluation\simple_operations` and run: \
+*Key generation:* `python key_generation.py <number_of_nodes>`, \
+*Signing:* `python signing.py <threshold> <data_to_sign>`, \
+*Verification:* `python verification.py <server_id> <signed_data> <timestamp> <signature_in_hex>`.
 
-### Key Generation
-Navigate to the root directory and run:
-1. `python .\evaluation\performance\key_generation.py 4 1 ..\target\release`
+The *key\_generation.py* takes a number of servers a scheme has and generates keys. The *signing.py* takes the 
+threshold of the scheme with data that you want to sign and prints to the standard output the signature in hex and the 
+timestamp used. The *verification.py* takes the server_id on which you want to do verification, data you signed, 
+and timestamp with signature provided by signing.py script. It Then prints whether the signature is **valid** or **invalid**.
 
-### Signing
-Navigate to the root directory and run:
-1. `pytest -v "evaluation/tests/integration_tests/signing_test.py::TestSigning24::test_sign_data"`
-
-### Verification
-Navigate to the root directory and run:
-1. `pytest -v "evaluation/tests/integration_tests/verification_test.py::TestVerify24::test_verify_signature_on_all_parties"`
+Examples of usage: \
+`python .\key_generation.py 4` \
+`python .\signing.py 2 data123` \
+`python .\verification.py 4 data123 1702548777 7b2272223a7b226375727665223a22736563703235366b31222c227363616c6172223a5b34352c3230382c3132302c3231302c3131352c38352c3133392c31312c3133362c3137322c31312c3231392c3139312c3130342c3136332c3230372c31352c38332c37372c3134302c3232392c372c3233332c3133322c3233312c3136352c3138322c31312c3132392c38372c3130342c36315d7d2c2273223a7b226375727665223a22736563703235366b31222c227363616c6172223a5b3132372c3134372c3139332c33392c3130392c3130392c34312c34352c39342c33372c3134362c3132372c3131382c31342c37362c39362c372c3136352c36382c3133322c3131312c3132362c3139352c36372c392c3137392c3133362c36362c3137312c3131372c35392c375d7d2c227265636964223a307d`
 
 # Evaluation
 1. Add your project root directory into the PYTHONPATH: `$env:PYTHONPATH = "D:\log-signing-mpc;$env:PYTHONPATH"`.
 2. Navigate to the `evaluation\performance`.
 3. Run performance benchmark of your choice: \
-   Key generation: `python key_generation.py <number_of_nodes> <number_of_trials> <path_to_generated_keys>`, \
-   Signing: `python signing.py <threshold> <test_type> <log_count> <number_of_trials>`, \
-   Verification: `python verification.py <threshold> <number_of_signatures_to_verify> <number_of_trials>`.
+   **Key generation:** `python key_generation.py <number_of_nodes> <number_of_trials> <path_to_generated_keys>`, \
+   **Signing:** `python signing.py <threshold> <test_type> <log_count> <number_of_trials>`, \
+   **Verification:** `python verification.py <threshold> <number_of_signatures_to_verify> <number_of_trials>`.
+
+For **key generation**, you have to specify the number of servers your schemes use, the number of trials of test you want 
+to run, and where the keys will be generated since they need to be deleted to generate them repeatedly (NOTE: this
+currently only works on non-docker deployment because I did not find a good way to remove keys from the containers).
+
+For **signing**, you have to specify the threshold of the scheme, test type, number of logs to sign, and the number of trials.
+*Test_type* can be either *order* or *parallel*. If it is *order*, *number_of_logs* specifies the number of logs that
+will be signed in order in a single trial where *number_of_trials* specifies their count. If it is *parallel*, the *number_of_logs*
+specifies how many logs will be sent in parallel and *number_of_trials* specifies how many trials of that test you want
+to do.
+
+For **verification**, you have to specify the threshold of the scheme, number of signatures to verify in a single trial,
+and number of trials you want to do.
+
+The scripts will then present to you intermediate results and the final average. I would like just to point out that
+signing is not 100% perfect if you sign many logs in parallel. This is because that would require strong synchronization
+between servers, which is rather hard to get right.
+
+Examples: \
+`python .\key_generation.py 4 5 ..\..\target\release` \
+`python .\signing.py 2 order 1 10`\
+`python .\signing.py 2 parallel 5 2` \
+`python .\verification.py 2 100 5`.
+
 
 # Useful Commands
 1. Run unit-tests inside docker: `docker compose run unit-tests`.
