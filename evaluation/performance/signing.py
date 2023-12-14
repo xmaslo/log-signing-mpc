@@ -106,8 +106,10 @@ def compute_average(n, p_count, file_name, parties, urls, ports, tt):
         
         cumulated_times.append(result[0])
         cumulated_averages.append(result[1])
-    
-    print(f"\n\nExecution time average: {sum(cumulated_times)/n:.2f} seconds")
+
+    print(f"\n\nExecution time averages: {cumulated_times}")
+    print(f"Execution time per log averages: {cumulated_averages}")
+    print(f"Execution time average: {sum(cumulated_times)/n:.2f} seconds")
     print(f"Execution time per log average: {sum(cumulated_averages)/n:.2f} log/sec")
 
 

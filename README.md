@@ -211,7 +211,8 @@ For **signing**, you have to specify the threshold of the scheme, test type, num
 *Test_type* can be either *order* or *parallel*. If it is *order*, *number_of_logs* specifies the number of logs that
 will be signed in a single trial, and *number_of_trials* specifies number of trials. If it is *parallel*, the *number_of_logs*
 specifies how many logs will be sent in parallel, and *number_of_trials* specifies how many trials of that test you want
-to do.
+to do. Note: There will always be one extra signature because the protocols do all 6 rounds in the first signature,
+which I wanted to ignore in the tests.
 
 For **verification**, you have to specify the threshold of the scheme, the number of signatures to verify in a single trial,
 and number of trials you want to do.
