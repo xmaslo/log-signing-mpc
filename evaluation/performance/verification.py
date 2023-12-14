@@ -40,7 +40,7 @@ def verify_bench(threshold, signature_count, signature, timestamp):
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time:.2f} seconds")
     print(f"Execution time per log: {signature_count/execution_time}")
-    return (execution_time, signature_count/execution_time)
+    return execution_time, signature_count/execution_time
 
 
 def compute_average(n, threshold, signature_count):
