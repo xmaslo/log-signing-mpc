@@ -47,7 +47,7 @@ You can download the most recent version of Rustup at https://www.rust-lang.org/
    Build Release: `cargo build --release`
 
 ### Run
-NOTE: If running in PowerShell, you might need to change the execution policy (administrator privileges required): `set-executionpolicy remotesigned`.
+Note: If running in PowerShell, you might need to change the execution policy (administrator privileges required): `set-executionpolicy remotesigned`.
 
 Navigate to `.\log-signing-mpc\scripts` and run:
 1. `.\run_servers_on_localhost.ps1 ..\target\release 2 4`
@@ -202,7 +202,7 @@ Examples of usage: \
    **Verification:** `python verification.py <threshold> <number_of_signatures_to_verify> <number_of_trials>`.
 
 For **key generation**, you have to specify the number of servers your schemes use, the number of trials of tests you want
-to run, and where the keys will be generated since they need to be deleted to generate them repeatedly (NOTE: this
+to run, and where the keys will be generated since they need to be deleted to generate them repeatedly (Note: this
 currently, it only works on non-docker deployment because I did not find a good way to remove keys from the containers).
 
 For **signing**, you have to specify the threshold of the scheme, test type, number of logs to sign, and the number of trials.
